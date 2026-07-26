@@ -1,0 +1,771 @@
+/* ======================================================
+   ORDERS PAGE 
+====================================================== */
+
+
+/* ==========================
+   PAGE
+========================== */
+
+.orders-page {
+
+    min-height: 100vh;
+
+    padding: 32px;
+
+    background: #f7f8fa;
+
+    font-family:
+        "Inter",
+        "Segoe UI",
+        sans-serif;
+
+    color: #1f2937;
+
+}
+
+
+
+
+/* ==========================
+   HEADER
+========================== */
+
+
+.orders-header h1 {
+
+
+    margin: 0;
+
+    font-size: 32px;
+
+    font-weight: 750;
+
+    letter-spacing: -0.5px;
+
+}
+
+
+
+.orders-header p {
+
+
+    margin-top: 8px;
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+}
+
+
+
+
+
+
+
+/* ==========================
+   SUMMARY CARD
+========================== */
+
+
+.orders-summary {
+
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 24px;
+
+    margin-top: 32px;
+
+}
+
+
+
+
+
+.summary-card {
+
+
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 24px;
+
+    display: flex;
+
+    align-items: flex-start;
+
+    gap: 18px;
+
+    min-height: 150px;
+
+    box-shadow:
+
+        0 8px 30px rgba(0, 0, 0, .05);
+
+    border: 1px solid #f1f1f1;
+
+    transition: .25s ease;
+
+}
+
+
+
+
+
+.summary-card:hover {
+
+
+    transform: translateY(-3px);
+
+    box-shadow:
+
+        0 14px 35px rgba(0, 0, 0, .08);
+
+}
+
+
+
+
+
+
+
+.summary-icon {
+
+
+    width: 55px;
+
+    height: 55px;
+
+    border-radius: 16px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #fff4e8;
+
+    color: #f97316;
+
+    flex-shrink: 0;
+
+}
+
+
+
+
+
+.summary-icon.success {
+
+
+    background: #dcfce7;
+
+    color: #16a34a;
+
+}
+
+
+
+
+.summary-icon.money {
+
+
+    background: #eef2ff;
+
+    color: #4f46e5;
+
+}
+
+
+
+
+
+
+.summary-card span {
+
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+    font-weight: 500;
+
+}
+
+
+
+.summary-card h2 {
+
+
+    margin:
+
+        8px 0 12px;
+
+    font-size: 25px;
+
+    font-weight: 750;
+
+    color: #111827;
+
+}
+
+
+
+
+
+
+
+
+/* ==========================
+   SELECT FILTER
+========================== */
+
+
+.summary-card select {
+
+
+    width: 170px;
+
+    height: 38px;
+
+    border-radius: 10px;
+
+    border:
+
+        1px solid #e5e7eb;
+
+    background: white;
+
+    padding:
+
+        0 12px;
+
+    font-size: 13px;
+
+    color: #374151;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+
+}
+
+
+
+.summary-card select:hover {
+
+
+    border-color: #f97316;
+
+}
+
+
+
+
+.summary-card select:focus {
+
+
+    outline: none;
+
+    border-color: #f97316;
+
+    box-shadow:
+
+        0 0 0 3px rgba(249, 115, 22, .15);
+
+}
+
+
+
+
+
+
+
+
+
+/* ==========================
+   ORDERS TABLE CARD
+========================== */
+
+
+.orders-card {
+
+
+    margin-top: 32px;
+
+    background: white;
+
+    border-radius: 22px;
+
+    padding: 26px;
+
+    box-shadow:
+
+        0 8px 30px rgba(0, 0, 0, .05);
+
+    border:
+
+        1px solid #f1f1f1;
+
+}
+
+
+
+
+
+
+.card-header {
+
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+
+
+.card-header h3 {
+
+
+    margin: 0;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+}
+
+
+
+
+
+
+
+
+/* ==========================
+   TABLE
+========================== */
+
+
+.table-wrapper {
+
+
+    width: 100%;
+
+    overflow-x: auto;
+
+}
+
+
+
+
+
+table {
+
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+}
+
+
+
+
+
+thead {
+
+
+    background: #fafafa;
+
+}
+
+
+
+th {
+
+
+    padding: 16px;
+
+    text-align: left;
+
+    font-size: 13px;
+
+    color: #6b7280;
+
+    font-weight: 600;
+
+    border-bottom:
+
+        1px solid #e5e7eb;
+
+}
+
+
+
+td {
+
+
+    padding: 18px 16px;
+
+    border-bottom:
+
+        1px solid #f3f4f6;
+
+    font-size: 14px;
+
+    color: #374151;
+
+}
+
+
+
+
+
+tbody tr {
+
+
+    transition: .2s;
+
+}
+
+
+
+tbody tr:hover {
+
+
+    background: #fffaf5;
+
+}
+
+
+
+
+
+
+
+/* ==========================
+   CUSTOMER
+========================== */
+
+
+.customer,
+.address {
+
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+}
+
+
+
+
+
+.customer svg {
+
+
+    color: #f97316;
+
+}
+
+
+
+.address svg {
+
+
+    color: #ef4444;
+
+}
+
+
+
+
+
+
+/* ==========================
+   STATUS BADGE
+========================== */
+
+
+.paid {
+
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding:
+
+        7px 13px;
+
+    border-radius: 30px;
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+
+
+
+
+
+
+/* ==========================
+   EMPTY STATE
+========================== */
+
+
+.empty-orders {
+
+
+    min-height: 300px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    color: #9ca3af;
+
+    text-align: center;
+
+}
+
+
+
+.empty-orders svg {
+
+
+    margin-bottom: 15px;
+
+}
+
+
+
+.empty-orders h3 {
+
+
+    margin: 5px 0;
+
+    color: #374151;
+
+    font-size: 18px;
+
+}
+
+
+
+
+
+.empty-orders p {
+
+
+    color: #9ca3af;
+
+}
+
+
+
+
+
+
+
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+
+@media(max-width:1100px) {
+
+
+    .orders-summary {
+
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+
+}
+
+
+
+
+
+@media(max-width:768px) {
+
+
+    .orders-page {
+
+
+        padding: 20px;
+
+    }
+
+
+
+    .orders-header h1 {
+
+
+        font-size: 26px;
+
+    }
+
+
+
+    .summary-card {
+
+
+        padding: 20px;
+
+    }
+
+
+
+    .summary-card select {
+
+
+        width: 100%;
+
+    }
+
+
+
+    th,
+    td {
+
+
+        white-space: nowrap;
+
+    }
+
+
+
+}
+
+.order-action {
+
+    display: flex;
+
+    gap: 10px;
+
+}
+
+
+
+.accept-btn,
+.reject-btn {
+
+
+    border: none;
+
+    padding: 8px 14px;
+
+    border-radius: 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    cursor: pointer;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+
+.accept-btn {
+
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+}
+
+
+
+.reject-btn {
+
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+}
+
+
+
+.waiting {
+
+
+    background: #fef3c7;
+
+    color: #92400e;
+
+    padding: 7px 12px;
+
+    border-radius: 20px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+
+.rejected {
+
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+    padding: 7px 12px;
+
+    border-radius: 20px;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}

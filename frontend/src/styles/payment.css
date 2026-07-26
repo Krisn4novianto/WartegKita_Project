@@ -1,0 +1,1121 @@
+/* ===========================
+   PAYMENT PAGE
+=========================== */
+
+* {
+    box-sizing: border-box;
+}
+
+
+.payment-page {
+
+    min-height: 100vh;
+
+    background: #f8fafc;
+
+    padding: 32px;
+
+    font-family: Inter, sans-serif;
+
+}
+
+
+
+.payment-container {
+
+    max-width: 1200px;
+
+    margin: auto;
+
+}
+
+
+
+/* ===========================
+   HEADER
+=========================== */
+
+
+.payment-top {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 22px;
+
+    margin-bottom: 30px;
+
+}
+
+
+
+.back-button {
+
+    width: fit-content;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 12px 18px;
+
+    border-radius: 14px;
+
+    border: 1px solid #e5e7eb;
+
+    background: white;
+
+    color: #374151;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+
+.back-button:hover {
+
+    transform: translateX(-3px);
+
+    background: #f9fafb;
+
+}
+
+
+
+.payment-hero {
+
+    background: linear-gradient(135deg,
+            #ff6b35,
+            #ff8a3d);
+
+    color: white;
+
+    border-radius: 28px;
+
+    padding: 40px;
+
+    border: none;
+
+    box-shadow:
+        0 20px 40px rgba(255, 107, 53, .25);
+
+}
+
+
+
+.payment-header h1 {
+
+    color: white;
+
+}
+
+
+.payment-header p {
+
+    color: rgba(255, 255, 255, .9);
+
+}
+
+
+
+.payment-header p {
+
+    margin-top: 12px;
+
+    color: #f0fdf4;
+
+    max-width: 700px;
+
+    line-height: 1.6;
+
+}
+
+
+
+
+
+/* ===========================
+   PROGRESS
+=========================== */
+
+
+.payment-progress {
+
+    margin-top: 35px;
+
+    display: flex;
+
+    align-items: center;
+
+}
+
+
+
+.progress-step {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+
+    min-width: 100px;
+
+}
+
+
+
+.step-circle {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    background: #e5e7eb;
+
+    color: #6b7280;
+
+    font-weight: 700;
+
+}
+
+
+
+.progress-step.done .step-circle,
+.progress-step.active .step-circle {
+
+    background: #16a34a;
+
+    color: white;
+
+}
+
+
+
+.progress-step span {
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+    color: #6b7280;
+
+}
+
+
+
+.progress-step.active span {
+
+    color: #111827;
+
+}
+
+
+
+.progress-line {
+
+    height: 3px;
+
+    flex: 1;
+
+    background: #e5e7eb;
+
+    margin: 0 10px;
+
+}
+
+
+
+.progress-line.done {
+
+    background: #16a34a;
+
+}
+
+
+
+
+
+/* ===========================
+   MAIN LAYOUT
+=========================== */
+
+
+.payment-layout {
+
+    display: grid;
+
+    grid-template-columns:
+
+        minmax(0, 1fr) 380px;
+
+    gap: 28px;
+
+    align-items: start;
+
+}
+
+
+
+
+.payment-main {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 22px;
+
+}
+
+
+
+
+
+/* ===========================
+   CARD
+=========================== */
+
+
+.payment-card {
+
+    background: white;
+
+    border-radius: 22px;
+
+    padding: 26px;
+
+    border: 1px solid #e5e7eb;
+
+}
+
+
+
+.checkout-card-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    margin-bottom: 22px;
+
+}
+
+
+
+.checkout-number {
+
+    width: 42px;
+
+    height: 42px;
+
+    border-radius: 14px;
+
+    background: #16a34a;
+
+    color: white;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-weight: 800;
+
+}
+
+
+
+.checkout-card-header h2 {
+
+    margin: 0;
+
+    font-size: 20px;
+
+    font-weight: 800;
+
+}
+
+
+
+.checkout-card-header p {
+
+    margin: 5px 0 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+}
+
+
+
+
+
+/* ===========================
+   STATUS
+=========================== */
+
+
+.payment-status {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    background: #f0fdf4;
+
+    padding: 18px;
+
+    border-radius: 18px;
+
+}
+
+
+
+.status-icon {
+
+    width: 48px;
+
+    height: 48px;
+
+    background: #16a34a;
+
+    color: white;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+
+.payment-status strong {
+
+    display: block;
+
+    font-size: 16px;
+
+}
+
+
+
+.payment-status p {
+
+    margin: 4px 0 0;
+
+    color: #6b7280;
+
+}
+
+
+
+
+
+/* ===========================
+   METHOD
+=========================== */
+
+
+.method-box {
+
+    padding: 18px;
+
+    background: #f9fafb;
+
+    border-radius: 16px;
+
+    border: 1px solid #e5e7eb;
+
+}
+
+
+
+.method-box strong {
+
+    font-size: 18px;
+
+}
+
+
+
+
+
+/* ===========================
+   PAYMENT INSTRUCTION
+=========================== */
+
+
+.payment-instruction {
+
+    text-align: center;
+
+    padding: 25px;
+
+}
+
+
+
+.payment-instruction svg {
+
+    margin: auto;
+
+    color: #16a34a;
+
+}
+
+
+
+.payment-instruction h2 {
+
+    margin: 15px 0 8px;
+
+}
+
+
+
+.payment-instruction p {
+
+    color: #6b7280;
+
+}
+
+
+
+.fake-qr {
+
+    width: 180px;
+
+    height: 180px;
+
+    margin: 25px auto;
+
+    background:
+
+        repeating-linear-gradient(45deg,
+            #111 0px,
+            #111 8px,
+            white 8px,
+            white 16px);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    color: white;
+
+    font-weight: 800;
+
+}
+
+
+
+.account-box {
+
+    margin: 20px auto;
+
+    padding: 18px;
+
+    max-width: 280px;
+
+    border-radius: 16px;
+
+    background: #f3f4f6;
+
+    font-size: 22px;
+
+    font-weight: 800;
+
+}
+
+
+
+
+
+/* ===========================
+   SUMMARY
+=========================== */
+
+
+.payment-summary {
+
+    background: white;
+
+    border-radius: 22px;
+
+    padding: 24px;
+
+    border: 1px solid #e5e7eb;
+
+    position: sticky;
+
+    top: 20px;
+
+}
+
+
+
+.summary-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+.summary-header h2 {
+
+    margin: 0;
+
+    font-size: 20px;
+
+}
+
+
+
+.summary-header span {
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+}
+
+
+
+
+
+.payment-items {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 14px;
+
+}
+
+
+
+.checkout-item {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+}
+
+
+
+.checkout-item div {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+}
+
+
+
+.checkout-item span {
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+}
+
+
+
+
+
+.summary-divider {
+
+    height: 1px;
+
+    background: #e5e7eb;
+
+    margin: 20px 0;
+
+}
+
+
+
+
+
+.summary-total {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+
+.summary-total span {
+
+    font-weight: 600;
+
+}
+
+
+
+.summary-total strong {
+
+    font-size: 22px;
+
+}
+
+
+
+
+
+.checkout-pay-button,
+.payment-success-button {
+
+    margin-top: 24px;
+
+    width: 100%;
+
+    height: 52px;
+
+    border: none;
+
+    border-radius: 16px;
+
+    background: #16a34a;
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+
+
+.checkout-pay-button:hover,
+.payment-success-button:hover {
+
+    background: #15803d;
+
+}
+
+
+
+
+
+/* ===========================
+   RESPONSIVE
+=========================== */
+
+
+@media(max-width:900px) {
+
+
+    .payment-page {
+
+        padding: 16px;
+
+    }
+
+
+    .payment-layout {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+
+    .payment-summary {
+
+        position: static;
+
+    }
+
+
+
+    .payment-header h1 {
+
+        font-size: 28px;
+
+    }
+
+
+
+    .payment-progress {
+
+        overflow-x: auto;
+
+    }
+
+
+}
+
+
+/* ======================================================
+   SPLIT SCREEN OPTIMIZATION
+   (Laptop kecil / browser 50%)
+====================================================== */
+
+
+@media (max-width: 1200px) {
+
+
+    .payment-page {
+
+        padding: 22px;
+
+    }
+
+
+    .payment-container {
+
+        max-width: 100%;
+
+    }
+
+
+
+    .payment-hero {
+
+        padding: 30px;
+
+        border-radius: 24px;
+
+    }
+
+
+
+    .payment-header h1 {
+
+        font-size: 30px;
+
+    }
+
+
+
+    .payment-header p {
+
+        font-size: 14px;
+
+    }
+
+
+
+    .payment-layout {
+
+        grid-template-columns:
+            minmax(0, 1fr) 320px;
+
+        gap: 20px;
+
+    }
+
+
+
+    .payment-card {
+
+        padding: 22px;
+
+        border-radius: 18px;
+
+    }
+
+
+
+    .payment-summary {
+
+        padding: 20px;
+
+        border-radius: 18px;
+
+    }
+
+
+}
+
+
+
+
+
+
+/* ======================================================
+   SMALL LAPTOP / HALF SCREEN
+====================================================== */
+
+
+@media (max-width: 1050px) {
+
+
+    .payment-layout {
+
+        grid-template-columns: 1fr;
+
+    }
+
+
+
+    .payment-summary {
+
+        position: relative;
+
+        top: 0;
+
+    }
+
+
+
+    .payment-progress {
+
+        gap: 5px;
+
+    }
+
+
+
+    .progress-step {
+
+        min-width: 75px;
+
+    }
+
+
+
+    .step-circle {
+
+        width: 36px;
+
+        height: 36px;
+
+        font-size: 13px;
+
+    }
+
+
+
+    .progress-step span {
+
+        font-size: 11px;
+
+    }
+
+
+
+    .progress-line {
+
+        margin: 0 5px;
+
+    }
+
+
+}
+
+
+
+
+
+
+
+/* ======================================================
+   VERY SMALL SPLIT VIEW
+====================================================== */
+
+
+@media (max-width:700px) {
+
+
+    .payment-page {
+
+        padding: 14px;
+
+    }
+
+
+
+    .payment-hero {
+
+        padding: 24px;
+
+        border-radius: 20px;
+
+    }
+
+
+
+    .payment-header h1 {
+
+        font-size: 24px;
+
+    }
+
+
+
+    .payment-card {
+
+        padding: 18px;
+
+    }
+
+
+
+    .checkout-card-header {
+
+        gap: 12px;
+
+    }
+
+
+
+    .checkout-number {
+
+        width: 36px;
+
+        height: 36px;
+
+        border-radius: 10px;
+
+    }
+
+
+
+    .checkout-card-header h2 {
+
+        font-size: 17px;
+
+    }
+
+
+
+    .payment-status {
+
+        padding: 14px;
+
+    }
+
+
+
+    .status-icon {
+
+        width: 40px;
+
+        height: 40px;
+
+    }
+
+
+
+    .fake-qr {
+
+        width: 140px;
+
+        height: 140px;
+
+    }
+
+
+
+    .account-box {
+
+        font-size: 18px;
+
+    }
+
+
+
+}
+
+
+
+
+
+
+
+/* ======================================================
+   ULTRA WIDE DESKTOP
+====================================================== */
+
+
+@media(min-width:1400px) {
+
+
+    .payment-container {
+
+        max-width: 1300px;
+
+    }
+
+
+
+    .payment-layout {
+
+        grid-template-columns:
+            minmax(0, 1fr) 400px;
+
+    }
+
+
+
+    .payment-hero {
+
+        padding: 45px;
+
+    }
+
+}

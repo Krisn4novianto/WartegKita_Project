@@ -1,0 +1,49 @@
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    border: none;
+    background: none;
+
+    cursor: pointer;
+
+    color: #475569;
+
+    font-weight: 600;
+
+    transition: .2s;
+}
+
+.back-button:hover {
+    color: #16a34a;
+}
+
+.primary-button {
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 14px 24px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    background: #16a34a;
+
+    color: white;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .2s;
+}
+
+.primary-button:hover {
+
+    background: #15803d;
+
+}

@@ -1,0 +1,425 @@
+/* ==========================================
+   VIRTUAL ACCOUNT PAYMENT
+========================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+.va-payment {
+    max-width: 760px;
+    margin: 40px auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    font-family: Inter, sans-serif;
+}
+
+/* ==========================================
+   HEADER
+========================================== */
+
+.va-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .08);
+}
+
+.va-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: white;
+    flex-shrink: 0;
+}
+
+.va-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.va-header p {
+    margin-top: 6px;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* ==========================================
+   BANK SELECT
+========================================== */
+
+.va-bank-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+}
+
+.va-bank-choice {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px;
+    border-radius: 18px;
+    background: #fff;
+    border: 2px solid #ececec;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.va-bank-choice:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .08);
+}
+
+.va-bank-choice img.bank-logo {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.va-bank-choice strong {
+    display: block;
+    font-size: 17px;
+    color: #222;
+}
+
+.va-bank-choice small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+}
+
+.va-bank-choice.active.bri {
+    border-color: #00529c;
+    background: linear-gradient(135deg, #eef6ff, #ffffff);
+}
+
+.va-bank-choice.active.raya {
+    border-color: #00a859;
+    background: linear-gradient(135deg, #eefdf5, #ffffff);
+}
+
+.va-bank-choice.active img {
+    transform: scale(1.08);
+}
+
+/* ==========================================
+   VA CARD
+========================================== */
+
+.va-card {
+    background: #fff;
+    border-radius: 22px;
+    padding: 28px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, .08);
+}
+
+.va-bank {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.va-main-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 12px;
+}
+
+.va-bank h3 {
+    margin: 0;
+    font-size: 24px;
+}
+
+.va-card label {
+    display: block;
+    margin-bottom: 10px;
+    color: #666;
+    font-weight: 600;
+}
+
+/* ==========================================
+   COPY BOX
+========================================== */
+
+.va-copy-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    padding: 18px 22px;
+    border-radius: 16px;
+    background: #f7f8fa;
+    border: 2px dashed #d8d8d8;
+}
+
+.va-copy-box strong {
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: #111827;
+    word-break: break-all;
+}
+
+.va-copy-box button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    cursor: pointer;
+    transition: .25s;
+    font-weight: 600;
+}
+
+.va-copy-box button:hover {
+    background: #1d4ed8;
+}
+
+/* ==========================================
+   TOTAL
+========================================== */
+
+.va-total-card {
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+    color: white;
+    border-radius: 22px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 14px 40px rgba(34, 197, 94, .25);
+}
+
+.va-total-card small {
+    opacity: .9;
+    font-size: 15px;
+}
+
+.va-total-card h1 {
+    margin: 12px 0 22px;
+    font-size: 40px;
+}
+
+.va-copy-total {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, .18);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, .3);
+    border-radius: 14px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.va-copy-total:hover {
+    background: rgba(255, 255, 255, .28);
+}
+
+/* ==========================================
+   APP BUTTON
+========================================== */
+
+.va-app-button {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    background: #111827;
+    color: white;
+    border: none;
+    border-radius: 18px;
+    padding: 18px;
+    font-size: 17px;
+    cursor: pointer;
+    transition: .3s;
+    font-weight: 600;
+}
+
+.va-app-button:hover {
+    background: #000;
+    transform: translateY(-2px);
+}
+
+/* ==========================================
+   TIMER
+========================================== */
+.va-timer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    text-align: center;
+
+    padding: 24px;
+
+    border-radius: 20px;
+    background: #fff7ed;
+    border: 2px dashed #fb923c;
+}
+
+.va-timer svg {
+    width: 40px;
+    height: 40px;
+    color: #ea580c;
+    margin-bottom: 10px;
+}
+
+.va-timer strong {
+    font-size: 15px;
+    color: #78716c;
+    margin-bottom: 8px;
+}
+
+.va-timer h2 {
+    margin: 0;
+
+    font-size: 42px;
+    font-weight: 800;
+    color: #dc2626;
+
+    letter-spacing: 6px;
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* ==========================================
+   INSTRUCTION
+========================================== */
+
+.va-instruction {
+    background: white;
+    border-radius: 22px;
+    padding: 28px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+}
+
+.va-instruction h3 {
+    margin-top: 0;
+    margin-bottom: 24px;
+}
+
+.va-step {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.va-step:last-child {
+    margin-bottom: 0;
+}
+
+.va-step span {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #2563eb;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.va-step p {
+    margin: 5px 0 0;
+    color: #444;
+    line-height: 1.6;
+}
+
+/* ==========================================
+   NOTE
+========================================== */
+
+.va-note {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: #ecfdf5;
+    border: 2px solid #86efac;
+    border-radius: 18px;
+    padding: 20px;
+}
+
+.va-note svg {
+    color: #16a34a;
+    flex-shrink: 0;
+}
+
+.va-note span {
+    color: #166534;
+    line-height: 1.6;
+}
+
+.va-note b {
+    color: #15803d;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width:768px) {
+
+    .va-payment {
+        padding: 16px;
+    }
+
+    .va-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .va-bank-selector {
+        grid-template-columns: 1fr;
+    }
+
+    .va-copy-box {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .va-copy-box strong {
+        font-size: 18px;
+        letter-spacing: 1px;
+    }
+
+    .va-copy-box button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .va-total-card h1 {
+        font-size: 32px;
+    }
+
+    .va-timer {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .va-timer h2 {
+        font-size: 30px;
+    }
+
+    .va-app-button {
+        width: 100%;
+    }
+}

@@ -1,0 +1,859 @@
+/* =====================================================
+   PROFILE PAGE
+===================================================== */
+
+.profile-page {
+    min-height: 100vh;
+    background: #f5f7fb;
+    padding: 40px 20px;
+    font-family: Inter, system-ui, sans-serif;
+}
+
+
+.profile-container {
+    max-width: 900px;
+    margin: auto;
+}
+
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.profile-header {
+    margin-bottom: 35px;
+}
+
+
+.profile-header h1 {
+    font-size: 42px;
+    font-weight: 800;
+    color: #111827;
+    margin: 0;
+}
+
+
+.profile-header p {
+    margin-top: 10px;
+    color: #6b7280;
+    font-size: 18px;
+}
+
+
+
+
+/* =====================================================
+   CARD
+===================================================== */
+
+.profile-card {
+
+    background: white;
+
+    border-radius: 30px;
+
+    padding: 45px;
+
+    box-shadow:
+        0 15px 40px rgba(0, 0, 0, .06);
+
+}
+
+
+
+/* =====================================================
+   AVATAR
+===================================================== */
+
+
+.profile-avatar {
+
+    width: 120px;
+
+    height: 120px;
+
+    border-radius: 50%;
+
+
+    margin: 0 auto 20px;
+
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+
+    background:
+        linear-gradient(135deg,
+            #16a34a,
+            #22c55e);
+
+
+    color: white;
+
+    font-size: 45px;
+
+    font-weight: 800;
+
+}
+
+
+
+
+/* =====================================================
+   BADGE
+===================================================== */
+
+
+.profile-badge {
+
+    margin: auto;
+
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+
+    width: max-content;
+
+
+    padding: 10px 22px;
+
+
+    border-radius: 30px;
+
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+}
+
+
+
+
+
+/* =====================================================
+   PROFILE INFO
+===================================================== */
+
+
+.profile-info {
+
+    margin-top: 30px;
+
+    text-align: center;
+
+}
+
+
+
+.profile-info h2 {
+
+    font-size: 23px;
+
+    color: #111827;
+
+    margin-bottom: 8px;
+
+}
+
+
+
+.profile-email {
+
+    color: #6b7280;
+
+    font-size: 15px;
+
+    margin-bottom: 20px;
+
+}
+
+
+
+
+
+/* =====================================================
+   EDIT PROFILE FORM
+===================================================== */
+
+
+.profile-edit {
+
+    max-width: 450px;
+
+    margin: 0 auto;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 15px;
+
+}
+
+
+
+.profile-edit input {
+
+
+    width: 100%;
+
+    height: 52px;
+
+
+    border-radius: 14px;
+
+    border: 1px solid #d1d5db;
+
+
+    padding: 0 18px;
+
+
+    font-size: 16px;
+
+
+    box-sizing: border-box;
+
+}
+
+
+
+.profile-edit input:focus {
+
+    outline: none;
+
+    border-color: #16a34a;
+
+}
+
+
+
+.profile-edit button {
+
+
+    height: 52px;
+
+
+    background: #16a34a;
+
+    color: white;
+
+
+    border: none;
+
+
+    border-radius: 14px;
+
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+}
+
+
+
+
+/* =====================================================
+   EDIT BUTTON
+===================================================== */
+
+
+.edit-profile {
+
+
+    margin: auto;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+    justify-content: center;
+
+
+    gap: 8px;
+
+
+    padding: 12px 22px;
+
+
+    border-radius: 14px;
+
+
+    border: 1px solid #16a34a;
+
+
+    background: white;
+
+
+    color: #16a34a;
+
+
+    font-weight: 700;
+
+}
+
+
+
+.edit-profile:hover {
+
+    background: #16a34a;
+
+    color: white;
+
+}
+
+
+
+
+
+/* =====================================================
+   MENU
+===================================================== */
+
+
+.profile-menu {
+
+
+    margin-top: 45px;
+
+
+    display: flex;
+
+
+    flex-direction: column;
+
+
+    gap: 20px;
+
+
+}
+
+
+
+.profile-menu>button {
+
+
+    width: 100%;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 18px;
+
+
+    padding: 20px;
+
+
+    border-radius: 18px;
+
+
+    border: 1px solid #e5e7eb;
+
+
+    background: #fff;
+
+
+    text-align: left;
+
+
+}
+
+
+
+.profile-menu>button svg {
+
+    width: 32px;
+
+    height: 32px;
+
+    color: #16a34a;
+
+}
+
+
+
+
+.profile-menu strong {
+
+    display: block;
+
+    color: #111827;
+
+    font-size: 17px;
+
+}
+
+
+
+.profile-menu span {
+
+    display: block;
+
+    margin-top: 5px;
+
+    color: #6b7280;
+
+}
+
+
+
+
+
+/* =====================================================
+   ADDRESS
+===================================================== */
+
+
+.address-box {
+
+
+    border: 1px solid #e5e7eb;
+
+
+    border-radius: 22px;
+
+
+    padding: 25px;
+
+
+}
+
+
+
+.address-header {
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 15px;
+
+
+    margin-bottom: 25px;
+
+
+}
+
+
+
+.address-header svg {
+
+    color: #16a34a;
+
+    width: 32px;
+
+    height: 32px;
+
+}
+
+
+
+
+.saved-address {
+
+
+    display: flex;
+
+
+    justify-content: space-between;
+
+
+    gap: 20px;
+
+
+    padding: 20px;
+
+
+    background: #f9fafb;
+
+
+    border-radius: 18px;
+
+
+}
+
+
+
+.saved-address p {
+
+    color: #374151;
+
+    margin: 8px 0;
+
+}
+
+
+
+
+.edit-address {
+
+
+    height: 42px;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 8px;
+
+
+    padding: 0 18px;
+
+
+    border-radius: 12px;
+
+
+    border: 1px solid #16a34a;
+
+
+    background: white;
+
+
+    color: #16a34a;
+
+
+    font-weight: 700;
+
+}
+
+
+
+
+
+.add-address-btn {
+
+
+    width: 100%;
+
+
+    display: flex;
+
+
+    justify-content: center;
+
+
+    align-items: center;
+
+
+    gap: 8px;
+
+
+    padding: 15px;
+
+
+    border-radius: 14px;
+
+
+    border: none;
+
+
+    background: #16a34a;
+
+
+    color: white;
+
+
+    font-weight: 700;
+
+
+}
+
+
+
+
+
+/* =====================================================
+   ADDRESS FORM
+===================================================== */
+
+
+.address-form {
+
+
+    display: flex;
+
+
+    flex-direction: column;
+
+
+    gap: 15px;
+
+
+}
+
+
+
+.address-type {
+
+
+    display: flex;
+
+
+    gap: 10px;
+
+
+}
+
+
+
+.address-type button {
+
+
+    padding: 10px 18px;
+
+
+    border-radius: 20px;
+
+
+    border: 1px solid #d1d5db;
+
+
+    background: white;
+
+
+}
+
+
+
+.address-type .active {
+
+
+    background: #16a34a;
+
+
+    color: white;
+
+
+    border-color: #16a34a;
+
+
+}
+
+
+
+
+
+.address-form input,
+.address-form textarea,
+.address-form select {
+
+
+    width: 100%;
+
+
+    box-sizing: border-box;
+
+
+    border-radius: 14px;
+
+
+    border: 1px solid #d1d5db;
+
+
+    padding: 14px;
+
+
+    font-size: 15px;
+
+
+}
+
+
+
+.address-form textarea {
+
+
+    height: 110px;
+
+    resize: none;
+
+}
+
+
+
+.address-actions {
+
+
+    display: flex;
+
+
+    gap: 15px;
+
+}
+
+
+
+.save-address {
+
+
+    flex: 1;
+
+
+    padding: 14px;
+
+
+    border: none;
+
+
+    border-radius: 14px;
+
+
+    background: #16a34a;
+
+
+    color: white;
+
+
+    font-weight: 700;
+
+
+}
+
+
+
+.cancel-btn {
+
+
+    flex: 1;
+
+
+    border: none;
+
+
+    border-radius: 14px;
+
+
+    background: #e5e7eb;
+
+
+    font-weight: 700;
+
+}
+
+
+
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+
+.logout-button {
+
+
+    width: 100%;
+
+
+    margin-top: 30px;
+
+
+    padding: 16px;
+
+
+    display: flex;
+
+
+    justify-content: center;
+
+
+    align-items: center;
+
+
+    gap: 10px;
+
+
+    border: none;
+
+
+    border-radius: 16px;
+
+
+    background: #ef4444;
+
+
+    color: white;
+
+
+    font-size: 16px;
+
+
+    font-weight: 700;
+
+
+}
+
+
+
+
+
+/* =====================================================
+   MOBILE
+===================================================== */
+
+
+@media(max-width:600px) {
+
+
+    .profile-page {
+
+        padding: 20px 15px;
+
+    }
+
+
+    .profile-card {
+
+        padding: 25px 18px;
+
+    }
+
+
+    .profile-header h1 {
+
+        font-size: 32px;
+
+    }
+
+
+    .saved-address {
+
+        flex-direction: column;
+
+    }
+
+
+    .address-actions {
+
+        flex-direction: column;
+
+    }
+
+
+}

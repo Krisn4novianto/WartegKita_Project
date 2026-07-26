@@ -1,0 +1,556 @@
+/* =====================================
+   SELLER DASHBOARD
+===================================== */
+
+
+.seller-layout {
+
+    min-height: 100vh;
+
+    background:
+        linear-gradient(135deg,
+            #f8fafc,
+            #ecfdf5);
+
+}
+
+
+
+
+
+/* =====================================
+   CONTENT
+===================================== */
+
+
+.seller-content {
+
+
+    margin-left: 260px;
+
+    width: calc(100% - 260px);
+
+    padding: 35px 40px;
+
+
+    transition: .3s ease;
+
+
+}
+
+
+
+.menu-close .seller-content {
+
+
+    margin-left: 80px;
+
+    width: calc(100% - 80px);
+
+
+}
+
+
+
+
+
+
+/* =====================================
+   MAIN
+===================================== */
+
+
+.seller-dashboard {
+
+
+    max-width: 1400px;
+
+    margin: auto;
+
+
+}
+
+
+
+
+
+
+/* =====================================
+   HEADER HERO
+===================================== */
+
+
+.dashboard-header {
+
+
+    background:
+
+        linear-gradient(135deg,
+            #16a34a,
+            #22c55e);
+
+
+    padding: 35px;
+
+
+    border-radius: 28px;
+
+
+    color: white;
+
+
+    margin-bottom: 30px;
+
+
+    box-shadow:
+
+        0 20px 40px rgba(22, 163, 74, .25);
+
+
+}
+
+
+
+.dashboard-header h1 {
+
+
+    margin: 0;
+
+
+    font-size: 36px;
+
+
+    font-weight: 800;
+
+
+}
+
+
+
+.dashboard-header p {
+
+
+    margin-top: 10px;
+
+
+    opacity: .9;
+
+
+    font-size: 16px;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   STAT GRID
+===================================== */
+
+
+.stats-grid {
+
+
+    display: grid;
+
+
+    grid-template-columns:
+
+        repeat(4, 1fr);
+
+
+    gap: 22px;
+
+
+}
+
+
+
+
+
+
+
+/* CARD */
+
+
+.stat-card {
+
+
+    background: white;
+
+
+    border-radius: 24px;
+
+
+    padding: 25px;
+
+
+    display: flex;
+
+
+    gap: 18px;
+
+
+    align-items: center;
+
+
+    border: 1px solid #e2e8f0;
+
+
+    box-shadow:
+
+        0 12px 35px rgba(15, 23, 42, .06);
+
+
+    transition: .25s;
+
+
+}
+
+
+
+.stat-card:hover {
+
+
+    transform: translateY(-6px);
+
+
+    box-shadow:
+
+        0 20px 45px rgba(15, 23, 42, .12);
+
+
+}
+
+
+
+
+
+
+
+/* ICON */
+
+
+.stat-icon {
+
+
+    width: 60px;
+
+
+    height: 60px;
+
+
+    border-radius: 20px;
+
+
+    display: flex;
+
+
+    justify-content: center;
+
+
+    align-items: center;
+
+
+    background: #dcfce7;
+
+
+    color: #16a34a;
+
+
+}
+
+
+
+
+
+/* BLUE */
+
+
+.stat-card:nth-child(2) .stat-icon {
+
+
+    background: #dbeafe;
+
+
+    color: #2563eb;
+
+
+}
+
+
+
+
+
+/* ORANGE */
+
+
+.stat-card:nth-child(3) .stat-icon {
+
+
+    background: #fef3c7;
+
+
+    color: #d97706;
+
+
+}
+
+
+
+
+
+/* PURPLE */
+
+
+.stat-card:nth-child(4) .stat-icon {
+
+
+    background: #ede9fe;
+
+
+    color: #7c3aed;
+
+
+}
+
+
+
+
+
+
+.stat-card span {
+
+
+    display: block;
+
+
+    font-size: 14px;
+
+
+    color: #64748b;
+
+
+    margin-bottom: 8px;
+
+
+}
+
+
+
+.stat-card strong {
+
+
+    font-size: 25px;
+
+
+    font-weight: 800;
+
+
+    color: #0f172a;
+
+
+}
+
+
+
+
+.stat-card small {
+
+
+    font-size: 14px;
+
+
+    color: #64748b;
+
+
+    margin-left: 5px;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+   INFORMATION CARD
+===================================== */
+
+
+.seller-info-card {
+
+
+    margin-top: 35px;
+
+
+    background: white;
+
+
+    border-radius: 28px;
+
+
+    padding: 30px;
+
+
+    border:
+
+        1px solid #e2e8f0;
+
+
+    box-shadow:
+
+        0 15px 35px rgba(15, 23, 42, .06);
+
+
+}
+
+
+
+.seller-info-card h3 {
+
+
+    margin: 0 0 12px;
+
+
+    font-size: 22px;
+
+
+    font-weight: 800;
+
+
+}
+
+
+
+.seller-info-card p {
+
+
+    margin: 0;
+
+
+    color: #64748b;
+
+
+    line-height: 1.7;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   LOADING
+===================================== */
+
+
+.seller-loading {
+
+
+    height: 100vh;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    justify-content: center;
+
+
+    font-size: 18px;
+
+
+    color: #64748b;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+
+@media(max-width:1200px) {
+
+
+    .stats-grid {
+
+
+        grid-template-columns:
+
+            repeat(2, 1fr);
+
+
+    }
+
+
+}
+
+
+
+
+
+@media(max-width:700px) {
+
+
+    .seller-content,
+
+
+    .menu-close .seller-content {
+
+
+        margin-left: 0;
+
+
+        width: 100%;
+
+
+        padding: 20px;
+
+
+    }
+
+
+
+    .stats-grid {
+
+
+        grid-template-columns: 1fr;
+
+
+    }
+
+
+
+    .dashboard-header h1 {
+
+
+        font-size: 26px;
+
+
+    }
+
+
+}

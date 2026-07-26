@@ -1,0 +1,963 @@
+/* ==========================================
+   BANK TRANSFER PAYMENT PREMIUM
+========================================== */
+
+
+.bank-payment {
+
+    position: relative;
+
+    width: 100%;
+
+    max-width: 720px;
+
+    margin: 0 auto;
+
+    padding: 28px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 22px;
+
+    background: #f8fafc;
+
+}
+
+
+
+/* ==========================================
+   HEADER
+========================================== */
+
+
+.bank-header {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+    background: white;
+
+    padding: 24px;
+
+    border-radius: 28px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .06);
+
+}
+
+
+
+.bank-header-icon {
+
+    width: 64px;
+
+    height: 64px;
+
+    border-radius: 20px;
+
+    background:
+        linear-gradient(135deg,
+            #16a34a,
+            #22c55e);
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+}
+
+
+
+.bank-header h2 {
+
+    margin: 0;
+
+    font-size: 25px;
+
+    font-weight: 800;
+
+    color: #111827;
+
+}
+
+
+
+.bank-header p {
+
+    margin-top: 6px;
+
+    margin-bottom: 0;
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+}
+
+
+
+
+/* ==========================================
+   BANK PICKER
+========================================== */
+
+
+.bank-picker {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 16px;
+
+}
+
+
+
+.bank-tab {
+
+
+    border: none;
+
+    background: white;
+
+    padding: 18px;
+
+    border-radius: 24px;
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+    text-align: left;
+
+    border: 2px solid transparent;
+
+}
+
+
+
+.bank-tab:hover {
+
+    transform: translateY(-3px);
+
+}
+
+
+
+.bank-tab.active {
+
+    border-color: #16a34a;
+
+    box-shadow:
+        0 10px 25px rgba(22, 163, 74, .15);
+
+}
+
+
+
+.bank-brand {
+
+    width: 55px;
+
+    height: 55px;
+
+    border-radius: 18px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-weight: 900;
+
+    font-size: 18px;
+
+}
+
+
+
+.bri-brand {
+
+    background: #dbeafe;
+
+    color: #0066b3;
+
+}
+
+
+
+.raya-brand {
+
+    background: #dcfce7;
+
+    color: #16a34a;
+
+}
+
+
+
+.bank-tab strong {
+
+    display: block;
+
+    font-size: 16px;
+
+}
+
+
+
+.bank-tab small {
+
+    color: #6b7280;
+
+    font-size: 12px;
+
+}
+
+
+
+
+
+/* ==========================================
+   ACCOUNT CARD
+========================================== */
+
+
+.account-card {
+
+    padding: 26px;
+
+    border-radius: 30px;
+
+    color: white;
+
+    position: relative;
+
+    overflow: hidden;
+
+}
+
+
+
+.account-card::after {
+
+
+    content: "";
+
+    position: absolute;
+
+    width: 200px;
+
+    height: 200px;
+
+    right: -70px;
+
+    top: -70px;
+
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, .15);
+
+}
+
+
+
+.bri-card {
+
+    background:
+
+        linear-gradient(135deg,
+            #0066b3,
+            #004b87);
+
+}
+
+
+
+.raya-card {
+
+
+    background:
+
+        linear-gradient(135deg,
+            #00a859,
+            #087f40);
+
+
+}
+
+
+
+
+.account-top span {
+
+
+    opacity: .8;
+
+    font-size: 14px;
+
+}
+
+
+
+.account-top strong {
+
+    display: block;
+
+    margin-top: 6px;
+
+    font-size: 20px;
+
+}
+
+
+
+
+
+.account-number {
+
+
+    margin: 28px 0;
+
+    background: rgba(255, 255, 255, .15);
+
+    padding: 18px;
+
+    border-radius: 18px;
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    font-size: 25px;
+
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+}
+
+
+
+.account-number button {
+
+
+    width: 40px;
+
+    height: 40px;
+
+    border-radius: 12px;
+
+    border: none;
+
+    cursor: pointer;
+
+}
+
+
+
+.account-footer span {
+
+
+    display: block;
+
+    opacity: .8;
+
+    font-size: 13px;
+
+}
+
+
+.account-footer strong {
+
+    font-size: 15px;
+
+}
+
+
+
+/* ==========================================
+   TOTAL PAYMENT
+========================================== */
+
+
+.payment-box {
+
+
+    background: white;
+
+    padding: 28px;
+
+    border-radius: 28px;
+
+    text-align: center;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, .05);
+
+}
+
+
+
+.payment-box span {
+
+
+    color: #6b7280;
+
+}
+
+
+
+.payment-box h1 {
+
+
+    margin: 10px 0 20px;
+
+    font-size: 36px;
+
+    color: #111827;
+
+}
+
+
+
+
+.copy-total {
+
+
+    border: none;
+
+    background: #dcfce7;
+
+    color: #15803d;
+
+    padding: 12px 20px;
+
+    border-radius: 14px;
+
+    font-weight: 700;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 8px;
+
+    margin: auto;
+
+    cursor: pointer;
+
+}
+
+
+
+
+
+/* ==========================================
+ STATUS CARD
+========================================== */
+
+
+.payment-status-card {
+
+
+    background: white;
+
+    padding: 24px;
+
+    border-radius: 28px;
+
+    box-shadow:
+        0 8px 25px rgba(0, 0, 0, .05);
+
+}
+
+
+
+.payment-status-top {
+
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+
+.payment-status-left span,
+.payment-timer span {
+
+
+    color: #6b7280;
+
+    font-size: 13px;
+
+}
+
+
+
+.payment-badge {
+
+
+    margin-top: 8px;
+
+    background: #fef3c7;
+
+    color: #92400e;
+
+    padding: 10px 15px;
+
+    border-radius: 999px;
+
+    display: flex;
+
+    gap: 8px;
+
+    align-items: center;
+
+    font-size: 14px;
+
+    font-weight: 700;
+
+}
+
+
+
+.payment-dot {
+
+
+    width: 9px;
+
+    height: 9px;
+
+    border-radius: 50%;
+
+    background: #f59e0b;
+
+}
+
+
+
+.payment-timer {
+
+
+    text-align: right;
+
+}
+
+
+
+.payment-timer h2 {
+
+
+    margin: 5px 0 0;
+
+    font-size: 32px;
+
+    color: #16a34a;
+
+}
+
+
+
+.payment-status-card p {
+
+
+    margin-bottom: 0;
+
+    margin-top: 20px;
+
+    color: #6b7280;
+
+}
+
+
+
+
+
+/* ==========================================
+ BANK APP BUTTON
+========================================== */
+
+
+.bank-app-button {
+
+
+    height: 58px;
+
+    border: none;
+
+    border-radius: 20px;
+
+    color: white;
+
+    font-size: 17px;
+
+    font-weight: 700;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    cursor: pointer;
+
+    transition: .25s;
+
+}
+
+
+
+.bank-app-button:hover {
+
+
+    transform: translateY(-3px);
+
+
+}
+
+
+
+.bri-btn {
+
+    background: #0066b3;
+
+}
+
+
+
+.raya-btn {
+
+    background: #00a859;
+
+}
+
+
+
+
+/* ==========================================
+ INSTRUCTION
+========================================== */
+
+
+.instruction-card {
+
+
+    background: white;
+
+    padding: 26px;
+
+    border-radius: 28px;
+
+}
+
+
+
+.instruction-card h3 {
+
+
+    margin-top: 0;
+
+    font-size: 20px;
+
+}
+
+
+
+.instruction-row {
+
+
+    display: flex;
+
+    gap: 15px;
+
+    align-items: center;
+
+    margin-bottom: 16px;
+
+}
+
+
+
+.instruction-row span {
+
+
+    width: 34px;
+
+    height: 34px;
+
+    border-radius: 50%;
+
+    background: #dcfce7;
+
+    color: #16a34a;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-weight: 800;
+
+
+}
+
+
+
+.instruction-row p {
+
+
+    margin: 0;
+
+    color: #374151;
+
+}
+
+
+
+
+/* ==========================================
+ NOTE
+========================================== */
+
+.bank-note {
+
+    display: flex;
+
+    gap: 10px;
+
+    align-items: flex-start;
+
+    background: #ecfdf5;
+
+    color: #166534;
+
+    padding: 16px 18px;
+
+    border-radius: 18px;
+
+    font-size: 14px;
+
+    line-height: 1.45;
+
+}
+
+
+.bank-note svg {
+
+    flex-shrink: 0;
+
+    margin-top: 2px;
+
+}
+
+
+.bank-note span {
+
+    flex: 1;
+
+}
+
+
+.bank-note b {
+
+    margin: 0 2px;
+
+}
+
+
+
+
+
+/* ==========================================
+ EXPIRED MODAL
+========================================== */
+
+
+.payment-expired-overlay {
+
+
+    position: fixed;
+
+    inset: 0;
+
+    background: rgba(15, 23, 42, .55);
+
+    backdrop-filter: blur(8px);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    z-index: 999;
+
+}
+
+
+
+.payment-expired-modal {
+
+
+    background: white;
+
+    width: 90%;
+
+    max-width: 420px;
+
+    padding: 35px;
+
+    border-radius: 32px;
+
+    text-align: center;
+
+}
+
+
+
+.expired-icon {
+
+
+    width: 80px;
+
+    height: 80px;
+
+    margin: auto;
+
+    background: #fee2e2;
+
+    color: #dc2626;
+
+    border-radius: 50%;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+}
+
+
+
+.payment-expired-modal button {
+
+
+    margin-top: 20px;
+
+    width: 100%;
+
+    height: 52px;
+
+    border: none;
+
+    border-radius: 16px;
+
+    background: #16a34a;
+
+    color: white;
+
+    font-weight: 700;
+
+}
+
+
+
+/* ==========================================
+ MOBILE
+========================================== */
+
+
+@media(max-width:600px) {
+
+
+    .bank-payment {
+
+        padding: 16px;
+
+    }
+
+
+
+    .bank-picker {
+
+
+        grid-template-columns: 1fr;
+
+
+    }
+
+
+
+    .payment-status-top {
+
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 20px;
+
+
+    }
+
+
+
+    .payment-timer {
+
+
+        text-align: left;
+
+    }
+
+
+
+    .account-number {
+
+
+        font-size: 18px;
+
+    }
+
+
+
+    .payment-box h1 {
+
+
+        font-size: 28px;
+
+    }
+
+
+
+}

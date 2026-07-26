@@ -1,0 +1,10 @@
+@import "./base.css";
+@import "./components.css";
+@import "./home.css";
+@import "./auth.css";
+@import "./customer.css";
+@import "./seller.css";
+@import "./admin.css";
+@import "./responsive.css";
+@import "./store-detail.css";
+@import "./cart.css";

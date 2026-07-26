@@ -1,0 +1,178 @@
+/* ===========================
+   PAYPAL
+=========================== */
+
+.paypal-payment {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.paypal-header {
+
+    display: flex;
+
+    flex-direction: column;
+
+    justify-content: center;
+
+    align-items: center;
+
+    text-align: center;
+
+    gap: 18px;
+
+    padding: 40px 30px;
+
+    border-radius: 22px;
+
+    background: linear-gradient(135deg, #003087, #009cde);
+
+    color: #fff;
+
+    margin-bottom: 10px;
+
+}
+
+.paypal-header h2 {
+
+    margin: 0;
+
+    font-size: 30px;
+
+    font-weight: 700;
+
+    letter-spacing: .3px;
+
+}
+
+.paypal-header p {
+
+    margin: 0;
+
+    max-width: 420px;
+
+    font-size: 15px;
+
+    line-height: 1.8;
+
+    color: rgba(255, 255, 255, .88);
+
+}
+
+
+.paypal-icon {
+
+    width: 90px;
+
+    height: 90px;
+
+    border-radius: 24px;
+
+    background: rgba(255, 255, 255, .18);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    backdrop-filter: blur(8px);
+
+    box-shadow: 0 10px 25px rgba(0, 0, 0, .18);
+
+}
+
+.paypal-icon svg {
+
+    width: 42px;
+
+    height: 42px;
+
+}
+
+.paypal-card {
+    background: white;
+    border: 1px solid #ececec;
+    border-radius: 20px;
+    padding: 30px;
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+    flex-wrap: wrap;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+}
+
+.paypal-logo {
+    width: 220px;
+    background: #eff6ff;
+    border-radius: 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    color: #003087;
+}
+
+.paypal-total {
+    flex: 1;
+    text-align: center;
+}
+
+.paypal-total h1 {
+    font-size: 42px;
+    color: #16a34a;
+    margin: 15px 0;
+}
+
+.paypal-button {
+    background: #0070ba;
+    color: white;
+    border: none;
+    padding: 14px 26px;
+    border-radius: 12px;
+    display: inline-flex;
+    gap: 10px;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.paypal-button:hover {
+    background: #003087;
+}
+
+.paypal-instruction,
+.paypal-note {
+    background: white;
+    border: 1px solid #ececec;
+    border-radius: 18px;
+    padding: 24px;
+}
+
+.paypal-step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.paypal-step span {
+    width: 34px;
+    height: 34px;
+    background: #0070ba;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-weight: bold;
+}
+
+.paypal-note {
+    display: flex;
+    gap: 14px;
+    background: #ecfdf5;
+    color: #166534;
+    align-items: center;
+}

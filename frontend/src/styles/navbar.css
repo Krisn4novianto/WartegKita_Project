@@ -1,0 +1,305 @@
+/* =====================================
+   NAVBAR WARTEGKITA
+===================================== */
+
+.navbar {
+
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    width: 100%;
+
+    background: #16a34a;
+
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.15);
+
+}
+
+
+
+/* =====================================
+   NAVBAR INNER
+===================================== */
+
+.navbar-inner {
+
+    width: 100%;
+
+    height: 68px;
+
+
+    padding: 0 20px;
+
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+}
+
+
+
+/* =====================================
+   LOGO / BRAND
+===================================== */
+
+.brand {
+
+    display: flex;
+
+    align-items: center;
+
+
+    text-decoration: none;
+
+    flex-shrink: 0;
+
+}
+
+
+
+.brand span {
+
+
+    color: #ffffff;
+
+
+    font-size: 26px;
+
+
+    font-weight: 900;
+
+
+    letter-spacing: -0.8px;
+
+
+    line-height: 1;
+
+
+    white-space: nowrap;
+
+
+    font-family:
+        Inter,
+        system-ui,
+        sans-serif;
+
+
+    transition: .25s ease;
+
+}
+
+
+
+.brand:hover span {
+
+    opacity: .85;
+
+    transform: scale(1.03);
+
+}
+
+
+
+/* =====================================
+   MENU
+===================================== */
+
+.navbar-menu {
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 6px;
+
+
+}
+
+
+
+/* LINK */
+
+.navbar-menu a {
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 8px;
+
+
+
+    padding: 10px 15px;
+
+
+
+    color:
+        rgba(255, 255, 255, .9);
+
+
+
+    text-decoration: none;
+
+
+
+    font-size: 15px;
+
+
+
+    font-weight: 600;
+
+
+
+    border-radius: 12px;
+
+
+
+    transition:
+
+        .25s ease;
+
+}
+
+
+
+/* ICON */
+
+.navbar-menu svg {
+
+
+    width: 19px;
+
+    height: 19px;
+
+
+    stroke-width: 2.5;
+
+}
+
+
+
+/* HOVER */
+
+.navbar-menu a:hover {
+
+
+    background:
+
+        rgba(255, 255, 255, .15);
+
+
+
+    color: white;
+
+
+}
+
+
+
+/* ACTIVE */
+
+.navbar-menu a.active {
+
+
+    background: white;
+
+
+    color: #16a34a;
+
+
+
+    box-shadow:
+
+        0 5px 15px rgba(0, 0, 0, .15);
+
+
+}
+
+
+
+/* =====================================
+   RESPONSIVE
+===================================== */
+
+
+@media(max-width:768px) {
+
+
+    .navbar-inner {
+
+        height: 60px;
+
+        padding: 0 16px;
+
+    }
+
+
+
+    .brand span {
+
+
+        font-size: 21px;
+
+    }
+
+
+
+    .navbar-menu {
+
+
+        gap: 2px;
+
+    }
+
+
+
+    .navbar-menu a {
+
+
+        padding: 9px;
+
+
+    }
+
+
+
+    .navbar-menu a span {
+
+
+        display: none;
+
+    }
+
+
+
+    .navbar-menu a {
+
+
+        font-size: 0;
+
+    }
+
+
+
+    .navbar-menu svg {
+
+
+        width: 22px;
+
+        height: 22px;
+
+    }
+
+
+}

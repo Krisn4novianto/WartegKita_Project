@@ -1,0 +1,410 @@
+/* ===========================
+   HISTORY ORDER DETAIL
+=========================== */
+
+
+.order-detail-page {
+
+    min-height: 100vh;
+
+    padding: 40px;
+
+    background: #f5f7fb;
+
+}
+
+
+
+/* ===========================
+   BACK BUTTON
+=========================== */
+
+.back-order {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    border: none;
+
+    background: transparent;
+
+    color: #15803d;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    margin-bottom: 25px;
+
+}
+
+
+
+/* ===========================
+   HEADER
+=========================== */
+
+.detail-header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 28px;
+
+}
+
+
+.detail-header h1 {
+
+    margin: 0;
+
+    font-size: 32px;
+
+    font-weight: 800;
+
+    color: #111827;
+
+}
+
+
+.detail-header p {
+
+    margin-top: 8px;
+
+    color: #6b7280;
+
+}
+
+
+
+
+
+/* ===========================
+   STATUS
+=========================== */
+
+
+.status-card {
+
+
+    background: white;
+
+    border-radius: 20px;
+
+    padding: 24px;
+
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+
+    margin-bottom: 24px;
+
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .06);
+
+}
+
+
+
+.status-icon {
+
+
+    width: 58px;
+
+    height: 58px;
+
+
+    border-radius: 16px;
+
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+
+    background: #dcfce7;
+
+    color: #16a34a;
+
+}
+
+
+
+.status-card span {
+
+    color: #6b7280;
+
+    font-size: 14px;
+
+}
+
+
+.status-card h3 {
+
+    margin: 6px 0 0;
+
+}
+
+
+
+
+
+/* ===========================
+   CONTENT CARD
+=========================== */
+
+
+.detail-card {
+
+
+    background: white;
+
+
+    border-radius: 20px;
+
+
+    padding: 24px;
+
+
+    margin-bottom: 24px;
+
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, .06);
+
+}
+
+
+
+.card-title {
+
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+
+    margin-bottom: 20px;
+
+}
+
+
+.card-title h3 {
+
+    margin: 0;
+
+}
+
+
+
+
+
+/* ===========================
+   MENU
+=========================== */
+
+
+.menu-row {
+
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+
+    padding: 16px 0;
+
+
+    border-bottom: 1px solid #eee;
+
+}
+
+
+
+.menu-row:last-child {
+
+    border-bottom: none;
+
+}
+
+
+
+.menu-row p {
+
+
+    margin: 5px 0 0;
+
+
+    color: #6b7280;
+
+
+    font-size: 14px;
+
+}
+
+
+
+
+
+/* ===========================
+   PAYMENT
+=========================== */
+
+
+.payment-row {
+
+
+    display: flex;
+
+    justify-content: space-between;
+
+
+    padding: 14px 0;
+
+}
+
+
+
+.payment-row span {
+
+    color: #6b7280;
+
+}
+
+
+
+.payment-row strong {
+
+    font-weight: 700;
+
+}
+
+
+
+
+
+/* ===========================
+   PAYMENT BUTTON
+=========================== */
+
+
+.continue-payment {
+
+
+    width: 100%;
+
+
+    padding: 16px;
+
+
+    border: none;
+
+
+    border-radius: 14px;
+
+
+    background:
+
+        linear-gradient(135deg,
+            #22c55e,
+            #15803d);
+
+
+    color: white;
+
+
+    font-weight: 700;
+
+
+    font-size: 16px;
+
+
+    cursor: pointer;
+
+}
+
+
+
+.continue-payment:hover {
+
+    opacity: .9;
+
+}
+
+
+
+
+
+/* ===========================
+   LOADING
+=========================== */
+
+
+.order-detail-loading {
+
+
+    min-height: 100vh;
+
+
+    display: flex;
+
+
+    justify-content: center;
+
+
+    align-items: center;
+
+
+}
+
+
+
+
+
+/* ===========================
+   MOBILE
+=========================== */
+
+
+@media(max-width:768px) {
+
+
+    .order-detail-page {
+
+        padding: 20px;
+
+    }
+
+
+    .detail-header h1 {
+
+        font-size: 26px;
+
+    }
+
+
+    .detail-card {
+
+        padding: 18px;
+
+    }
+
+
+}

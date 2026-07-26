@@ -1,0 +1,840 @@
+/* =====================================================
+   HOME PAGE
+===================================================== */
+
+.home-page {
+    width: 100%;
+}
+
+/* =====================================================
+   HERO EYEBROW
+===================================================== */
+
+.hero-home .eyebrow {
+    display: inline-flex;
+    align-items: center;
+
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    background: rgba(31, 107, 79, 0.08);
+
+    color: #1f6b4f !important;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    letter-spacing: 2px;
+
+    text-transform: uppercase;
+}
+
+/* =====================================================
+   EYEBROW TEXT
+===================================================== */
+
+.eyebrow {
+    display: inline-block;
+
+    color: #15803d;
+
+    background: rgba(34, 197, 94, 0.12);
+
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: 800;
+
+    letter-spacing: .8px;
+}
+
+/* =====================================================
+   HERO
+===================================================== */
+
+.hero-home {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 42px;
+    align-items: center;
+    overflow: hidden;
+
+    padding: 52px;
+
+    background:
+        linear-gradient(135deg,
+            #eaf5ee 0%,
+            #f7efe1 100%);
+
+    border-radius: 28px;
+}
+
+.hero-copy h1 {
+    max-width: 650px;
+
+    margin: 14px 0;
+
+    color: #17251e;
+
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.05;
+    letter-spacing: -2px;
+}
+
+.hero-copy p {
+    max-width: 560px;
+
+    color: #64748b;
+
+    font-size: 17px;
+    line-height: 1.7;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    margin-top: 26px;
+}
+
+
+
+/* =====================================================
+   CHAT
+===================================================== */
+
+.chat-banner {
+
+    margin-bottom: 40px;
+
+    padding: 35px;
+
+    border-radius: 25px;
+
+    background:
+        linear-gradient(135deg,
+            #dcfce7,
+            #ecfdf5);
+
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+}
+
+
+.chat-banner h2 {
+
+    font-size: 30px;
+    margin: 10px 0;
+
+}
+
+
+.chat-banner p {
+
+    color: #64748b;
+
+}
+
+.chat-banner .eyebrow {
+
+    color: #15803d;
+
+    font-weight: 700;
+
+}
+
+
+/* =====================================================
+   BUTTON
+===================================================== */
+
+.button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+
+    border: 0;
+    border-radius: 12px;
+
+    padding: 13px 20px;
+
+    background: #1f6b4f;
+    color: white;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.button:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(31, 107, 79, 0.2);
+}
+
+.button-secondary {
+    background: white;
+    color: #1f6b4f;
+
+    border: 1px solid #dce7df;
+}
+
+.button-secondary:hover {
+    background: #f5faf6;
+}
+
+.button-light {
+    background: white;
+    color: #1f6b4f;
+}
+
+.button.full {
+    width: 100%;
+}
+
+
+/* =====================================================
+   HERO TRUST
+===================================================== */
+
+.hero-trust {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+
+    margin-top: 24px;
+
+    color: #52665a;
+
+    font-size: 13px;
+}
+
+.hero-trust span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+
+/* =====================================================
+   HERO IMAGE
+===================================================== */
+
+.hero-visual {
+    position: relative;
+
+    min-height: 360px;
+}
+
+.hero-visual>img {
+    width: 100%;
+    height: 360px;
+
+    display: block;
+
+    object-fit: cover;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 18px 40px rgba(31, 107, 79, 0.16);
+}
+
+
+/* =====================================================
+   HERO FLOATING CARD
+===================================================== */
+
+.hero-floating-card {
+    position: absolute;
+
+    left: 22px;
+    bottom: 22px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 13px 16px;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    border-radius: 16px;
+
+    box-shadow:
+        0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+.hero-floating-card strong,
+.hero-floating-card span {
+    display: block;
+}
+
+.hero-floating-card strong {
+    color: #17251e;
+    font-size: 14px;
+}
+
+.hero-floating-card span {
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   ICON
+===================================================== */
+
+.floating-icon,
+.benefit-icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    background: #e8f5e9;
+    color: #1f6b4f;
+}
+
+
+/* =====================================================
+   SEARCH CARD
+===================================================== */
+
+.quick-search {
+    position: relative;
+    z-index: 2;
+
+    margin: -20px auto 42px;
+
+    padding: 26px;
+}
+
+
+/* =====================================================
+   SEARCH HEADER
+===================================================== */
+
+.search-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.search-heading h2 {
+    margin: 7px 0 0;
+
+    color: #17251e;
+}
+
+
+/* =====================================================
+   LOCATION
+===================================================== */
+
+.location-wrapper {
+    position: relative;
+}
+
+.location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 10px 14px;
+
+    border: 0;
+    border-radius: 999px;
+
+    background: #f4f7f4;
+    color: #1f6b4f;
+
+    font-size: 13px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.location-pill:hover {
+    background: #e8f1e9;
+
+    transform: translateY(-1px);
+}
+
+.location-dropdown {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    z-index: 20;
+
+    min-width: 230px;
+
+    padding: 8px;
+
+    background: white;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    box-shadow:
+        0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.location-dropdown button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    padding: 11px 12px;
+
+    border: 0;
+    border-radius: 9px;
+
+    background: transparent;
+
+    color: #334155;
+
+    text-align: left;
+
+    cursor: pointer;
+}
+
+.location-dropdown button:hover {
+    background: #f4f7f4;
+
+    color: #1f6b4f;
+}
+
+
+/* =====================================================
+   SEARCH INPUT
+===================================================== */
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    margin-top: 20px;
+
+    padding: 5px 5px 5px 16px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+
+    background: white;
+}
+
+.search-box input {
+    flex: 1;
+
+    width: 100%;
+
+    margin: 0;
+    padding: 12px 0;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+}
+
+.search-box input:focus {
+    outline: none;
+}
+
+.search-box .button {
+    padding: 11px 18px;
+}
+
+
+/* =====================================================
+   CATEGORY
+===================================================== */
+
+.category-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+
+    margin-top: 15px;
+}
+
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 9px 14px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+
+    background: white;
+    color: #64748b;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.category-chip:hover {
+    transform: translateY(-2px);
+
+    border-color: #1f6b4f;
+
+    color: #1f6b4f;
+}
+
+.category-chip.active {
+    background: #1f6b4f;
+    color: white;
+
+    border-color: #1f6b4f;
+}
+
+.category-emoji {
+    font-size: 16px;
+}
+
+
+/* =====================================================
+   BENEFITS
+===================================================== */
+
+.benefit-grid {
+    display: grid;
+
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 18px;
+
+    margin: 30px 0 52px;
+}
+
+.benefit-item {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 13px;
+
+    padding: 17px;
+
+    border: 1px solid #edf0ed;
+    border-radius: 16px;
+
+    background: white;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.benefit-item:hover {
+    transform: translateY(-3px);
+
+    border-color: #d5e4d8;
+
+    box-shadow:
+        0 8px 22px rgba(31, 107, 79, 0.08);
+}
+
+.benefit-item strong,
+.benefit-item span {
+    display: block;
+}
+
+.benefit-item strong {
+    color: #17251e;
+}
+
+.benefit-item span {
+    margin-top: 4px;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+
+/* =====================================================
+   SECTION HEADER
+===================================================== */
+
+.section-header-with-subtitle {
+    align-items: end;
+
+    margin-bottom: 20px;
+}
+
+.section-header-with-subtitle h2 {
+    margin: 7px 0 4px;
+}
+
+.section-subtitle {
+    margin: 0;
+
+    color: #64748b;
+}
+
+.text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #1f6b4f;
+
+    font-weight: 700;
+
+    transition:
+        gap 0.2s ease;
+}
+
+.text-link:hover {
+    gap: 10px;
+}
+
+
+/* =====================================================
+   STORE CARD
+===================================================== */
+
+.store-card {
+    overflow: hidden;
+
+    padding: 0;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.store-card:hover {
+    transform: translateY(-5px);
+
+    box-shadow:
+        0 14px 30px rgba(0, 0, 0, 0.08);
+}
+
+.store-image-wrap {
+    position: relative;
+
+    height: 190px;
+
+    overflow: hidden;
+}
+
+.store-image-wrap img {
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    transition:
+        transform 0.25s ease;
+}
+
+.store-card:hover .store-image-wrap img {
+    transform: scale(1.05);
+}
+
+
+/* =====================================================
+   STORE STATUS
+===================================================== */
+
+.store-status {
+    position: absolute;
+
+    top: 14px;
+    right: 14px;
+
+    padding: 7px 10px;
+
+    border-radius: 999px;
+
+    background: white;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.store-status.open {
+    color: #1f6b4f;
+}
+
+.store-status.closed {
+    color: #b42318;
+}
+
+
+/* =====================================================
+   STORE CONTENT
+===================================================== */
+
+.store-card-content {
+    padding: 18px;
+}
+
+.store-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    gap: 10px;
+}
+
+.store-title-row h3 {
+    margin: 0;
+
+    color: #17251e;
+}
+
+.store-card p {
+    min-height: 42px;
+
+    margin: 9px 0 15px;
+
+    color: #64748b;
+
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+
+/* =====================================================
+   RATING
+===================================================== */
+
+.rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    color: #b7791f;
+
+    font-size: 13px;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   STORE META
+===================================================== */
+
+.meta {
+    display: flex;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+.meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+
+/* =====================================================
+   PROMO BANNER
+===================================================== */
+
+.promo-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+
+    margin-top: 60px;
+    padding: 34px 38px;
+
+    border-radius: 24px;
+
+    background: #1f6b4f;
+
+    color: white;
+}
+
+.promo-banner h2 {
+    max-width: 560px;
+
+    margin: 8px 0;
+}
+
+.promo-banner p {
+    margin: 0;
+
+    color: #d8ebe0;
+}
+
+
+/* =====================================================
+   EMPTY STATE
+===================================================== */
+
+.empty-state {
+    padding: 40px;
+
+    text-align: center;
+}
+
+.empty-state h3 {
+    margin-bottom: 8px;
+}
+
+.empty-state p {
+    color: #64748b;
+}

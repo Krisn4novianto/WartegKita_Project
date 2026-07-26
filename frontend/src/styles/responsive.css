@@ -1,0 +1,102 @@
+@media (max-width: 850px) {
+    .hero-home {
+        grid-template-columns: 1fr;
+    }
+
+    .benefit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .promo-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 700px) {
+    .navbar {
+        padding: 0 20px;
+    }
+
+    .navbar nav {
+        gap: 10px;
+        font-size: 12px;
+    }
+
+    .page-container {
+        width: 90%;
+    }
+
+    .hero {
+        padding: 32px 24px;
+    }
+
+    .section-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .cart-item,
+    .order-card,
+    .menu-card {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 600px) {
+    .search-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .location-wrapper {
+        width: 100%;
+    }
+
+    .location-pill {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .location-dropdown {
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
+
+    .search-box {
+        flex-wrap: wrap;
+        padding: 8px 10px;
+    }
+
+    .search-box input {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .search-box .button {
+        width: 100%;
+    }
+
+    .hero-visual,
+    .hero-visual>img {
+        min-height: 280px;
+        height: 280px;
+    }
+
+    .hero-floating-card {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+    }
+
+    .meta {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .success-card {
+        padding: 32px 20px;
+    }
+}

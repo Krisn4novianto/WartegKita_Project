@@ -1,0 +1,657 @@
+/* =========================================
+   STORE DETAIL PAGE
+========================================= */
+
+.store-detail-page {
+
+    min-height: 100vh;
+
+    max-width: 1280px;
+
+    margin: auto;
+
+    background: #f8fafc;
+
+    color: #1f2937;
+
+    padding-bottom: 150px;
+
+}
+
+
+/* =========================================
+   BACK BUTTON
+========================================= */
+
+.back-button {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin: 10px 24px 14px;
+
+    border: none;
+
+    background: none;
+
+    color: #64748b;
+
+    font-size: 15px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: .2s;
+
+}
+
+
+.back-button:hover {
+
+    color: #16a34a;
+
+    transform: translateX(-4px);
+
+}
+
+
+
+/* =========================================
+   HERO STORE
+========================================= */
+
+
+.store-hero {
+
+    position: relative;
+
+    margin: 0 24px;
+
+    height: 220px;
+
+    border-radius: 28px;
+
+    overflow: hidden;
+
+    display: flex;
+
+    align-items: flex-end;
+
+
+    background:
+
+        linear-gradient(135deg,
+            #475569,
+            #0f172a);
+
+
+    background-size: cover;
+
+    background-position: center;
+
+
+    box-shadow:
+
+        0 18px 40px rgba(0, 0, 0, .18);
+
+}
+
+
+
+.store-hero::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+
+    background:
+
+        linear-gradient(180deg,
+            transparent,
+            rgba(0, 0, 0, .75));
+
+
+    z-index: 1;
+
+}
+
+
+
+
+.store-overlay {
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+
+        linear-gradient(90deg,
+            rgba(0, 0, 0, .45),
+            transparent);
+
+    z-index: 2;
+
+}
+
+
+
+
+/* =========================================
+   HERO CONTENT
+========================================= */
+
+
+.store-header-content {
+
+    position: relative;
+
+    z-index: 3;
+
+    padding: 24px 32px;
+
+    width: 100%;
+
+}
+
+
+
+.eyebrow {
+
+    display: inline-flex;
+
+    padding: 5px 14px;
+
+    border-radius: 999px;
+
+    background:
+
+        rgba(255, 255, 255, .2);
+
+    backdrop-filter: blur(10px);
+
+    color: white;
+
+    font-size: 11px;
+
+    font-weight: 900;
+
+    letter-spacing: 1.5px;
+
+}
+
+
+
+
+.store-header-content h1 {
+
+    margin: 10px 0 8px;
+
+    color: white;
+
+    font-size: 34px;
+
+    font-weight: 950;
+
+    letter-spacing: -1px;
+
+}
+
+
+
+
+.store-header-content p {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin: 0;
+
+    color: white;
+
+    font-size: 14px;
+
+}
+
+
+
+/* =========================================
+   META CARD
+========================================= */
+
+
+.store-meta {
+
+    display: flex;
+
+    gap: 10px;
+
+    margin-top: 12px;
+
+}
+
+
+.meta-card {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    padding: 8px 14px;
+
+    border-radius: 14px;
+
+    background: white;
+
+    color: #334155;
+
+    font-size: 13px;
+
+    font-weight: 800;
+
+
+    box-shadow:
+
+        0 8px 20px rgba(0, 0, 0, .12);
+
+}
+
+
+.meta-card svg {
+
+    color: #16a34a;
+
+}
+
+
+
+
+.store-address {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 10px;
+
+    color: white;
+
+    font-size: 13px;
+
+    font-weight: 600;
+
+}
+
+
+
+/* =========================================
+   MENU CATEGORY
+========================================= */
+
+
+.menu-filter-section {
+
+    padding:
+
+        28px 24px 8px;
+
+}
+
+
+
+.menu-filter-section h2 {
+
+    margin: 0 0 18px;
+
+    font-size: 28px;
+
+    font-weight: 950;
+
+}
+
+
+
+
+.category-list {
+
+    display: flex;
+
+    gap: 12px;
+
+    overflow-x: auto;
+
+}
+
+
+
+.category-list::-webkit-scrollbar {
+
+    display: none;
+
+}
+
+
+
+
+.category-list button {
+
+
+    flex-shrink: 0;
+
+    border: none;
+
+    padding:
+
+        10px 22px;
+
+
+    border-radius: 999px;
+
+
+    background: white;
+
+    color: #475569;
+
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+
+    box-shadow:
+
+        0 8px 18px rgba(0, 0, 0, .06);
+
+}
+
+
+
+
+.category-list button.active {
+
+    background:
+
+        linear-gradient(135deg,
+            #16a34a,
+            #22c55e);
+
+
+    color: white;
+
+}
+
+
+
+/* =========================================
+   MENU GRID
+========================================= */
+
+
+.menu-grid {
+
+
+    padding:
+
+        18px 24px;
+
+
+    display: grid;
+
+
+    grid-template-columns:
+
+        repeat(auto-fill,
+            minmax(280px, 1fr));
+
+
+    gap: 22px;
+
+}
+
+
+
+
+/* =========================================
+   FLOATING CART PREMIUM
+========================================= */
+
+
+.floating-cart-bar {
+
+
+    position: fixed;
+
+
+    left: 50%;
+
+    bottom: 20px;
+
+
+    transform: translateX(-50%);
+
+
+    width:
+
+        min(820px,
+            calc(100% - 48px));
+
+
+    min-height: 78px;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 18px;
+
+
+    padding:
+
+        14px 24px;
+
+
+    border: none;
+
+
+    border-radius: 26px;
+
+
+    background:
+
+        linear-gradient(135deg,
+            #15803d,
+            #22c55e);
+
+
+    color: white;
+
+
+    cursor: pointer;
+
+
+    box-shadow:
+
+        0 18px 45px rgba(0, 0, 0, .25);
+
+
+    z-index: 999;
+
+}
+
+
+
+
+
+.floating-cart-bar svg {
+
+
+    width: 50px;
+
+    height: 50px;
+
+
+    padding: 12px;
+
+
+    border-radius: 16px;
+
+
+    background: white;
+
+    color: #16a34a;
+
+}
+
+
+
+
+
+.floating-left {
+
+
+    flex: 1;
+
+
+    display: flex;
+
+    flex-direction: column;
+
+
+}
+
+
+
+.floating-left strong:first-child {
+
+
+    font-size: 13px;
+
+    opacity: .85;
+
+}
+
+
+
+.floating-left strong:last-child {
+
+
+    font-size: 22px;
+
+    font-weight: 950;
+
+}
+
+
+
+.floating-right {
+
+
+    background: white;
+
+    color: #16a34a;
+
+
+    padding:
+
+        12px 28px;
+
+
+    border-radius: 999px;
+
+
+    font-size: 15px;
+
+    font-weight: 950;
+
+}
+
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+
+@media(max-width:768px) {
+
+
+    .store-hero {
+
+        margin: 0 16px;
+
+        height: 210px;
+
+        border-radius: 22px;
+
+    }
+
+
+
+    .store-header-content {
+
+        padding: 20px;
+
+    }
+
+
+    .store-header-content h1 {
+
+        font-size: 28px;
+
+    }
+
+
+
+    .menu-filter-section,
+    .menu-grid {
+
+        padding-left: 16px;
+
+        padding-right: 16px;
+
+    }
+
+
+
+    .floating-cart-bar {
+
+
+        width:
+
+            calc(100% - 32px);
+
+
+        bottom: 14px;
+
+    }
+
+
+
+    .floating-right {
+
+        padding:
+
+            10px 18px;
+
+    }
+
+
+
+}

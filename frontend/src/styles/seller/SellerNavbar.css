@@ -1,0 +1,417 @@
+/* =====================================
+   SELLER NAVBAR
+===================================== */
+
+
+.seller-navbar {
+
+
+    position: fixed;
+
+
+    top: 0;
+
+
+    left: 0;
+
+
+    height: 100vh;
+
+
+    width: 260px;
+
+
+    background: white;
+
+
+    border-right: 1px solid #e2e8f0;
+
+
+    padding: 22px;
+
+
+    display: flex;
+
+
+    flex-direction: column;
+
+
+    z-index: 999;
+
+
+
+    transition:
+
+        width .3s ease;
+
+
+
+    box-shadow:
+
+        8px 0 30px rgba(15, 23, 42, .05);
+
+
+}
+
+
+
+
+
+/* CLOSED */
+
+
+.seller-navbar.close {
+
+
+    width: 85px;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   BUTTON
+===================================== */
+
+
+.seller-toggle {
+
+
+    width: 44px;
+
+
+    height: 44px;
+
+
+    border: none;
+
+
+    border-radius: 14px;
+
+
+    background: #16a34a;
+
+
+    color: white;
+
+
+    cursor: pointer;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    justify-content: center;
+
+
+    transition: .2s;
+
+
+}
+
+
+
+.seller-toggle:hover {
+
+
+    background: #15803d;
+
+
+    transform: scale(1.05);
+
+
+}
+
+
+
+
+
+
+
+
+
+/* =====================================
+   LOGO
+===================================== */
+
+
+.seller-logo {
+
+
+    margin-top: 28px;
+
+
+    font-size: 25px;
+
+
+    font-weight: 800;
+
+
+    color: #16a34a;
+
+
+    white-space: nowrap;
+
+
+}
+
+
+
+.seller-logo b {
+
+
+    color: #0f172a;
+
+
+}
+
+
+
+
+
+.seller-navbar.close .seller-logo {
+
+
+    text-align: center;
+
+
+    font-size: 20px;
+
+
+}
+
+
+
+
+
+
+
+
+
+
+/* =====================================
+   MENU
+===================================== */
+
+
+.seller-menu {
+
+
+    margin-top: 45px;
+
+
+    display: flex;
+
+
+    flex-direction: column;
+
+
+    gap: 10px;
+
+
+}
+
+
+
+
+
+.seller-menu a,
+
+
+.seller-bottom a {
+
+
+    height: 50px;
+
+
+    padding: 0 15px;
+
+
+    border-radius: 16px;
+
+
+    display: flex;
+
+
+    align-items: center;
+
+
+    gap: 15px;
+
+
+    color: #475569;
+
+
+    text-decoration: none;
+
+
+    cursor: pointer;
+
+
+    transition: .2s;
+
+
+}
+
+
+
+.seller-menu a:hover,
+
+
+.seller-bottom a:hover {
+
+
+    background: #dcfce7;
+
+
+    color: #16a34a;
+
+
+}
+
+
+
+
+
+.seller-menu .active {
+
+
+    background: #16a34a;
+
+
+    color: white;
+
+
+}
+
+
+
+
+
+
+
+
+
+/* CLOSED MENU */
+
+
+.seller-navbar.close .seller-menu a,
+
+
+.seller-navbar.close .seller-bottom a {
+
+
+    justify-content: center;
+
+
+    padding: 0;
+
+
+}
+
+
+
+.seller-navbar.close span {
+
+
+    display: none;
+
+
+}
+
+
+
+
+
+
+
+
+/* =====================================
+   BOTTOM
+===================================== */
+
+
+.seller-bottom {
+
+
+    margin-top: auto;
+
+
+}
+
+
+
+
+
+
+
+/* =====================================
+   MOBILE
+===================================== */
+
+
+@media(max-width:700px) {
+
+
+    .seller-navbar {
+
+
+        transform: translateX(-100%);
+
+
+    }
+
+
+
+
+    .seller-navbar.open {
+
+
+        transform: translateX(0);
+
+
+    }
+
+
+}
+
+/* =====================================
+   SELLER LAYOUT
+===================================== */
+
+.seller-layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f6f8fb;
+}
+
+.seller-content {
+    flex: 1;
+    min-width: 0;
+    margin-left: 260px;
+    padding: 32px;
+    transition: margin-left .3s ease;
+}
+
+.seller-layout.menu-close .seller-content {
+    margin-left: 85px;
+}
+
+/* Mobile */
+
+@media(max-width:700px) {
+
+    .seller-content {
+        margin-left: 0;
+        padding: 18px;
+    }
+
+}
