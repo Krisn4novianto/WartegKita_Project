@@ -42,6 +42,8 @@ interface OrderItem {
 
     menu_id: number;
 
+    menu_name?: string;
+
     quantity: number;
 
 }

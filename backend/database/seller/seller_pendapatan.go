@@ -8,7 +8,7 @@ import (
 
 func GetPendapatanDashboard(
 	db *sql.DB,
-	sellerID int,
+	sellerID string,
 
 ) (*models.SellerDashboard, error) {
 

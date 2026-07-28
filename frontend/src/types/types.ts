@@ -1,7 +1,9 @@
 export type OrderStatus =
     | "PENDING"
+    | "WAITING_CONFIRMATION"
     | "CONFIRMED"
     | "PREPARING"
+    | "COOKING"
     | "READY"
     | "DELIVERING"
     | "COMPLETED"
@@ -19,7 +21,7 @@ export type DeliveryType =
     | "pickup";
 
 export interface Seller {
-    id: number;
+    id: string | number;
 
     store_name: string;
 
@@ -35,7 +37,7 @@ export interface Seller {
 }
 
 export interface MenuCategory {
-    id: number;
+    id: string | number;
 
     name: string;
 
@@ -45,9 +47,9 @@ export interface MenuCategory {
 }
 
 export interface Menu {
-    id: number;
+    id: string | number;
 
-    seller_id?: number;
+    seller_id?: string | number;
 
     name: string;
 
@@ -65,9 +67,9 @@ export interface Menu {
 }
 
 export interface CartItem {
-    id: number;
+    id: string | number;
 
-    menu_id: number;
+    menu_id: string | number;
 
     quantity: number;
 
@@ -77,7 +79,7 @@ export interface CartItem {
 }
 
 export interface CreateOrderItem {
-    menu_id: number;
+    menu_id: string | number;
 
     quantity: number;
 
@@ -97,11 +99,13 @@ export interface CreateOrderPayload {
 }
 
 export interface OrderItem {
-    id: number;
+    id: string | number;
 
-    menu_id: number;
+    menu_id: string | number;
 
-    name: string;
+    menu_name?: string;
+
+    name?: string;
 
     price: number;
 
@@ -111,7 +115,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-    id: number;
+    id: string | number;
 
     order_number: string;
 

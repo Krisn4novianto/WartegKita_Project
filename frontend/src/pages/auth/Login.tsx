@@ -5,8 +5,7 @@ import api from "../../services/api";
 export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [
-    , setPassword] = useState("");
+  const [password, setPassword] = useState("");
 
   async function submit(event: FormEvent) {
     event.preventDefault();

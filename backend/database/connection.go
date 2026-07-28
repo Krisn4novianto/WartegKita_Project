@@ -4,12 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
 // DB adalah koneksi database utama aplikasi
 var DB *sql.DB
+
+func getEnv(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists && value != "" {
+		return value
+	}
+	return fallback
+}
 
 // Connect melakukan:
 // 1. Connect ke PostgreSQL server
@@ -18,14 +26,18 @@ var DB *sql.DB
 // 4. Connect ke database aplikasi
 func Connect() {
 
+	host := getEnv("DB_HOST", "localhost")
+	port := getEnv("DB_PORT", "5433")
+	user := getEnv("DB_USER", "postgres")
+	password := getEnv("DB_PASSWORD", "Krisn@12345")
+
 	// =====================================
 	// CONNECT KE POSTGRES DEFAULT
 	// =====================================
 
-	adminDB, err := sql.Open(
-		"postgres",
-		"host=localhost port=5432 user=postgres password=Krisn@12345 sslmode=disable",
-	)
+	dsnAdmin := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable", host, port, user, password)
+
+	adminDB, err := sql.Open("postgres", dsnAdmin)
 
 	if err != nil {
 		log.Fatal("Gagal membuka koneksi PostgreSQL:", err)
@@ -76,10 +88,9 @@ func Connect() {
 	// CONNECT KE DATABASE APLIKASI
 	// =====================================
 
-	DB, err = sql.Open(
-		"postgres",
-		"host=localhost port=5432 user=postgres password=Krisn@12345 dbname=cust_wartegkita sslmode=disable",
-	)
+	dsnApp := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=cust_wartegkita sslmode=disable", host, port, user, password)
+
+	DB, err = sql.Open("postgres", dsnApp)
 
 	if err != nil {
 		log.Fatal("Gagal membuka database aplikasi:", err)
@@ -91,3 +102,4 @@ func Connect() {
 
 	fmt.Println("✅ PostgreSQL Connected -> cust_wartegkita")
 }
+

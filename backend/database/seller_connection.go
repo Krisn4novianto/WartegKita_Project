@@ -12,10 +12,14 @@ var SellerDB *sql.DB
 
 func ConnectSellerDB() {
 
-	adminDB, err := sql.Open(
-		"postgres",
-		"host=localhost port=5432 user=postgres password=Krisn@12345 sslmode=disable",
-	)
+	host := getEnv("DB_HOST", "localhost")
+	port := getEnv("DB_PORT", "5433")
+	user := getEnv("DB_USER", "postgres")
+	password := getEnv("DB_PASSWORD", "Krisn@12345")
+
+	dsnAdmin := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable", host, port, user, password)
+
+	adminDB, err := sql.Open("postgres", dsnAdmin)
 
 	if err != nil {
 		log.Fatal(err)
@@ -68,10 +72,9 @@ func ConnectSellerDB() {
 
 	adminDB.Close()
 
-	SellerDB, err = sql.Open(
-		"postgres",
-		"host=localhost port=5432 user=postgres password=Krisn@12345 dbname=sell_wartegkita sslmode=disable",
-	)
+	dsnSeller := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=sell_wartegkita sslmode=disable", host, port, user, password)
+
+	SellerDB, err = sql.Open("postgres", dsnSeller)
 
 	if err != nil {
 		log.Fatal(err)
@@ -86,3 +89,4 @@ func ConnectSellerDB() {
 	)
 
 }
+

@@ -55,7 +55,7 @@ func Register(router *gin.Engine) {
 	// ADDRESS
 	// =====================================
 
-	CreateUserRoutes(api)
+	RegisterUserRoutes(api)
 
 	// =====================================
 	// WILAYAH

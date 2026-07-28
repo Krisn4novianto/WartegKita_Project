@@ -31,6 +31,11 @@ export default function QRISPayment({
     const [showToast, setShowToast] =
         useState(false);
 
+    const handleRetryPayment = () => {
+        setExpired(false);
+        setTimeLeft(15 * 60);
+    };
+
 
 
 

@@ -4,7 +4,7 @@ import {
     ShoppingCart,
 } from "lucide-react";
 
-import { Menu } from "../types/types";
+import { Menu } from "../../types";
 
 
 interface MenuCardProps {

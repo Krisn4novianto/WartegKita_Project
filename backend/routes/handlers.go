@@ -7,34 +7,132 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
-
 	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
+	"github.com/krisn4novianto/wartegkita/backend/middleware"
 )
 
 // =====================================
 // AUTH
 // =====================================
 
+// register godoc
+// @Summary      Register User
+// @Description  Register a new customer account
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body routes.RegisterBody true "Register payload"
+// @Success      201 {object} map[string]string
+// @Router       /auth/register [post]
 func register(c *gin.Context) {
+
+	var body struct {
+		Name     string `json:"name"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "Format data tidak valid: " + err.Error(),
+			},
+		)
+		return
+	}
+
+	if body.Name == "" || body.Email == "" || body.Password == "" {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "Nama, email, dan password wajib diisi",
+			},
+		)
+		return
+	}
+
+	user, err := database.CreateUser(body.Name, body.Email, body.Password)
+
+	if err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": err.Error(),
+			},
+		)
+		return
+	}
 
 	c.JSON(
 		http.StatusCreated,
 		gin.H{
-			"message": "register endpoint ready",
+			"message": "Registrasi berhasil",
+			"data":    user,
 		},
 	)
 
 }
 
+// login godoc
+// @Summary      Login User
+// @Description  Authenticate with email and password. Returns a token and user profile data.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        body body routes.LoginBody true "Login payload"
+// @Success      200 {object} map[string]interface{}
+// @Router       /auth/login [post]
 func login(c *gin.Context) {
+
+	var body struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.JSON(
+			http.StatusBadRequest,
+			gin.H{
+				"error": "Format data tidak valid: " + err.Error(),
+			},
+		)
+		return
+	}
+
+	user, err := database.AuthenticateUser(body.Email, body.Password)
+
+	if err != nil {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{
+				"error": err.Error(),
+			},
+		)
+		return
+	}
+
+	token, err := middleware.GenerateToken(user.ID)
+
+	if err != nil {
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"error": "Gagal membuat token: " + err.Error(),
+			},
+		)
+		return
+	}
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
-			"message": "login endpoint ready",
-			"token":   "development-token",
+			"message": "Login berhasil",
+			"token":   token,
+			"data":    user,
 		},
 	)
 
@@ -43,6 +141,15 @@ func login(c *gin.Context) {
 // =====================================
 // SELLER
 // =====================================
+
+// listSellers godoc
+// @Summary      List All Sellers
+// @Description  Returns all registered warteg seller profiles
+// @Tags         Sellers
+// @Produce      json
+// @Success      200 {array}  sellerdb.CustomerSeller
+// @Failure      500 {object} map[string]string
+// @Router       /sellers [get]
 func listSellers(c *gin.Context) {
 
 	sellers, err := sellerdb.GetAllProfiles()
@@ -65,6 +172,15 @@ func listSellers(c *gin.Context) {
 
 }
 
+// getSeller godoc
+// @Summary      Get Seller Detail
+// @Description  Returns the full profile detail of a specific seller
+// @Tags         Sellers
+// @Produce      json
+// @Param        seller_id path int true "Seller ID"
+// @Success      200 {object} map[string]interface{}
+// @Failure      404 {object} map[string]string
+// @Router       /sellers/{seller_id} [get]
 func getSeller(c *gin.Context) {
 
 	sellerID := c.Param("seller_id")
@@ -116,6 +232,17 @@ func createMenu(c *gin.Context) {
 
 }
 
+// createOrder godoc
+// @Summary      Create Order
+// @Description  Place a new order. Validates menus, calculates total, inserts in a single DB transaction.
+// @Tags         Orders
+// @Accept       json
+// @Produce      json
+// @Param        body body routes.CreateOrderBody true "Order payload"
+// @Success      201 {object} map[string]interface{}
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /orders [post]
 func createOrder(c *gin.Context) {
 
 	fmt.Println("========== CREATE ORDER ==========")
@@ -129,12 +256,12 @@ func createOrder(c *gin.Context) {
 	fmt.Println("SELLER DB YANG DIPAKAI:", dbName)
 
 	var body struct {
-		UserID   int `json:"user_id"`
-		SellerID int `json:"seller_id"`
+		UserID   string `json:"user_id"`
+		SellerID string `json:"seller_id"`
 
 		Items []struct {
-			MenuID   int `json:"menu_id"`
-			Quantity int `json:"quantity"`
+			MenuID   interface{} `json:"menu_id"`
+			Quantity int         `json:"quantity"`
 		} `json:"items"`
 
 		PaymentMethod string `json:"payment_method"`
@@ -149,6 +276,11 @@ func createOrder(c *gin.Context) {
 		})
 
 		return
+	}
+
+	// Fallback for user_id from token context if not passed in body
+	if body.UserID == "" {
+		body.UserID = c.GetString("user_id")
 	}
 
 	if len(body.Items) == 0 {
@@ -186,7 +318,7 @@ func createOrder(c *gin.Context) {
 	}
 
 	type OrderItem struct {
-		MenuID   int
+		MenuID   string
 		MenuName string
 		Quantity int
 		Price    float64
@@ -203,7 +335,8 @@ func createOrder(c *gin.Context) {
 
 	for _, item := range body.Items {
 
-		fmt.Println("MENU ID REQUEST:", item.MenuID)
+		menuIDStr := fmt.Sprintf("%v", item.MenuID)
+		fmt.Println("MENU ID REQUEST:", menuIDStr)
 
 		var (
 			menuName string
@@ -218,7 +351,7 @@ SELECT
 FROM menus
 WHERE id=$1
 `,
-			item.MenuID,
+			menuIDStr,
 		).Scan(
 			&menuName,
 			&price,
@@ -228,7 +361,7 @@ WHERE id=$1
 
 			fmt.Println(
 				"MENU TIDAK ADA:",
-				item.MenuID,
+				menuIDStr,
 				err,
 			)
 
@@ -250,7 +383,7 @@ WHERE id=$1
 		total += price * float64(item.Quantity)
 
 		orderItems = append(orderItems, OrderItem{
-			MenuID:   item.MenuID,
+			MenuID:   menuIDStr,
 			MenuName: menuName,
 			Quantity: item.Quantity,
 			Price:    price,
@@ -258,15 +391,22 @@ WHERE id=$1
 	}
 
 	// ==========================
-	// INSERT ORDER
+	// INSERT ORDER (UUID v7)
 	// ==========================
 
-	var orderID int
+	orderIDObj, err := uuid.NewV7()
+	if err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	orderID := orderIDObj.String()
 
-	err = tx.QueryRow(
+	_, err = tx.Exec(
 		`
 		INSERT INTO orders
 		(
+			id,
 			order_number,
 			user_id,
 			seller_id,
@@ -280,19 +420,20 @@ WHERE id=$1
 			$1,
 			$2,
 			$3,
+			$4,
 			'WAITING_CONFIRMATION',
 			'PENDING',
-			$4,
-			$5
+			$5,
+			$6
 		)
-		RETURNING id
 		`,
+		orderID,
 		orderNumber,
 		body.UserID,
 		body.SellerID,
 		total,
 		body.PaymentMethod,
-	).Scan(&orderID)
+	)
 
 	if err != nil {
 
@@ -306,15 +447,18 @@ WHERE id=$1
 	}
 
 	// ==========================
-	// INSERT ORDER ITEMS
+	// INSERT ORDER ITEMS (UUID v7)
 	// ==========================
 
 	for _, item := range orderItems {
+
+		itemIDObj, _ := uuid.NewV7()
 
 		_, err := tx.Exec(
 			`
 			INSERT INTO order_items
 			(
+			id,
 			order_id,
 			menu_id,
 			menu_name,
@@ -327,9 +471,11 @@ WHERE id=$1
 			$2,
 			$3,
 			$4,
-			$5
+			$5,
+			$6
 			)
 			`,
+			itemIDObj.String(),
 			orderID,
 			item.MenuID,
 			item.MenuName,
@@ -375,6 +521,14 @@ WHERE id=$1
 // LIST ORDERS
 // =====================================
 
+// listOrders godoc
+// @Summary      List All Orders
+// @Description  Returns all orders sorted by creation date (newest first)
+// @Tags         Orders
+// @Produce      json
+// @Success      200 {array}  map[string]interface{}
+// @Failure      500 {object} map[string]string
+// @Router       /orders [get]
 func listOrders(c *gin.Context) {
 
 	rows, err := database.DB.Query(`
@@ -412,10 +566,10 @@ func listOrders(c *gin.Context) {
 	for rows.Next() {
 
 		var (
-			id            int
+			id            string
 			orderNumber   string
-			userID        int
-			sellerID      int
+			userID        string
+			sellerID      string
 			status        string
 			paymentStatus string
 			total         float64
@@ -471,12 +625,22 @@ func listOrders(c *gin.Context) {
 // GET ORDER
 // =====================================
 
+// getOrder godoc
+// @Summary      Get Order Detail
+// @Description  Returns full detail of a specific order including its line items
+// @Tags         Orders
+// @Produce      json
+// @Param        id path string true "Order ID (UUID)"
+// @Success      200 {object} map[string]interface{}
+// @Failure      404 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /orders/{id} [get]
 func getOrder(c *gin.Context) {
 
 	id := c.Param("id")
 
 	var order struct {
-		ID int
+		ID string
 
 		Status string
 
@@ -538,7 +702,7 @@ func getOrder(c *gin.Context) {
 	for rows.Next() {
 
 		var (
-			menuID   int
+			menuID   string
 			menuName string
 			qty      int
 			price    float64
@@ -591,6 +755,15 @@ func getOrder(c *gin.Context) {
 // PAYMENT
 // =====================================
 
+// payOrder godoc
+// @Summary      Pay Order
+// @Description  Mark an order as paid. Updates both order status and payment_status to PAID.
+// @Tags         Orders
+// @Produce      json
+// @Param        id path string true "Order ID (UUID)"
+// @Success      200 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /orders/{id}/pay [put]
 func payOrder(c *gin.Context) {
 
 	id := c.Param("id")
@@ -630,6 +803,18 @@ func payOrder(c *gin.Context) {
 // UPDATE STATUS
 // =====================================
 
+// updateOrderStatus godoc
+// @Summary      Update Order Status
+// @Description  Update the seller-side order status (WAITING_CONFIRMATION, CONFIRMED, COOKING, READY, DELIVERED, CANCELLED)
+// @Tags         Orders
+// @Accept       json
+// @Produce      json
+// @Param        id   path string                      true "Order ID (UUID)"
+// @Param        body body routes.UpdateStatusBody   true "Status payload"
+// @Success      200 {object} map[string]string
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /orders/{id}/status [put]
 func updateOrderStatus(c *gin.Context) {
 
 	id := c.Param("id")
@@ -676,4 +861,40 @@ func updateOrderStatus(c *gin.Context) {
 		"status": body.Status,
 	})
 
+}
+
+// =====================================
+// SWAGGER DOC TYPES (not used in logic)
+// =====================================
+
+// RegisterBody is used for swagger docs only
+type RegisterBody struct {
+	Name     string `json:"name"     example:"Budi Santoso"`
+	Email    string `json:"email"    example:"budi@example.com"`
+	Password string `json:"password" example:"secret123"`
+}
+
+// LoginBody is used for swagger docs only
+type LoginBody struct {
+	Email    string `json:"email"    example:"budi@example.com"`
+	Password string `json:"password" example:"secret123"`
+}
+
+// CreateOrderBody is used for swagger docs only
+type CreateOrderBody struct {
+	UserID        string           `json:"user_id"        example:"018f4a12-89cd-7b1e-9a2c-3f4e56789abc"`
+	SellerID      string           `json:"seller_id"      example:"018f4a12-89cd-7b1e-9a2c-3f4e56789def"`
+	PaymentMethod string           `json:"payment_method" example:"CASH"`
+	Items         []OrderItemInput `json:"items"`
+}
+
+// OrderItemInput is used for swagger docs only
+type OrderItemInput struct {
+	MenuID   string `json:"menu_id"  example:"018f4a12-89cd-7b1e-9a2c-3f4e56789ghi"`
+	Quantity int    `json:"quantity" example:"2"`
+}
+
+// UpdateStatusBody is used for swagger docs only
+type UpdateStatusBody struct {
+	Status string `json:"status" example:"CONFIRMED" enums:"WAITING_CONFIRMATION,CONFIRMED,COOKING,READY,DELIVERED,CANCELLED"`
 }

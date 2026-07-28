@@ -1,8 +1,37 @@
 package seller
 
 import (
+	"log"
+
 	"github.com/krisn4novianto/wartegkita/backend/database"
 )
+
+// =====================================
+// CREATE TABLE
+// =====================================
+
+func CreateSellerProfileTable() {
+	query := `
+	CREATE TABLE IF NOT EXISTS seller_profile (
+		id SERIAL PRIMARY KEY,
+		seller_id INT UNIQUE NOT NULL,
+		nama_warteg VARCHAR(100),
+		nama_pemilik VARCHAR(100),
+		nomor_hp VARCHAR(30),
+		alamat TEXT,
+		deskripsi TEXT,
+		bank VARCHAR(50),
+		nomor_rekening VARCHAR(50),
+		updated_at TIMESTAMP DEFAULT NOW()
+	);
+	`
+	_, err := database.SellerDB.Exec(query)
+	if err != nil {
+		log.Println("Gagal membuat tabel seller_profile:", err)
+		return
+	}
+	log.Println("✅ Tabel seller_profile siap")
+}
 
 // =====================================
 // SELLER PROFILE MODEL

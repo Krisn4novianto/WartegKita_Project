@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 
-import MenuCard from "../../components/MenuCard";
+import MenuCard from "./MenuCard";
 
 import api from "../../services/api";
 
@@ -171,7 +171,7 @@ export default function StoreDetail() {
     setQuantities
   ] =
     useState<
-      Record<number, number>
+      Record<string | number, number>
     >({});
 
 
@@ -428,7 +428,7 @@ export default function StoreDetail() {
 
   const getQuantity =
     (
-      menuId: number
+      menuId: number | string
     ) => {
 
 
@@ -447,7 +447,7 @@ export default function StoreDetail() {
 
   const increaseQuantity =
     (
-      menuId: number
+      menuId: number | string
     ) => {
 
 
@@ -476,7 +476,7 @@ export default function StoreDetail() {
 
   const decreaseQuantity =
     (
-      menuId: number
+      menuId: number | string
     ) => {
 
 
@@ -876,7 +876,7 @@ export default function StoreDetail() {
 
                   onClick={() =>
                     setActiveCategory(
-                      category
+                      category || ""
                     )
                   }
 

@@ -28,6 +28,7 @@ import {
   Menu,
   MenuCategory,
 } from "../../types";
+import StoreCard from "../../components/StoreCard";
 
 
 export default function Home() {
@@ -179,7 +180,7 @@ export default function Home() {
 
           sellerMenus.some(
             (menu) =>
-              menu.category.toLowerCase() ===
+              (menu.category || "").toLowerCase() ===
               activeCategory.toLowerCase()
           );
 

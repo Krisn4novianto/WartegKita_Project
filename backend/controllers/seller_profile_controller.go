@@ -8,10 +8,14 @@ import (
 	"github.com/krisn4novianto/wartegkita/backend/database/seller"
 )
 
-// =====================================
-// GET SELLER PROFILE
-// =====================================
-
+// GetSellerProfile godoc
+// @Summary      Get Seller Profile
+// @Description  Returns the internal profile data of a seller (nama warteg, pemilik, bank, dll)
+// @Tags         Sellers
+// @Produce      json
+// @Param        seller_id path int true "Seller ID"
+// @Success      200 {object} seller.SellerProfile
+// @Router       /sellers/{seller_id}/profile [get]
 func GetSellerProfile(c *gin.Context) {
 
 	sellerID := c.Param("seller_id")
@@ -35,10 +39,18 @@ func GetSellerProfile(c *gin.Context) {
 
 }
 
-// =====================================
-// UPDATE / SAVE SELLER PROFILE
-// =====================================
-
+// UpdateSellerProfile godoc
+// @Summary      Update Seller Profile
+// @Description  Create or update the seller's internal profile (upsert by seller_id)
+// @Tags         Sellers
+// @Accept       json
+// @Produce      json
+// @Param        seller_id path int                  true "Seller ID"
+// @Param        body      body seller.SellerProfile true "Seller profile payload"
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
+// @Router       /sellers/{seller_id}/profile [put]
 func UpdateSellerProfile(c *gin.Context) {
 
 	sellerID := c.Param("seller_id")

@@ -8,11 +8,11 @@ func CreateOrderItemsTable() {
 
 	CREATE TABLE IF NOT EXISTS order_items (
 
-		id SERIAL PRIMARY KEY,
+		id UUID PRIMARY KEY,
 
-		order_id INT NOT NULL,
+		order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
 
-		menu_id INT NOT NULL,
+		menu_id VARCHAR(100) NOT NULL,
 
 		menu_name VARCHAR(100) NOT NULL,
 

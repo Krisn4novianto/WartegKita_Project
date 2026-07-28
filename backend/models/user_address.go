@@ -1,27 +1,27 @@
 package models
 
 type UserAddress struct {
-	ID int `json:"id"`
+	ID string `json:"id" example:"018f4a12-89cd-7b1e-9a2c-3f4e56789abc"`
 
-	UserID int `json:"user_id"`
+	UserID string `json:"user_id" example:"018f4a12-89cd-7b1e-9a2c-3f4e56789abc"`
 
-	Label string `json:"label"`
+	Label string `json:"label" example:"Rumah"`
 
-	Detail string `json:"detail"`
+	Detail string `json:"detail" example:"Jl. Merdeka No. 10"`
 
-	ProvinceID   int    `json:"province_id"`
-	ProvinceName string `json:"province_name"`
+	ProvinceID   int    `json:"province_id" example:"32"`
+	ProvinceName string `json:"province_name" example:"Jawa Barat"`
 
-	CityID   int    `json:"city_id"`
-	CityName string `json:"city_name"`
+	CityID   int    `json:"city_id" example:"3201"`
+	CityName string `json:"city_name" example:"Bogor"`
 
-	DistrictID   int    `json:"district_id"`
-	DistrictName string `json:"district_name"`
+	DistrictID   int    `json:"district_id" example:"320101"`
+	DistrictName string `json:"district_name" example:"Kecamatan Bogor Tengah"`
 
-	PostalCode string `json:"postal_code"`
+	PostalCode string `json:"postal_code" example:"16111"`
 
-	Note string `json:"note"`
+	Note string `json:"note" example:"Pagar besi"`
 
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	Latitude  float64 `json:"latitude" example:"-6.597147"`
+	Longitude float64 `json:"longitude" example:"106.806038"`
 }

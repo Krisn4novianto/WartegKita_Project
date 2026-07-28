@@ -7,8 +7,8 @@ func CreateMenuTable() {
 	query := `
 
 	CREATE TABLE IF NOT EXISTS menus (
-		id SERIAL PRIMARY KEY,
-		seller_id INT NOT NULL,
+		id VARCHAR(100) PRIMARY KEY,
+		seller_id VARCHAR(100) NOT NULL,
 		name VARCHAR(100) NOT NULL,
 		description TEXT,
 		price NUMERIC(12,2) NOT NULL DEFAULT 0,

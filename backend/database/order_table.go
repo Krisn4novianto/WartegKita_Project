@@ -7,13 +7,13 @@ func CreateOrderTable() {
 	query := `
 	CREATE TABLE IF NOT EXISTS orders (
 
-		id SERIAL PRIMARY KEY,
+		id UUID PRIMARY KEY,
 
 		order_number VARCHAR(50) UNIQUE NOT NULL,
 
-		user_id INT NOT NULL,
+		user_id UUID NOT NULL,
 
-		seller_id INT NOT NULL,
+		seller_id VARCHAR(100) NOT NULL,
 
 
 		-- STATUS PESANAN SELLER

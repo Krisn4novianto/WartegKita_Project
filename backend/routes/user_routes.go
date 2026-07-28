@@ -7,16 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
+	"github.com/krisn4novianto/wartegkita/backend/middleware"
 	"github.com/krisn4novianto/wartegkita/backend/models"
 )
 
-// =====================================
-// USER ROUTES
-// =====================================
-
-func CreateUserRoutes(api *gin.RouterGroup) {
+// RegisterUserRoutes registers all user-related endpoints.
+func RegisterUserRoutes(api *gin.RouterGroup) {
 
 	users := api.Group("/users")
+
+	// Protected routes: STRICT JWT Authentication Middleware
+	users.Use(middleware.AuthMiddleware())
 
 	// PROFILE
 
@@ -44,13 +45,30 @@ func CreateUserRoutes(api *gin.RouterGroup) {
 
 }
 
-// =====================================
-// GET PROFILE
-// =====================================
-
+// getUserProfile godoc
+// @Summary      Get User Profile
+// @Description  Retrieve user profile for the authenticated user (requires Bearer JWT token)
+// @Tags         Users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Failure      404 {object} map[string]string
+// @Router       /users/profile [get]
 func getUserProfile(c *gin.Context) {
 
-	userID := c.Query("user_id")
+	// STRICT: Only get userID from authenticated JWT token context
+	userID := c.GetString("user_id")
+
+	if userID == "" {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{
+				"error": "User tidak terotentikasi",
+			},
+		)
+		return
+	}
 
 	var user models.User
 
@@ -75,7 +93,7 @@ func getUserProfile(c *gin.Context) {
 		c.JSON(
 			http.StatusNotFound,
 			gin.H{
-				"error": err.Error(),
+				"error": "User tidak ditemukan",
 			},
 		)
 
@@ -91,17 +109,36 @@ func getUserProfile(c *gin.Context) {
 
 }
 
-// =====================================
-// UPDATE PROFILE
-// =====================================
-
+// updateUserProfile godoc
+// @Summary      Update User Profile
+// @Description  Update user's name and email (requires Bearer JWT token)
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        body body routes.UpdateProfileBody true "Profile update payload"
+// @Success      200 {object} map[string]string
+// @Failure      401 {object} map[string]string
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /users/profile [put]
 func updateUserProfile(c *gin.Context) {
 
+	// STRICT: Get userID from JWT context
+	userID := c.GetString("user_id")
+
+	if userID == "" {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{
+				"error": "User tidak terotentikasi",
+			},
+		)
+		return
+	}
+
 	var body struct {
-		UserID int `json:"user_id"`
-
-		Name string `json:"name"`
-
+		Name  string `json:"name"`
 		Email string `json:"email"`
 	}
 
@@ -129,7 +166,7 @@ func updateUserProfile(c *gin.Context) {
 		`,
 		body.Name,
 		body.Email,
-		body.UserID,
+		userID,
 	)
 
 	if err != nil {
@@ -153,13 +190,29 @@ func updateUserProfile(c *gin.Context) {
 
 }
 
-// =====================================
-// GET ADDRESS
-// =====================================
-
+// getUserAddress godoc
+// @Summary      Get User Address
+// @Description  Retrieve saved delivery address for the authenticated user (requires Bearer JWT token)
+// @Tags         Users
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Router       /users/address [get]
 func getUserAddress(c *gin.Context) {
 
-	userID := c.Query("user_id")
+	// STRICT: Get userID from JWT context
+	userID := c.GetString("user_id")
+
+	if userID == "" {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{
+				"error": "User tidak terotentikasi",
+			},
+		)
+		return
+	}
 
 	var address models.UserAddress
 
@@ -182,7 +235,9 @@ func getUserAddress(c *gin.Context) {
 			district_name,
 
 			postal_code,
-			note
+			note,
+			latitude,
+			longitude
 
 		FROM user_addresses
 
@@ -208,6 +263,8 @@ func getUserAddress(c *gin.Context) {
 
 		&address.PostalCode,
 		&address.Note,
+		&address.Latitude,
+		&address.Longitude,
 	)
 
 	if err != nil {
@@ -231,11 +288,33 @@ func getUserAddress(c *gin.Context) {
 
 }
 
-// =====================================
-// SAVE ADDRESS
-// =====================================
-
+// saveAddress godoc
+// @Summary      Save User Address
+// @Description  Create or update delivery address for the authenticated user (requires Bearer JWT token)
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        address body models.UserAddress true "User address payload"
+// @Success      201 {object} map[string]interface{}
+// @Failure      401 {object} map[string]string
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /users/address [post]
 func saveAddress(c *gin.Context) {
+
+	// STRICT: Get userID from JWT context
+	userID := c.GetString("user_id")
+
+	if userID == "" {
+		c.JSON(
+			http.StatusUnauthorized,
+			gin.H{
+				"error": "User tidak terotentikasi",
+			},
+		)
+		return
+	}
 
 	var address models.UserAddress
 
@@ -251,6 +330,9 @@ func saveAddress(c *gin.Context) {
 		return
 
 	}
+
+	// Override userID with authenticated JWT user ID
+	address.UserID = userID
 
 	err := database.CreateAddress(address)
 
@@ -282,4 +364,10 @@ func saveAddress(c *gin.Context) {
 		},
 	)
 
+}
+
+// UpdateProfileBody is used for swagger docs only
+type UpdateProfileBody struct {
+	Name  string `json:"name"  example:"Budi Santoso"`
+	Email string `json:"email" example:"budi@example.com"`
 }
