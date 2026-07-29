@@ -1,4 +1,4 @@
-package seller
+﻿package seller
 
 import (
 	"log"
@@ -12,6 +12,6 @@ func CreateSellerPendapatanTable(db ...interface{}) {
 		log.Println("Gagal membuat seller_pendapatan:", err)
 		return
 	}
-	log.Println("✅ seller_pendapatan table ready")
+	log.Println(" seller_pendapatan table ready")
 }
 

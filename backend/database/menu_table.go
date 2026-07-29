@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"log"
@@ -11,6 +11,6 @@ func CreateMenuTable() {
 		log.Println("Gagal migrasi tabel menus:", err)
 		return
 	}
-	log.Println("✅ Tabel menus siap")
+	log.Println(" Tabel menus siap")
 }
 

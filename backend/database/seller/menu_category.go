@@ -1,4 +1,4 @@
-package seller
+﻿package seller
 
 import (
 	"log"
@@ -15,7 +15,7 @@ func CreateMenuCategoryTable() {
 	if err := database.DB.AutoMigrate(&models.MenuCategory{}); err != nil {
 		log.Fatal("Gagal membuat tabel menu_category:", err)
 	}
-	log.Println("✅ Table menu_category siap")
+	log.Println(" Table menu_category siap")
 }
 
 func SeedMenuCategory() {

@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"log"
@@ -15,6 +15,6 @@ func DeleteExpiredOrders() {
 		return
 	}
 
-	log.Println("✅ History order lebih dari 30 hari berhasil dibersihkan")
+	log.Println(" History order lebih dari 30 hari berhasil dibersihkan")
 }
 

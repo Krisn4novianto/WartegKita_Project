@@ -1,8 +1,8 @@
-// Package main is the entry point for the WartegKita API server.
+﻿// Package main is the entry point for the WartegKita API server.
 //
 //	@title			WartegKita API
 //	@version		1.0
-//	@description	REST API for WartegKita — connecting customers with traditional Indonesian Warteg sellers.
+//	@description	REST API for WartegKita  connecting customers with traditional Indonesian Warteg sellers.
 //	@contact.name	WartegKita Team
 //	@contact.url	https://github.com/Krisn4novianto/WartegKita_Project
 //	@host			localhost:8080
@@ -152,10 +152,10 @@ func main() {
 	// =========================
 
 	log.Println(
-		"🚀 WartegKita API running on http://localhost:" + port,
+		" WartegKita API running on http://localhost:" + port,
 	)
 	log.Println(
-		"📖 API Documentation (FastAPI style): http://localhost:" + port + "/docs",
+		" API Documentation (FastAPI style): http://localhost:" + port + "/docs",
 	)
 
 	if err := router.Run(":" + port); err != nil {

@@ -1,4 +1,4 @@
-package seller
+﻿package seller
 
 import (
 	"log"
@@ -18,7 +18,7 @@ func CreateSellerProfileTable() {
 		log.Println("Gagal membuat tabel seller_profile:", err)
 		return
 	}
-	log.Println("✅ Tabel seller_profile siap")
+	log.Println(" Tabel seller_profile siap")
 }
 
 func GetProfile(sellerID string) (SellerProfile, error) {

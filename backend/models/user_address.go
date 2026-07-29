@@ -1,4 +1,4 @@
-package models
+﻿package models
 
 import "time"
 
@@ -19,6 +19,6 @@ type UserAddress struct {
 	Longitude    float64   `json:"longitude"`
 	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	// FK to users.id — navigation field only for constraint; excluded from migrations via -:migration
+	// FK to users.id  navigation field only for constraint; excluded from migrations via -:migration
 	User *User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }

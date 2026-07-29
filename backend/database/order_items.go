@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"log"
@@ -11,6 +11,6 @@ func CreateOrderItemsTable() {
 		log.Println("Gagal migrasi tabel order_items:", err)
 		return
 	}
-	log.Println("✅ Tabel order_items siap")
+	log.Println(" Tabel order_items siap")
 }
 

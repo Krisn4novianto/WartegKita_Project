@@ -1,4 +1,4 @@
-package database
+﻿package database
 
 import (
 	"database/sql"
@@ -70,7 +70,7 @@ func Connect() {
 		if err != nil {
 			log.Fatalf("Gagal membuat database %s: %v", dbName, err)
 		}
-		fmt.Printf("✅ Database %s berhasil dibuat\n", dbName)
+		fmt.Printf(" Database %s berhasil dibuat\n", dbName)
 	}
 
 	adminDB.Close()
@@ -84,7 +84,7 @@ func Connect() {
 		log.Fatal("Gagal membuka database aplikasi dengan GORM:", err)
 	}
 
-	fmt.Printf("✅ GORM PostgreSQL Connected -> %s\n", dbName)
+	fmt.Printf(" GORM PostgreSQL Connected -> %s\n", dbName)
 
 	// =====================================
 	// AUTO MIGRATE ALL MODELS
@@ -93,7 +93,7 @@ func Connect() {
 	// child tables reference it via FK constraints.
 	// =====================================
 
-	// Level 0 — root tables (no FK dependencies)
+	// Level 0  root tables (no FK dependencies)
 	if err = DB.AutoMigrate(
 		&models.User{},
 		&models.SellerProfile{},
@@ -102,33 +102,33 @@ func Connect() {
 		log.Fatal("AutoMigrate level-0 gagal:", err)
 	}
 
-	// Level 1 — depend on User / SellerProfile
+	// Level 1  depend on User / SellerProfile
 	if err = DB.AutoMigrate(
-		&models.UserAddress{},  // FK → users
-		&models.Menu{},         // FK → seller_profiles
+		&models.UserAddress{},  // FK  users
+		&models.Menu{},         // FK  seller_profiles
 	); err != nil {
 		log.Fatal("AutoMigrate level-1 gagal:", err)
 	}
 
-	// Level 2 — depend on User, SellerProfile, Menu
+	// Level 2  depend on User, SellerProfile, Menu
 	if err = DB.AutoMigrate(
-		&models.Order{},            // FK → users, seller_profiles
-		&models.SellerPendapatan{}, // FK → seller_profiles
+		&models.Order{},            // FK  users, seller_profiles
+		&models.SellerPendapatan{}, // FK  seller_profiles
 	); err != nil {
 		log.Fatal("AutoMigrate level-2 gagal:", err)
 	}
 
-	// Level 3 — depend on Order, Menu
+	// Level 3  depend on Order, Menu
 	if err = DB.AutoMigrate(
-		&models.OrderItem{}, // FK → orders, menus
+		&models.OrderItem{}, // FK  orders, menus
 	); err != nil {
 		log.Fatal("AutoMigrate level-3 gagal:", err)
 	}
 
-	fmt.Println("✅ GORM AutoMigrate selesai")
+	fmt.Println(" GORM AutoMigrate selesai")
 
 	// Explicitly ensure FK constraints that AutoMigrate may skip
-	// on pre-existing tables (idempotent — no-op if already exists).
+	// on pre-existing tables (idempotent  no-op if already exists).
 	ensureForeignKeys()
 
 	// Seed menu categories if empty
@@ -201,9 +201,9 @@ func ensureForeignKeys() {
 
 	for _, stmt := range fkStatements {
 		if err := DB.Exec(stmt.sql).Error; err != nil {
-			log.Printf("⚠️  Gagal membuat FK %s: %v\n", stmt.name, err)
+			log.Printf("  Gagal membuat FK %s: %v\n", stmt.name, err)
 		} else {
-			fmt.Printf("✅ Foreign key verified/created: %s\n", stmt.name)
+			fmt.Printf(" Foreign key verified/created: %s\n", stmt.name)
 		}
 	}
 }
@@ -220,14 +220,14 @@ func SeedMenuCategories() {
 	DB.Model(&models.MenuCategory{}).Count(&count)
 	if count == 0 {
 		categories := []models.MenuCategory{
-			{ID: newUUID(), Name: "Nasi Rames", Emoji: "🍛", IsActive: true},
-			{ID: newUUID(), Name: "Ayam", Emoji: "🍗", IsActive: true},
-			{ID: newUUID(), Name: "Ikan", Emoji: "🐟", IsActive: true},
-			{ID: newUUID(), Name: "Sayur", Emoji: "🥬", IsActive: true},
-			{ID: newUUID(), Name: "Minuman", Emoji: "🥤", IsActive: true},
+			{ID: newUUID(), Name: "Nasi Rames", Emoji: "", IsActive: true},
+			{ID: newUUID(), Name: "Ayam", Emoji: "", IsActive: true},
+			{ID: newUUID(), Name: "Ikan", Emoji: "", IsActive: true},
+			{ID: newUUID(), Name: "Sayur", Emoji: "", IsActive: true},
+			{ID: newUUID(), Name: "Minuman", Emoji: "", IsActive: true},
 		}
 		DB.Create(&categories)
-		fmt.Println("✅ Default kategori menu berhasil diderive")
+		fmt.Println(" Default kategori menu berhasil diderive")
 	}
 }
 
