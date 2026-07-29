@@ -12,6 +12,8 @@ import (
 	"github.com/krisn4novianto/wartegkita/backend/database"
 	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
 	"github.com/krisn4novianto/wartegkita/backend/middleware"
+	"github.com/krisn4novianto/wartegkita/backend/models"
+	"gorm.io/gorm"
 )
 
 // =====================================
@@ -244,579 +246,160 @@ func createMenu(c *gin.Context) {
 // @Failure      500 {object} map[string]string
 // @Router       /orders [post]
 func createOrder(c *gin.Context) {
-
 	fmt.Println("========== CREATE ORDER ==========")
 
-	var dbName string
-
-	err := database.SellerDB.QueryRow(
-		"SELECT current_database()",
-	).Scan(&dbName)
-
-	fmt.Println("SELLER DB YANG DIPAKAI:", dbName)
-
 	var body struct {
-		UserID   string `json:"user_id"`
-		SellerID string `json:"seller_id"`
-
-		Items []struct {
+		UserID        string `json:"user_id"`
+		SellerID      string `json:"seller_id"`
+		Items         []struct {
 			MenuID   interface{} `json:"menu_id"`
 			Quantity int         `json:"quantity"`
 		} `json:"items"`
-
 		PaymentMethod string `json:"payment_method"`
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-
-		fmt.Printf("BODY %+v\n", body)
-
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
-
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Fallback for user_id from token context if not passed in body
 	if body.UserID == "" {
 		body.UserID = c.GetString("user_id")
 	}
 
 	if len(body.Items) == 0 {
-
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "order harus memiliki minimal 1 menu",
-		})
-
+		c.JSON(http.StatusBadRequest, gin.H{"error": "order harus memiliki minimal 1 menu"})
 		return
 	}
 
 	for _, item := range body.Items {
-
 		if item.Quantity <= 0 {
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "quantity harus lebih dari 0",
-			})
-
+			c.JSON(http.StatusBadRequest, gin.H{"error": "quantity harus lebih dari 0"})
 			return
 		}
 	}
 
 	orderNumber := "ORD-" + strconv.FormatInt(time.Now().Unix(), 10)
-
-	tx, err := database.DB.Begin()
-
-	if err != nil {
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	type OrderItem struct {
-		MenuID   string
-		MenuName string
-		Quantity int
-		Price    float64
-	}
-
-	var (
-		orderItems []OrderItem
-		total      float64
-	)
-
-	// ==========================
-	// HITUNG TOTAL
-	// ==========================
-
-	for _, item := range body.Items {
-
-		menuIDStr := fmt.Sprintf("%v", item.MenuID)
-		fmt.Println("MENU ID REQUEST:", menuIDStr)
-
-		var (
-			menuName string
-			price    float64
-		)
-
-		err := database.SellerDB.QueryRow(
-			`
-SELECT
-    name,
-    price
-FROM menus
-WHERE id=$1
-`,
-			menuIDStr,
-		).Scan(
-			&menuName,
-			&price,
-		)
-
-		if err != nil {
-
-			fmt.Println(
-				"MENU TIDAK ADA:",
-				menuIDStr,
-				err,
-			)
-
-			tx.Rollback()
-
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "menu tidak ditemukan",
-			})
-
-			return
-		}
-
-		fmt.Println(
-			"MENU DITEMUKAN:",
-			menuName,
-			price,
-		)
-
-		total += price * float64(item.Quantity)
-
-		orderItems = append(orderItems, OrderItem{
-			MenuID:   menuIDStr,
-			MenuName: menuName,
-			Quantity: item.Quantity,
-			Price:    price,
-		})
-	}
-
-	// ==========================
-	// INSERT ORDER (UUID v7)
-	// ==========================
-
 	orderIDObj, err := uuid.NewV7()
 	if err != nil {
-		tx.Rollback()
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	orderID := orderIDObj.String()
 
-	_, err = tx.Exec(
-		`
-		INSERT INTO orders
-		(
-			id,
-			order_number,
-			user_id,
-			seller_id,
-			status,
-			payment_status,
-			total_amount,
-			payment_method
-		)
-		VALUES
-		(
-			$1,
-			$2,
-			$3,
-			$4,
-			'WAITING_CONFIRMATION',
-			'PENDING',
-			$5,
-			$6
-		)
-		`,
-		orderID,
-		orderNumber,
-		body.UserID,
-		body.SellerID,
-		total,
-		body.PaymentMethod,
-	)
+	var total float64
+	var orderItems []models.OrderItem
+
+	err = database.DB.Transaction(func(tx *gorm.DB) error {
+		for _, item := range body.Items {
+			menuIDStr := fmt.Sprintf("%v", item.MenuID)
+
+			var menu models.Menu
+			if err := tx.Where("id = ?", menuIDStr).First(&menu).Error; err != nil {
+				return fmt.Errorf("menu tidak ditemukan: %s", menuIDStr)
+			}
+
+			total += menu.Price * float64(item.Quantity)
+
+			itemIDObj, _ := uuid.NewV7()
+			orderItems = append(orderItems, models.OrderItem{
+				ID:       itemIDObj.String(),
+				OrderID:  orderID,
+				MenuID:   menuIDStr,
+				MenuName: menu.Name,
+				Quantity: item.Quantity,
+				Price:    menu.Price,
+			})
+		}
+
+		newOrder := models.Order{
+			ID:            orderID,
+			OrderNumber:   orderNumber,
+			UserID:        body.UserID,
+			SellerID:      body.SellerID,
+			Status:        "WAITING_CONFIRMATION",
+			PaymentStatus: "PENDING",
+			TotalAmount:   total,
+			PaymentMethod: body.PaymentMethod,
+			Items:         orderItems,
+		}
+
+		return tx.Create(&newOrder).Error
+	})
 
 	if err != nil {
-
-		tx.Rollback()
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// ==========================
-	// INSERT ORDER ITEMS (UUID v7)
-	// ==========================
-
-	for _, item := range orderItems {
-
-		itemIDObj, _ := uuid.NewV7()
-
-		_, err := tx.Exec(
-			`
-			INSERT INTO order_items
-			(
-			id,
-			order_id,
-			menu_id,
-			menu_name,
-			quantity,
-			price
-			)
-			VALUES
-			(
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6
-			)
-			`,
-			itemIDObj.String(),
-			orderID,
-			item.MenuID,
-			item.MenuName,
-			item.Quantity,
-			item.Price,
-		)
-
-		if err != nil {
-
-			tx.Rollback()
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	c.JSON(
-		http.StatusCreated,
-		gin.H{
-			"id":             orderID,
-			"order_number":   orderNumber,
-			"total_amount":   total,
-			"payment_status": "PENDING",
-			"status":         "WAITING_CONFIRMATION",
-			"message":        "order created",
-		},
-	)
+	c.JSON(http.StatusCreated, gin.H{
+		"id":             orderID,
+		"order_number":   orderNumber,
+		"total_amount":   total,
+		"payment_status": "PENDING",
+		"status":         "WAITING_CONFIRMATION",
+		"message":        "order created",
+	})
 }
 
 // =====================================
 // LIST ORDERS
 // =====================================
 
-// listOrders godoc
-// @Summary      List All Orders
-// @Description  Returns all orders sorted by creation date (newest first)
-// @Tags         Orders
-// @Produce      json
-// @Success      200 {array}  map[string]interface{}
-// @Failure      500 {object} map[string]string
-// @Router       /orders [get]
 func listOrders(c *gin.Context) {
-
-	rows, err := database.DB.Query(`
-
-		SELECT
-			id,
-			order_number,
-			user_id,
-			seller_id,
-			status,
-			payment_status,
-			total_amount,
-			payment_method,
-			created_at
-
-		FROM orders
-
-		ORDER BY created_at DESC
-
-	`)
-
-	if err != nil {
-
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-
+	var orders []models.Order
+	if err := database.DB.Order("created_at DESC").Find(&orders).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	defer rows.Close()
-
-	var orders []gin.H
-
-	for rows.Next() {
-
-		var (
-			id            string
-			orderNumber   string
-			userID        string
-			sellerID      string
-			status        string
-			paymentStatus string
-			total         float64
-			paymentMethod string
-			createdAt     time.Time
-		)
-
-		if err := rows.Scan(
-			&id,
-			&orderNumber,
-			&userID,
-			&sellerID,
-			&status,
-			&paymentStatus,
-			&total,
-			&paymentMethod,
-			&createdAt,
-		); err != nil {
-
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		orders = append(orders, gin.H{
-			"id":             id,
-			"order_number":   orderNumber,
-			"user_id":        userID,
-			"seller_id":      sellerID,
-			"status":         status,
-			"payment_status": paymentStatus,
-			"total_amount":   total,
-			"payment_method": paymentMethod,
-			"created_at":     createdAt,
-		})
-	}
-
-	// cek error setelah iterasi selesai
-	if err := rows.Err(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
 	c.JSON(http.StatusOK, orders)
-
 }
 
 // =====================================
 // GET ORDER
 // =====================================
 
-// getOrder godoc
-// @Summary      Get Order Detail
-// @Description  Returns full detail of a specific order including its line items
-// @Tags         Orders
-// @Produce      json
-// @Param        id path string true "Order ID (UUID)"
-// @Success      200 {object} map[string]interface{}
-// @Failure      404 {object} map[string]string
-// @Failure      500 {object} map[string]string
-// @Router       /orders/{id} [get]
 func getOrder(c *gin.Context) {
-
 	id := c.Param("id")
 
-	var order struct {
-		ID string
-
-		Status string
-
-		PaymentMethod string
-
-		Total float64
-	}
-
-	err := database.DB.QueryRow(`
-    SELECT
-        id,
-        status,
-        payment_method,
-        total_amount
-    FROM orders
-    WHERE id=$1
-`, id).Scan(
-		&order.ID,
-		&order.Status,
-		&order.PaymentMethod,
-		&order.Total,
-	)
-
-	if err != nil {
-
-		c.JSON(
-			404,
-			gin.H{
-				"error": "order tidak ditemukan",
-			},
-		)
-
+	var order models.Order
+	if err := database.DB.Preload("Items").Where("id = ?", id).First(&order).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "order tidak ditemukan"})
 		return
 	}
 
-	rows, err := database.DB.Query(`
-	SELECT
-		menu_id,
-		menu_name,
-		quantity,
-		price
-	FROM order_items
-	WHERE order_id=$1
-`, id)
-
-	if err != nil {
-
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-	}
-
-	defer rows.Close()
-
-	var items []gin.H
-
-	for rows.Next() {
-
-		var (
-			menuID   string
-			menuName string
-			qty      int
-			price    float64
-		)
-
-		if err := rows.Scan(
-			&menuID,
-			&menuName,
-			&qty,
-			&price,
-		); err != nil {
-
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-
-			return
-		}
-
-		items = append(items, gin.H{
-			"menu_id":   menuID,
-			"menu_name": menuName,
-			"quantity":  qty,
-			"price":     price,
-			"subtotal":  price * float64(qty),
-		})
-	}
-
-	if err := rows.Err(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(
-		http.StatusOK,
-		gin.H{
-			"id":             order.ID,
-			"status":         order.Status,
-			"payment_method": order.PaymentMethod,
-			"total_amount":   order.Total,
-			"items":          items,
-		},
-	)
-
+	c.JSON(http.StatusOK, order)
 }
 
 // =====================================
 // PAYMENT
 // =====================================
 
-// payOrder godoc
-// @Summary      Pay Order
-// @Description  Mark an order as paid. Updates both order status and payment_status to PAID.
-// @Tags         Orders
-// @Produce      json
-// @Param        id path string true "Order ID (UUID)"
-// @Success      200 {object} map[string]string
-// @Failure      500 {object} map[string]string
-// @Router       /orders/{id}/pay [put]
 func payOrder(c *gin.Context) {
-
 	id := c.Param("id")
 
-	_, err := database.DB.Exec(`
-
-		UPDATE orders
-
-		SET
-			status='PAID',
-			payment_status='PAID',
-			updated_at=CURRENT_TIMESTAMP
-
-		WHERE id=$1
-
-	`, id)
+	err := database.DB.Model(&models.Order{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":         "PAID",
+		"payment_status": "PAID",
+		"updated_at":     time.Now(),
+	}).Error
 
 	if err != nil {
-
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{
-
-		"message": "payment success",
-
+	c.JSON(http.StatusOK, gin.H{
+		"message":  "payment success",
 		"order_id": id,
 	})
-
 }
 
 // =====================================
 // UPDATE STATUS
 // =====================================
 
-// updateOrderStatus godoc
-// @Summary      Update Order Status
-// @Description  Update the seller-side order status (WAITING_CONFIRMATION, CONFIRMED, COOKING, READY, DELIVERED, CANCELLED)
-// @Tags         Orders
-// @Accept       json
-// @Produce      json
-// @Param        id   path string                      true "Order ID (UUID)"
-// @Param        body body routes.UpdateStatusBody   true "Status payload"
-// @Success      200 {object} map[string]string
-// @Failure      400 {object} map[string]string
-// @Failure      500 {object} map[string]string
-// @Router       /orders/{id}/status [put]
 func updateOrderStatus(c *gin.Context) {
-
 	id := c.Param("id")
 
 	var body struct {
@@ -824,44 +407,26 @@ func updateOrderStatus(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&body); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	_, err := database.DB.Exec(`
-
-		UPDATE orders
-
-		SET status=$1,
-
-		updated_at=CURRENT_TIMESTAMP
-
-		WHERE id=$2
-
-	`,
-		body.Status,
-		id,
-	)
+	err := database.DB.Model(&models.Order{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"status":     body.Status,
+		"updated_at": time.Now(),
+	}).Error
 
 	if err != nil {
-
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(200, gin.H{
-
+	c.JSON(http.StatusOK, gin.H{
 		"message": "status updated",
-
-		"status": body.Status,
+		"status":  body.Status,
 	})
-
 }
+
 
 // =====================================
 // SWAGGER DOC TYPES (not used in logic)

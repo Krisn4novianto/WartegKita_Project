@@ -1,27 +1,24 @@
 package models
 
+import "time"
+
 type UserAddress struct {
-	ID string `json:"id" example:"018f4a12-89cd-7b1e-9a2c-3f4e56789abc"`
+	ID           string    `gorm:"primaryKey;type:uuid" json:"id"`
+	UserID       string    `gorm:"type:uuid;uniqueIndex;not null" json:"user_id"`
+	Label        string    `gorm:"size:50" json:"label"`
+	Detail       string    `gorm:"type:text" json:"detail"`
+	ProvinceID   int       `json:"province_id"`
+	ProvinceName string    `gorm:"size:100" json:"province_name"`
+	CityID       int       `json:"city_id"`
+	CityName     string    `gorm:"size:100" json:"city_name"`
+	DistrictID   int       `json:"district_id"`
+	DistrictName string    `gorm:"size:100" json:"district_name"`
+	PostalCode   string    `gorm:"size:20" json:"postal_code"`
+	Note         string    `gorm:"type:text" json:"note"`
+	Latitude     float64   `json:"latitude"`
+	Longitude    float64   `json:"longitude"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	UserID string `json:"user_id" example:"018f4a12-89cd-7b1e-9a2c-3f4e56789abc"`
-
-	Label string `json:"label" example:"Rumah"`
-
-	Detail string `json:"detail" example:"Jl. Merdeka No. 10"`
-
-	ProvinceID   int    `json:"province_id" example:"32"`
-	ProvinceName string `json:"province_name" example:"Jawa Barat"`
-
-	CityID   int    `json:"city_id" example:"3201"`
-	CityName string `json:"city_name" example:"Bogor"`
-
-	DistrictID   int    `json:"district_id" example:"320101"`
-	DistrictName string `json:"district_name" example:"Kecamatan Bogor Tengah"`
-
-	PostalCode string `json:"postal_code" example:"16111"`
-
-	Note string `json:"note" example:"Pagar besi"`
-
-	Latitude  float64 `json:"latitude" example:"-6.597147"`
-	Longitude float64 `json:"longitude" example:"106.806038"`
+	// FK to users.id — navigation field only for constraint; excluded from migrations via -:migration
+	User *User `gorm:"foreignKey:UserID;constraint:OnDelete:CASCADE" json:"-"`
 }

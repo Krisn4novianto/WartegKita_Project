@@ -1,16 +1,15 @@
 package database
 
-import "log"
+import (
+	"log"
+	"time"
+
+	"github.com/krisn4novianto/wartegkita/backend/models"
+)
 
 func DeleteExpiredOrders() {
-
-	query := `
-	DELETE FROM orders
-	WHERE created_at <= NOW() - INTERVAL '30 days';
-	`
-
-	_, err := DB.Exec(query)
-
+	thirtyDaysAgo := time.Now().AddDate(0, 0, -30)
+	err := DB.Where("created_at <= ?", thirtyDaysAgo).Delete(&models.Order{}).Error
 	if err != nil {
 		log.Println("Gagal menghapus history order:", err)
 		return
@@ -18,3 +17,4 @@ func DeleteExpiredOrders() {
 
 	log.Println("✅ History order lebih dari 30 hari berhasil dibersihkan")
 }
+

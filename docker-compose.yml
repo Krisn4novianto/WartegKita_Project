@@ -4,7 +4,7 @@ services:
     container_name: wartegkita-postgres
     restart: always
     environment:
-      POSTGRES_DB: postgres
+      POSTGRES_DB: wartegkita_db
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Krisn@12345
     ports:

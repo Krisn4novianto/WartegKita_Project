@@ -26,7 +26,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
-	sellerDB "github.com/krisn4novianto/wartegkita/backend/database/seller"
 	_ "github.com/krisn4novianto/wartegkita/backend/docs" // swag generated docs
 	"github.com/krisn4novianto/wartegkita/backend/routes"
 )
@@ -44,48 +43,17 @@ func main() {
 	}
 
 	// =========================
-	// DATABASE CUSTOMER
+	// DATABASE (SINGLE GORM DB)
 	// =========================
 
 	database.Connect()
 
 	// =========================
-	// DATABASE SELLER
-	// =========================
-
-	database.ConnectSellerDB()
-
-	// =========================
-	// CREATE TABLE CUSTOMER
-	// =========================
-
-	database.CreateUserTables()
-
-	database.CreateOrderTable()
-
-	database.CreateOrderItemsTable()
-
-	// =========================
-	// CREATE TABLE SELLER
-	// =========================
-
-	database.CreateMenuTable()
-
-	sellerDB.CreateSellerProfileTable()
-
-	sellerDB.CreateMenuCategoryTable()
-
-	sellerDB.SeedMenuCategory()
-
-	sellerDB.CreateSellerPendapatanTable(
-		database.SellerDB,
-	)
-
-	// =========================
-	// CLEANUP ORDER
+	// CLEANUP EXPIRED ORDERS
 	// =========================
 
 	database.DeleteExpiredOrders()
+
 
 	// =========================
 	// PORT

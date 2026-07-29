@@ -2,34 +2,27 @@ package models
 
 import (
 	"time"
-
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type Seller struct {
-	ID bson.ObjectID `bson:"_id,omitempty" json:"id"`
+type SellerProfile struct {
+	ID            string    `gorm:"primaryKey;type:uuid" json:"id"`
+	SellerID      string    `gorm:"type:uuid;uniqueIndex;not null" json:"seller_id"`
+	NamaWarteg    string    `gorm:"size:100" json:"nama_warteg"`
+	NamaPemilik   string    `gorm:"size:100" json:"nama_pemilik"`
+	NomorHP       string    `gorm:"size:30" json:"nomor_hp"`
+	Alamat        string    `gorm:"type:text" json:"alamat"`
+	Deskripsi     string    `gorm:"type:text" json:"deskripsi"`
+	Bank          string    `gorm:"size:50" json:"bank"`
+	NomorRekening string    `gorm:"size:50" json:"nomor_rekening"`
+	UpdatedAt     time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
 
-	StoreName string `bson:"store_name" json:"store_name"`
-
-	Description string `bson:"description" json:"description"`
-
-	Address string `bson:"address" json:"address"`
-
-	Phone string `bson:"phone" json:"phone"`
-
-	Image string `bson:"image" json:"image"`
-
-	IsOpen bool `bson:"is_open" json:"is_open"`
-
-	Rating float64 `bson:"rating" json:"rating"`
-
-	DistanceKM float64 `bson:"distance_km" json:"distance_km"`
-
-	Latitude float64 `bson:"latitude" json:"latitude"`
-
-	Longitude float64 `bson:"longitude" json:"longitude"`
-
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+type CustomerSeller struct {
+	ID          string  `json:"id"`
+	StoreName   string  `json:"store_name"`
+	Description string  `json:"description"`
+	Address     string  `json:"address"`
+	Owner       string  `json:"owner"`
+	Phone       string  `json:"phone"`
+	Rating      float64 `json:"rating"`
 }
