@@ -266,7 +266,7 @@ func Connect() {
 
 	if err := DB.AutoMigrate(
 		&models.OrderItem{},
-		&models.ChatMessage{},
+		&models.BubbleChat{},
 	); err != nil {
 
 		log.Fatal(
@@ -551,6 +551,8 @@ func repairForeignKeys() {
 		`ALTER TABLE IF EXISTS chat_rooms
 		 DROP CONSTRAINT IF EXISTS fk_chat_rooms_seller`,
 
+		`ALTER TABLE IF EXISTS bubble_chats
+		 DROP CONSTRAINT IF EXISTS fk_bubble_chats_room`,
 		`ALTER TABLE IF EXISTS chat_messages
 		 DROP CONSTRAINT IF EXISTS fk_chat_messages_room`,
 	}
@@ -736,15 +738,15 @@ func repairForeignKeys() {
 		},
 
 		// =================================================
-		// CHAT MESSAGE → CHAT ROOM
+		// BUBBLE CHAT → CHAT ROOM
 		// =================================================
 
 		{
-			name: "fk_chat_messages_room",
+			name: "fk_bubble_chats_room",
 
 			sql: `
-			ALTER TABLE chat_messages
-			ADD CONSTRAINT fk_chat_messages_room
+			ALTER TABLE bubble_chats
+			ADD CONSTRAINT fk_bubble_chats_room
 			FOREIGN KEY (chat_room_id)
 			REFERENCES chat_rooms(id)
 			ON DELETE CASCADE

@@ -225,7 +225,7 @@ func UpdateOrderStatus(c *gin.Context) {
 	if sellerIDFromContext != "" {
 
 		orderSellerID := strings.TrimSpace(
-			order.SellerID.String(),
+			order.SellerID,
 		)
 
 		if orderSellerID != sellerIDFromContext {

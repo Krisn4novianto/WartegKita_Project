@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	sellerdb "WartegKita/backend/database/seller"
+	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
 )
 
 type SellerDashboardHandler struct {

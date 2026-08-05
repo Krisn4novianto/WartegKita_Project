@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/krisn4novianto/wartegkita/backend/database"
 	sellerDB "github.com/krisn4novianto/wartegkita/backend/database/seller"
 )
 
@@ -34,9 +35,11 @@ func SellerDashboard(c *gin.Context) {
 		return
 	}
 
-	result, err := sellerDB.GetPendapatanDashboard(
-		nil,
+	result, err := sellerDB.GetDashboardAnalytics(
+		database.DB,
 		sellerID,
+		sellerDB.DashboardFilter{},
+		"",
 	)
 
 	if err != nil {
