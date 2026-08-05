@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type ChatRoom struct {
-	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 
 	BuyerID uuid.UUID `gorm:"type:uuid;not null;index" json:"buyer_id"`
 
@@ -18,8 +19,15 @@ type ChatRoom struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+func (c *ChatRoom) BeforeCreate(tx *gorm.DB) (err error) {
+	if c.ID == uuid.Nil {
+		c.ID, err = uuid.NewV7()
+	}
+	return
+}
+
 type BubbleChat struct {
-	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	ID uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
 
 	ChatRoomID uuid.UUID `gorm:"type:uuid;not null;index" json:"chat_room_id"`
 
@@ -32,4 +40,11 @@ type BubbleChat struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (b *BubbleChat) BeforeCreate(tx *gorm.DB) (err error) {
+	if b.ID == uuid.Nil {
+		b.ID, err = uuid.NewV7()
+	}
+	return
 }
