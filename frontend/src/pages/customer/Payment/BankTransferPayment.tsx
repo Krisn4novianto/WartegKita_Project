@@ -1,236 +1,193 @@
 import {
     Building2,
-    Copy,
     CheckCircle2,
+    Copy,
     Smartphone,
 } from "lucide-react";
 
 import {
-    useEffect,
     useState,
 } from "react";
 
 import "../../../styles/Payment/BankTransferPayment.css";
 
+/* =====================================================
+   TYPES
+===================================================== */
 
 interface Props {
-    total: number;
+    totalAmount: number;
 }
-
-
 
 type BankType =
     | "bri"
     | "raya";
 
+/* =====================================================
+   BANK DATA
+===================================================== */
 
-
-
-const banks = {
-
+const banks: Record<
+    BankType,
+    {
+        name: string;
+        account: string;
+        owner: string;
+        app: string;
+    }
+> = {
     bri: {
-
         name: "Bank BRI",
-
         account: "123456789012345",
-
-        owner:
-            "PT WARTEGKITA INDONESIA",
-
-        app:
-            "BRImo",
-
-        color:
-            "#0066b3"
-
+        owner: "PT WARTEGKITA INDONESIA",
+        app: "BRImo",
     },
 
-
     raya: {
-
-        name:
-            "Bank Raya Indonesia",
-
-        account:
-            "987654321098765",
-
-        owner:
-            "PT WARTEGKITA INDONESIA",
-
-        app:
-            "Raya Mobile",
-
-        color:
-            "#00a859"
-
-    }
-
+        name: "Bank Raya Indonesia",
+        account: "987654321098765",
+        owner: "PT WARTEGKITA INDONESIA",
+        app: "Raya Mobile",
+    },
 };
 
+/* =====================================================
+   BANK URL
+===================================================== */
 
+const bankUrls: Record<
+    BankType,
+    string
+> = {
+    bri: "https://bri.co.id/brimo",
+    raya: "https://bankraya.co.id",
+};
 
-
+/* =====================================================
+   COMPONENT
+===================================================== */
 
 export default function BankTransferPayment({
-    total
+    totalAmount,
 }: Props) {
 
-
+    /* =================================================
+       STATE
+    ================================================= */
 
     const [
         selectedBank,
-        setSelectedBank
+        setSelectedBank,
     ] = useState<BankType>("bri");
 
-    const [timeLeft, setTimeLeft] = useState(15 * 60);
-    const [expired, setExpired] = useState(false);
+    const [
+        copiedAccount,
+        setCopiedAccount,
+    ] = useState(false);
 
+    const [
+        copiedAmount,
+        setCopiedAmount,
+    ] = useState(false);
 
-    const bank = banks[selectedBank];
-    useEffect(() => {
-        if (expired) return;
+    /* =================================================
+       SELECTED BANK
+    ================================================= */
 
-        const STORAGE_KEY = "bank_transfer_expired_at";
+    const bank =
+        banks[selectedBank];
 
-        let expiredAt = localStorage.getItem(STORAGE_KEY);
-
-        if (!expiredAt) {
-            expiredAt = (
-                Date.now() + 15 * 60 * 1000
-            ).toString();
-
-            localStorage.setItem(STORAGE_KEY, expiredAt);
-        }
-
-        const updateTimer = () => {
-            const remaining = Math.max(
-                0,
-                Math.floor(
-                    (Number(expiredAt) - Date.now()) / 1000
-                )
-            );
-
-            setTimeLeft(remaining);
-
-            if (remaining <= 0) {
-                setExpired(true);
-                localStorage.removeItem(STORAGE_KEY);
-            }
-        };
-
-        updateTimer(); // langsung update
-
-        const interval = setInterval(updateTimer, 1000);
-
-        return () => clearInterval(interval);
-    }, [expired]);
-
-
-
-
-
-    const minutes = String(
-        Math.floor(timeLeft / 60)
-    ).padStart(2, "0");
-
-    const seconds = String(
-        timeLeft % 60
-    ).padStart(2, "0");
-
-    const handleRetryPayment = () => {
-        const expiredAt =
-            Date.now() + 15 * 60 * 1000;
-
-        localStorage.setItem(
-            "bank_transfer_expired_at",
-            expiredAt.toString()
-        );
-
-        setTimeLeft(15 * 60);
-
-        setExpired(false);
-    };
-
-    const bankUrls: Record<BankType, string> = {
-        bri: "https://bri.co.id/brimo",
-        raya: "https://bankraya.co.id",
-    };
+    /* =================================================
+       COPY ACCOUNT
+    ================================================= */
 
     const copyAccount = async () => {
+
         try {
-            await navigator.clipboard.writeText(bank.account);
-            alert("Nomor rekening berhasil disalin");
-        } catch {
-            alert("Gagal menyalin nomor rekening");
+
+            await navigator.clipboard.writeText(
+                bank.account
+            );
+
+            setCopiedAccount(true);
+
+            window.setTimeout(() => {
+
+                setCopiedAccount(false);
+
+            }, 1800);
+
+        } catch (error) {
+
+            console.error(
+                "Gagal menyalin nomor rekening:",
+                error
+            );
+
+            alert(
+                "Gagal menyalin nomor rekening."
+            );
         }
     };
+
+    /* =================================================
+       COPY AMOUNT
+    ================================================= */
 
     const copyAmount = async () => {
+
         try {
-            await navigator.clipboard.writeText(total.toString());
-            alert("Nominal pembayaran berhasil disalin");
-        } catch {
-            alert("Gagal menyalin nominal pembayaran");
+
+            await navigator.clipboard.writeText(
+                String(totalAmount)
+            );
+
+            setCopiedAmount(true);
+
+            window.setTimeout(() => {
+
+                setCopiedAmount(false);
+
+            }, 1800);
+
+        } catch (error) {
+
+            console.error(
+                "Gagal menyalin nominal:",
+                error
+            );
+
+            alert(
+                "Gagal menyalin nominal pembayaran."
+            );
         }
     };
 
+    /* =================================================
+       OPEN BANK
+    ================================================= */
+
     const openBankApp = () => {
-        window.open(bankUrls[selectedBank], "_blank");
+
+        window.open(
+            bankUrls[selectedBank],
+            "_blank",
+            "noopener,noreferrer"
+        );
     };
 
-
-
-
-
-
-
-
-
-
-
+    /* =================================================
+       RENDER
+    ================================================= */
 
     return (
-
         <div className="bank-payment">
 
-            {
-                expired && (
-                    <div className="payment-expired-overlay">
-
-                        <div className="payment-expired-modal">
-
-                            <div className="expired-icon">
-                                <Building2 size={40} />
-                            </div>
-
-                            <h2>
-                                Pembayaran Gagal
-                            </h2>
-
-                            <p>
-                                Waktu pembayaran Transfer Bank
-                                sudah habis.
-                                Silakan ulangi pembayaran lagi.
-                            </p>
-
-                            <button
-                                onClick={handleRetryPayment}
-                            >
-                                Ulangi Pembayaran
-                            </button>
-
-                        </div>
-
-                    </div>
-                )
-            }
-
-
-
-            {/* HEADER */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
 
             <div className="bank-header">
-
 
                 <div className="bank-header-icon">
 
@@ -238,55 +195,40 @@ export default function BankTransferPayment({
 
                 </div>
 
-
-
                 <div>
 
                     <h2>
                         Transfer Bank
                     </h2>
 
-
                     <p>
                         Pilih rekening pembayaran
                         WartegKita.
                     </p>
 
-
                 </div>
-
 
             </div>
 
-
-
-
-
-
-
-            {/* SELECT BANK */}
-
+            {/* =================================================
+                BANK PICKER
+            ================================================= */}
 
             <div className="bank-picker">
 
-
+                {/* BRI */}
 
                 <button
-
+                    type="button"
                     className={
                         selectedBank === "bri"
-                            ?
-                            "bank-tab active bri"
-                            :
-                            "bank-tab"
+                            ? "bank-tab active bri"
+                            : "bank-tab"
                     }
-
                     onClick={() =>
                         setSelectedBank("bri")
                     }
-
                 >
-
 
                     <div className="bank-brand bri-brand">
 
@@ -294,13 +236,11 @@ export default function BankTransferPayment({
 
                     </div>
 
-
                     <div>
 
                         <strong>
                             Bank BRI
                         </strong>
-
 
                         <small>
                             Pembayaran via BRImo
@@ -308,32 +248,21 @@ export default function BankTransferPayment({
 
                     </div>
 
-
                 </button>
 
-
-
-
-
-
+                {/* BANK RAYA */}
 
                 <button
-
+                    type="button"
                     className={
                         selectedBank === "raya"
-                            ?
-                            "bank-tab active raya"
-                            :
-                            "bank-tab"
+                            ? "bank-tab active raya"
+                            : "bank-tab"
                     }
-
-
                     onClick={() =>
                         setSelectedBank("raya")
                     }
-
                 >
-
 
                     <div className="bank-brand raya-brand">
 
@@ -341,122 +270,89 @@ export default function BankTransferPayment({
 
                     </div>
 
-
-
                     <div>
 
                         <strong>
                             Bank Raya
                         </strong>
 
-
                         <small>
                             Pembayaran via Raya Mobile
                         </small>
 
-
                     </div>
-
 
                 </button>
 
-
-
             </div>
 
-
-
-
-
-
-
-
-
-            {/* ACCOUNT CARD */}
-
-
+            {/* =================================================
+                ACCOUNT CARD
+            ================================================= */}
 
             <div
                 className={
                     selectedBank === "bri"
-                        ?
-                        "account-card bri-card"
-                        :
-                        "account-card raya-card"
+                        ? "account-card bri-card"
+                        : "account-card raya-card"
                 }
             >
 
-
                 <div className="account-top">
-
 
                     <span>
                         Rekening Pembayaran
                     </span>
 
-
                     <strong>
                         {bank.name}
                     </strong>
 
-
                 </div>
-
-
-
-
 
                 <div className="account-number">
 
-
-                    {bank.account}
-
-
+                    <span>
+                        {bank.account}
+                    </span>
 
                     <button
+                        type="button"
                         onClick={copyAccount}
+                        aria-label="Salin nomor rekening"
                     >
 
-                        <Copy size={18} />
+                        {copiedAccount ? (
+                            <CheckCircle2
+                                size={18}
+                            />
+                        ) : (
+                            <Copy
+                                size={18}
+                            />
+                        )}
 
                     </button>
 
-
                 </div>
 
-
-
-
-
-
                 <div className="account-footer">
-
 
                     <span>
                         Atas Nama
                     </span>
 
-
                     <strong>
                         {bank.owner}
                     </strong>
 
-
                 </div>
-
-
 
             </div>
 
-
-
-
-
-
-
-
-
-            {/* TOTAL */}
+            {/* =================================================
+                TOTAL PAYMENT
+            ================================================= */}
 
             <div className="payment-box">
 
@@ -465,54 +361,42 @@ export default function BankTransferPayment({
                 </span>
 
                 <h1>
-                    Rp {total.toLocaleString("id-ID")}
+                    Rp{" "}
+                    {totalAmount.toLocaleString(
+                        "id-ID"
+                    )}
                 </h1>
 
                 <button
+                    type="button"
                     className="copy-total"
                     onClick={copyAmount}
                 >
-                    <Copy size={18} />
-                    Salin Nominal
+
+                    {copiedAmount ? (
+                        <CheckCircle2
+                            size={18}
+                        />
+                    ) : (
+                        <Copy
+                            size={18}
+                        />
+                    )}
+
+                    {copiedAmount
+                        ? "Tersalin"
+                        : "Salin Nominal"}
+
                 </button>
 
             </div>
 
-            <div className="payment-status-card">
-
-                <div className="payment-status-top">
-
-                    <div className="payment-status-left">
-
-                        <span>Status Pembayaran</span>
-
-                        <div className="payment-badge">
-                            <div className="payment-dot"></div>
-                            Menunggu Pembayaran
-                        </div>
-
-                    </div>
-
-                    <div className="payment-timer">
-
-                        <span>Batas Waktu</span>
-
-                        <h2>
-                            {minutes}:{seconds}
-                        </h2>
-
-                    </div>
-
-                </div>
-
-                <p>
-                    Transfer sesuai nominal agar pembayaran dapat
-                    terverifikasi otomatis.
-                </p>
-
-            </div>
+            {/* =================================================
+                OPEN BANK APP
+            ================================================= */}
 
             <button
+                type="button"
                 className={
                     selectedBank === "bri"
                         ? "bank-app-button bri-btn"
@@ -520,26 +404,22 @@ export default function BankTransferPayment({
                 }
                 onClick={openBankApp}
             >
+
                 <Smartphone size={22} />
+
                 Buka {bank.app}
+
             </button>
 
-
-
-
-            {/* INSTRUCTION */}
-
-
+            {/* =================================================
+                INSTRUCTION
+            ================================================= */}
 
             <div className="instruction-card">
-
 
                 <h3>
                     Cara Pembayaran
                 </h3>
-
-
-
 
                 {[
                     `Buka aplikasi ${bank.app}`,
@@ -550,11 +430,14 @@ export default function BankTransferPayment({
 
                     "Masukkan nominal sesuai tagihan",
 
-                    "Konfirmasi transaksi"
+                    "Pastikan nama penerima sesuai",
 
+                    "Konfirmasi transaksi",
                 ].map(
-                    (text, index) => (
-
+                    (
+                        text,
+                        index
+                    ) => (
 
                         <div
                             className="instruction-row"
@@ -565,44 +448,36 @@ export default function BankTransferPayment({
                                 {index + 1}
                             </span>
 
-
                             <p>
                                 {text}
                             </p>
 
-
                         </div>
 
-
-                    ))}
-
+                    )
+                )}
 
             </div>
 
-
-
-
-
-
-
-
-
-            {/* NOTE */}
-
+            {/* =================================================
+                NOTE
+            ================================================= */}
 
             <div className="bank-note">
 
                 <CheckCircle2 size={22} />
 
                 <span>
-                    Setelah transfer berhasil, tekan tombol{" "}
-                    <b>Konfirmasi Pembayaran</b>{" "}
-                    pada halaman berikutnya.
+                    Setelah transfer berhasil,
+                    kembali ke halaman ini lalu tekan
+                    tombol{" "}
+                    <b>
+                        Konfirmasi Pembayaran
+                    </b>.
                 </span>
 
             </div>
 
-        </div >
+        </div>
     );
 }
-

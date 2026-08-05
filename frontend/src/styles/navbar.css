@@ -1,9 +1,8 @@
-/* =====================================
+/* =====================================================
    NAVBAR WARTEGKITA
-===================================== */
+===================================================== */
 
 .navbar {
-
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -13,293 +12,574 @@
     background: #16a34a;
 
     box-shadow:
-        0 4px 18px rgba(0, 0, 0, 0.15);
+        0 2px 12px rgba(0, 0, 0, 0.10);
 
+    /* Safe area untuk iPhone */
+    padding-top: env(safe-area-inset-top);
+
+    box-sizing: border-box;
 }
 
 
-
-/* =====================================
+/* =====================================================
    NAVBAR INNER
-===================================== */
+===================================================== */
 
 .navbar-inner {
-
     width: 100%;
+    max-width: 1440px;
 
-    height: 68px;
+    min-height: 68px;
 
+    margin: 0 auto;
 
-    padding: 0 20px;
-
+    padding:
+        8px max(20px, env(safe-area-inset-right)) 8px max(20px, env(safe-area-inset-left));
 
     display: flex;
-
     align-items: center;
-
     justify-content: space-between;
 
+    gap: 20px;
+
+    box-sizing: border-box;
 }
 
 
-
-/* =====================================
+/* =====================================================
    LOGO / BRAND
-===================================== */
+===================================================== */
 
 .brand {
+    min-width: 0;
+
+    flex: 0 1 auto;
 
     display: flex;
-
     align-items: center;
 
+    gap: 10px;
 
     text-decoration: none;
-
-    flex-shrink: 0;
-
-}
-
-
-
-.brand span {
-
 
     color: #ffffff;
 
+    font-weight: 700;
 
-    font-size: 26px;
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+.brand:hover {
+    opacity: 0.92;
+}
+
+.brand:active {
+    transform: scale(0.98);
+}
 
 
-    font-weight: 900;
+/* =====================================================
+   BRAND LOGO
+===================================================== */
+
+.brand-logo {
+    width: 42px;
+    height: 42px;
+
+    flex: 0 0 42px;
+
+    object-fit: contain;
+
+    display: block;
+}
 
 
-    letter-spacing: -0.8px;
+/* =====================================================
+   BRAND TEXT
+===================================================== */
 
+.brand span {
+    min-width: 0;
+
+    color: #ffffff;
+
+    font-size: 21px;
 
     line-height: 1;
 
+    font-weight: 800;
+
+    letter-spacing: -0.5px;
 
     white-space: nowrap;
-
-
-    font-family:
-        Inter,
-        system-ui,
-        sans-serif;
-
-
-    transition: .25s ease;
-
 }
 
 
-
-.brand:hover span {
-
-    opacity: .85;
-
-    transform: scale(1.03);
-
-}
-
-
-
-/* =====================================
-   MENU
-===================================== */
+/* =====================================================
+   NAV MENU
+===================================================== */
 
 .navbar-menu {
+    min-width: 0;
 
+    flex: 0 1 auto;
 
     display: flex;
-
-
     align-items: center;
+    justify-content: flex-end;
 
+    gap: 4px;
 
-    gap: 6px;
-
-
+    overflow: visible;
 }
 
 
-
-/* LINK */
+/* =====================================================
+   NAV LINK
+===================================================== */
 
 .navbar-menu a {
+    min-height: 44px;
 
-
-    display: flex;
-
-
+    display: inline-flex;
     align-items: center;
-
+    justify-content: center;
 
     gap: 8px;
 
-
-
-    padding: 10px 15px;
-
-
-
-    color:
-        rgba(255, 255, 255, .9);
-
-
-
-    text-decoration: none;
-
-
-
-    font-size: 15px;
-
-
-
-    font-weight: 600;
-
-
+    padding: 0 13px;
 
     border-radius: 12px;
 
+    color: rgba(255, 255, 255, 0.92);
 
+    text-decoration: none;
+
+    font-size: 14px;
+
+    font-weight: 650;
+
+    white-space: nowrap;
 
     transition:
-
-        .25s ease;
-
+        background 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
 
+/* =====================================================
+   NAV ICON
+===================================================== */
 
-/* ICON */
-
-.navbar-menu svg {
-
+.navbar-menu a svg {
+    flex: 0 0 auto;
 
     width: 19px;
-
     height: 19px;
 
-
-    stroke-width: 2.5;
-
+    stroke-width: 2.3;
 }
 
 
-
-/* HOVER */
+/* =====================================================
+   HOVER
+===================================================== */
 
 .navbar-menu a:hover {
+    background: rgba(255, 255, 255, 0.14);
 
-
-    background:
-
-        rgba(255, 255, 255, .15);
-
-
-
-    color: white;
-
-
+    color: #ffffff;
 }
 
 
-
-/* ACTIVE */
+/* =====================================================
+   ACTIVE
+===================================================== */
 
 .navbar-menu a.active {
-
-
-    background: white;
-
+    background: #ffffff;
 
     color: #16a34a;
 
-
-
     box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.10);
+}
 
-        0 5px 15px rgba(0, 0, 0, .15);
 
+/* =====================================================
+   ACTIVE HOVER
+===================================================== */
+
+.navbar-menu a.active:hover {
+    background: #ffffff;
+
+    color: #15803d;
+}
+
+
+/* =====================================================
+   TABLET / SPLIT SCREEN
+   769px — 1000px
+===================================================== */
+
+@media (max-width: 1000px) {
+
+    .navbar-inner {
+        min-height: 64px;
+
+        padding-left: 16px;
+        padding-right: 16px;
+
+        gap: 12px;
+    }
+
+
+    .brand {
+        gap: 8px;
+    }
+
+
+    .brand-logo {
+        width: 40px;
+        height: 40px;
+
+        flex-basis: 40px;
+    }
+
+
+    .brand span {
+        font-size: 19px;
+    }
+
+
+    .navbar-menu {
+        gap: 2px;
+    }
+
+
+    .navbar-menu a {
+        min-height: 42px;
+
+        padding: 0 10px;
+
+        border-radius: 11px;
+
+        font-size: 13px;
+    }
+
+
+    .navbar-menu a svg {
+        width: 18px;
+        height: 18px;
+    }
 
 }
 
 
+/* =====================================================
+   SMALL TABLET / LANDSCAPE PHONE
+   601px — 768px
+===================================================== */
 
-/* =====================================
-   RESPONSIVE
-===================================== */
-
-
-@media(max-width:768px) {
-
+@media (max-width: 768px) {
 
     .navbar-inner {
+        min-height: 60px;
 
-        height: 60px;
+        padding-left: 14px;
+        padding-right: 14px;
 
-        padding: 0 16px;
-
+        gap: 8px;
     }
 
+
+    .brand {
+        gap: 7px;
+
+        flex-shrink: 1;
+    }
+
+
+    .brand-logo {
+        width: 38px;
+        height: 38px;
+
+        flex-basis: 38px;
+    }
 
 
     .brand span {
-
-
-        font-size: 21px;
-
+        font-size: 18px;
     }
-
 
 
     .navbar-menu {
-
-
         gap: 2px;
 
+        flex-shrink: 0;
     }
-
 
 
     .navbar-menu a {
+        width: 42px;
+        min-width: 42px;
+        height: 42px;
 
+        min-height: 42px;
 
-        padding: 9px;
+        padding: 0;
 
-
+        border-radius: 11px;
     }
-
 
 
     .navbar-menu a span {
-
-
         display: none;
-
     }
-
 
 
     .navbar-menu a {
-
-
         font-size: 0;
-
     }
 
 
+    .navbar-menu a svg {
+        width: 20px;
+        height: 20px;
 
-    .navbar-menu svg {
-
-
-        width: 22px;
-
-        height: 22px;
-
+        margin: 0;
     }
 
+}
+
+
+/* =====================================================
+   MOBILE
+   IOS / ANDROID
+===================================================== */
+
+@media (max-width: 600px) {
+
+    .navbar-inner {
+        min-height: 58px;
+
+        padding:
+            7px max(10px, env(safe-area-inset-right)) 7px max(10px, env(safe-area-inset-left));
+
+        gap: 6px;
+    }
+
+
+    .brand {
+        gap: 7px;
+
+        min-width: 0;
+    }
+
+
+    .brand-logo {
+        width: 36px;
+        height: 36px;
+
+        flex-basis: 36px;
+    }
+
+
+    .brand span {
+        font-size: 17px;
+
+        letter-spacing: -0.35px;
+
+        overflow: hidden;
+
+        text-overflow: ellipsis;
+    }
+
+
+    .navbar-menu {
+        gap: 1px;
+    }
+
+
+    .navbar-menu a {
+        width: 40px;
+        min-width: 40px;
+
+        height: 40px;
+        min-height: 40px;
+
+        border-radius: 10px;
+    }
+
+
+    .navbar-menu a svg {
+        width: 19px;
+        height: 19px;
+    }
+
+}
+
+
+/* =====================================================
+   VERY SMALL PHONE
+   320px — 380px
+===================================================== */
+
+@media (max-width: 380px) {
+
+    .navbar-inner {
+        padding-left: 8px;
+        padding-right: 8px;
+
+        gap: 4px;
+    }
+
+
+    .brand {
+        gap: 5px;
+    }
+
+
+    .brand-logo {
+        width: 34px;
+        height: 34px;
+
+        flex-basis: 34px;
+    }
+
+
+    .brand span {
+        font-size: 16px;
+    }
+
+
+    .navbar-menu a {
+        width: 38px;
+        min-width: 38px;
+
+        height: 38px;
+        min-height: 38px;
+
+        border-radius: 9px;
+    }
+
+
+    .navbar-menu a svg {
+        width: 18px;
+        height: 18px;
+    }
+
+}
+
+
+/* =====================================================
+   EXTREMELY NARROW SPLIT SCREEN
+   <= 340px
+===================================================== */
+
+@media (max-width: 340px) {
+
+    .navbar-inner {
+        padding-left: 7px;
+        padding-right: 7px;
+
+        gap: 3px;
+    }
+
+
+    .brand-logo {
+        width: 32px;
+        height: 32px;
+
+        flex-basis: 32px;
+    }
+
+
+    .brand span {
+        font-size: 15px;
+    }
+
+
+    .navbar-menu {
+        gap: 0;
+    }
+
+
+    .navbar-menu a {
+        width: 36px;
+        min-width: 36px;
+
+        height: 36px;
+        min-height: 36px;
+    }
+
+
+    .navbar-menu a svg {
+        width: 17px;
+        height: 17px;
+    }
+
+}
+
+
+/* =====================================================
+   TOUCH DEVICE
+===================================================== */
+
+@media (hover: none) and (pointer: coarse) {
+
+    .navbar-menu a:hover {
+        background: transparent;
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+
+    .navbar-menu a.active:hover {
+        background: #ffffff;
+        color: #16a34a;
+    }
+
+
+    .navbar-menu a:active {
+        background: rgba(255, 255, 255, 0.16);
+
+        transform: scale(0.94);
+    }
+
+
+    .navbar-menu a.active:active {
+        background: #ffffff;
+
+        color: #16a34a;
+    }
+
+}
+
+
+/* =====================================================
+   KEYBOARD ACCESSIBILITY
+===================================================== */
+
+.navbar a:focus-visible {
+    outline: 3px solid rgba(255, 255, 255, 0.55);
+
+    outline-offset: 2px;
+}
+
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .navbar *,
+    .navbar *::before,
+    .navbar *::after {
+        transition: none !important;
+    }
 
 }

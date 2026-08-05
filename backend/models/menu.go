@@ -1,8 +1,6 @@
 package models
 
-import (
-	"time"
-)
+import "time"
 
 type Menu struct {
 	ID          string    `gorm:"primaryKey;type:uuid" json:"id"`
@@ -17,7 +15,6 @@ type Menu struct {
 	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	// BelongsTo SellerProfile via SellerID -> seller_profiles.seller_id
 	Seller *SellerProfile `gorm:"foreignKey:SellerID;references:SellerID;constraint:OnDelete:CASCADE" json:"-"`
 }
 

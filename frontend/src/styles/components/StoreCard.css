@@ -1,0 +1,386 @@
+/* ==========================================================
+   STORE CARD
+========================================================== */
+
+.store-card {
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+
+    background: #fff;
+
+    border: 1px solid #EEF2F7;
+    border-radius: 22px;
+
+    overflow: hidden;
+
+    color: #111827;
+    text-decoration: none;
+
+    transition:
+        transform .28s ease,
+        box-shadow .28s ease,
+        border-color .28s ease;
+
+    box-shadow:
+        0 8px 24px rgba(15, 23, 42, .05);
+}
+
+.store-card:hover {
+
+    transform: translateY(-6px);
+
+    border-color: #DCFCE7;
+
+    box-shadow:
+        0 22px 42px rgba(15, 23, 42, .12);
+}
+
+/* ==========================================================
+   IMAGE
+========================================================== */
+
+.store-image-wrap {
+
+    position: relative;
+
+    aspect-ratio: 16 / 10;
+
+    overflow: hidden;
+
+    background: #F8FAFC;
+}
+
+.store-image {
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    transition: transform .45s ease;
+}
+
+.store-card:hover .store-image {
+
+    transform: scale(1.05);
+}
+
+/* ==========================================================
+   STATUS
+========================================================== */
+
+.store-status {
+
+    position: absolute;
+
+    top: 16px;
+    right: 16px;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 8px 14px;
+
+    border-radius: 999px;
+
+    font-size: 13px;
+    font-weight: 700;
+
+    backdrop-filter: blur(12px);
+
+    border: 1px solid rgba(255, 255, 255, .7);
+
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, .12);
+}
+
+.store-status::before {
+
+    content: "";
+
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: currentColor;
+}
+
+.store-status.open {
+
+    background: #ECFDF5;
+    color: #047857;
+}
+
+.store-status.closed {
+
+    background: #FFF7ED;
+    color: #C2410C;
+}
+
+/* ==========================================================
+   CONTENT
+========================================================== */
+
+.store-card-content {
+
+    display: flex;
+    flex-direction: column;
+
+    flex: 1;
+
+    padding: 22px;
+}
+
+/* ==========================================================
+   TITLE
+========================================================== */
+
+.store-title-row {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 12px;
+
+    height: 58px;
+}
+
+.store-name {
+
+    flex: 1;
+
+    margin: 0;
+
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.4;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+
+    overflow: hidden;
+
+    height: 50px;
+}
+
+/* ==========================================================
+   RATING
+========================================================== */
+
+.rating {
+
+    flex-shrink: 0;
+
+    display: inline-flex;
+
+    align-items: center;
+    gap: 5px;
+
+    padding: 7px 11px;
+
+    border-radius: 999px;
+
+    background: #FFF7ED;
+
+    color: #F59E0B;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.rating svg {
+
+    fill: #F59E0B;
+}
+
+/* ==========================================================
+   DESCRIPTION
+========================================================== */
+
+.store-description {
+
+    margin-top: 14px;
+
+    color: #6B7280;
+
+    font-size: 15px;
+
+    line-height: 1.65;
+
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+
+    overflow: hidden;
+
+    height: 74px;
+}
+
+/* ==========================================================
+   META
+========================================================== */
+
+.store-meta {
+
+    margin-top: auto;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 12px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid #EEF2F7;
+}
+
+/* ==========================================================
+   DISTANCE
+========================================================== */
+
+.distance {
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    color: #F59E0B;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+/* ==========================================================
+   ADDRESS
+========================================================== */
+
+.store-address {
+    display: -webkit-box;
+
+    width: 100%;
+    height: 42px;
+
+    margin: 0;
+    padding: 0;
+
+    color: #6B7280 !important;
+
+    font-size: 13px;
+    font-weight: 500;
+
+    line-height: 1.6;
+
+    text-decoration: none !important;
+
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+
+    overflow: hidden;
+}
+
+.store-address,
+.store-address span,
+.store-address p,
+.store-address a {
+    color: #6B7280 !important;
+    text-decoration: none !important;
+}
+
+/* ==========================================================
+   GRID
+========================================================== */
+
+.home-store-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fill, minmax(340px, 1fr));
+
+    gap: 24px;
+
+    align-items: stretch;
+}
+
+.home-store-grid>* {
+
+    display: flex;
+
+    height: 100%;
+}
+
+/* ==========================================================
+   MOBILE
+========================================================== */
+
+@media(max-width:768px) {
+
+    .home-store-grid {
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 14px;
+    }
+
+    .store-card-content {
+
+        padding: 16px;
+    }
+
+    .store-title-row {
+
+        height: 52px;
+    }
+
+    .store-name {
+
+        font-size: 16px;
+
+        height: 44px;
+    }
+
+    .store-description {
+
+        font-size: 13px;
+
+        height: 62px;
+    }
+
+    .store-address {
+
+        font-size: 12px;
+
+        height: 38px;
+    }
+
+    .rating {
+
+        font-size: 12px;
+    }
+
+    .distance {
+
+        font-size: 13px;
+    }
+}
+
+@media(max-width:520px) {
+
+    .home-store-grid {
+
+        grid-template-columns: 1fr;
+    }
+}

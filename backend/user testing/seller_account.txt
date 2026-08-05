@@ -1,0 +1,20 @@
+Daftar Akun Seller
+1.  Password : adm1nBudi123
+    Email : PutraBahari@gmail.com
+    Hash : $2a$10$z.niaLlox2yZGathz.hjI.w5wUVxQgoJD2uQwJteEdSLEuCXg63ke
+
+2.  Password : Wij4y@Kusuma
+    Email : andiwijayakusuma@gmail.com
+    Hash : $2a$10$ayPtghtoiML6wY0secGL0OEY8ri8foyvRsu1g7erNLrVEZfA0Cxie
+
+3.  Password : Balad0col3kS@mbal
+    Email : warungmiranda2026@gmail.com
+    Hash : $2a$10$IHQjC67DjoX1AAvgoxvsUOzmGTqo8Tc0vFzftyneIvMHLK2Ulx546
+
+4.  Password : B3rk@hCuanB0s
+    Email : berkahnusantara@gmail.com
+    Hash : $2a$10$IHQjC67DjoX1AAvgoxvsUOzmGTqo8Tc0vFzftyneIvMHLK2Ulx546
+
+5.  Password : B3rk@hCuanB0s
+    Email : berkahnusantara@gmail.com
+    Hash : $2a$10$IHQjC67DjoX1AAvgoxvsUOzmGTqo8Tc0vFzftyneIvMHLK2Ulx546

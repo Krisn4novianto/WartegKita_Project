@@ -22,4 +22,3 @@ func CreateAddress(address models.UserAddress) error {
 		DoUpdates: clause.AssignmentColumns([]string{"label", "detail", "province_id", "province_name", "city_id", "city_name", "district_id", "district_name", "postal_code", "note", "latitude", "longitude", "updated_at"}),
 	}).Create(&address).Error
 }
-
