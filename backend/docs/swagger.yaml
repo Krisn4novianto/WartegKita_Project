@@ -1,0 +1,922 @@
+basePath: /api/v1
+definitions:
+  database.Wilayah:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  github_com_krisn4novianto_wartegkita_backend_database_seller.CustomerSeller:
+    properties:
+      address:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      owner:
+        type: string
+      phone:
+        type: string
+      rating:
+        type: number
+      store_name:
+        type: string
+    type: object
+  github_com_krisn4novianto_wartegkita_backend_database_seller.SellerProfile:
+    properties:
+      alamat:
+        type: string
+      bank:
+        type: string
+      deskripsi:
+        type: string
+      id:
+        type: integer
+      nama_pemilik:
+        type: string
+      nama_warteg:
+        type: string
+      nomor_hp:
+        type: string
+      nomor_rekening:
+        type: string
+      seller_id:
+        type: integer
+    type: object
+  models.SellerDashboard:
+    properties:
+      rata_rata_harian:
+        type: number
+      total_pembeli:
+        type: integer
+      total_pendapatan:
+        type: number
+      total_transaksi:
+        type: integer
+    type: object
+  models.UserAddress:
+    properties:
+      city_id:
+        example: 3201
+        type: integer
+      city_name:
+        example: Bogor
+        type: string
+      detail:
+        example: Jl. Merdeka No. 10
+        type: string
+      district_id:
+        example: 320101
+        type: integer
+      district_name:
+        example: Kecamatan Bogor Tengah
+        type: string
+      id:
+        example: 018f4a12-89cd-7b1e-9a2c-3f4e56789abc
+        type: string
+      label:
+        example: Rumah
+        type: string
+      latitude:
+        example: -6.597147
+        type: number
+      longitude:
+        example: 106.806038
+        type: number
+      note:
+        example: Pagar besi
+        type: string
+      postal_code:
+        example: "16111"
+        type: string
+      province_id:
+        example: 32
+        type: integer
+      province_name:
+        example: Jawa Barat
+        type: string
+      user_id:
+        example: 018f4a12-89cd-7b1e-9a2c-3f4e56789abc
+        type: string
+    type: object
+  routes.CreateOrderBody:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/routes.OrderItemInput'
+        type: array
+      payment_method:
+        example: CASH
+        type: string
+      seller_id:
+        example: 018f4a12-89cd-7b1e-9a2c-3f4e56789def
+        type: string
+      user_id:
+        example: 018f4a12-89cd-7b1e-9a2c-3f4e56789abc
+        type: string
+    type: object
+  routes.LoginBody:
+    properties:
+      email:
+        example: budi@example.com
+        type: string
+      password:
+        example: secret123
+        type: string
+    type: object
+  routes.OrderItemInput:
+    properties:
+      menu_id:
+        example: 018f4a12-89cd-7b1e-9a2c-3f4e56789ghi
+        type: string
+      quantity:
+        example: 2
+        type: integer
+    type: object
+  routes.RegisterBody:
+    properties:
+      email:
+        example: budi@example.com
+        type: string
+      name:
+        example: Budi Santoso
+        type: string
+      password:
+        example: secret123
+        type: string
+    type: object
+  routes.UpdateProfileBody:
+    properties:
+      email:
+        example: budi@example.com
+        type: string
+      name:
+        example: Budi Santoso
+        type: string
+    type: object
+  routes.UpdateStatusBody:
+    properties:
+      status:
+        enum:
+        - WAITING_CONFIRMATION
+        - CONFIRMED
+        - COOKING
+        - READY
+        - DELIVERED
+        - CANCELLED
+        example: CONFIRMED
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: WartegKita Team
+    url: https://github.com/Krisn4novianto/WartegKita_Project
+  description: REST API for WartegKita — connecting customers with traditional Indonesian
+    Warteg sellers.
+  title: WartegKita API
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate with email and password. Returns a token and user
+        profile data.
+      parameters:
+      - description: Login payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.LoginBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Login User
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new customer account
+      parameters:
+      - description: Register payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.RegisterBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register User
+      tags:
+      - Auth
+  /menus:
+    get:
+      description: Returns all menus. Filter by seller_id query param to get menus
+        for a specific seller.
+      parameters:
+      - description: Filter by seller ID
+        in: query
+        name: seller_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Menus
+      tags:
+      - Menus
+    post:
+      consumes:
+      - multipart/form-data
+      description: Create a new menu item. Accepts multipart/form-data to support
+        image upload.
+      parameters:
+      - description: Seller ID (UUID)
+        in: formData
+        name: seller_id
+        required: true
+        type: string
+      - description: Menu name
+        in: formData
+        name: name
+        required: true
+        type: string
+      - description: Menu description
+        in: formData
+        name: description
+        type: string
+      - description: Price
+        in: formData
+        name: price
+        required: true
+        type: number
+      - description: Stock quantity
+        in: formData
+        name: stock
+        type: integer
+      - description: Category name
+        in: formData
+        name: category
+        required: true
+        type: string
+      - description: Is available
+        in: formData
+        name: available
+        type: boolean
+      - description: Menu image file
+        in: formData
+        name: image
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create Menu
+      tags:
+      - Menus
+  /menus/{id}:
+    delete:
+      description: Permanently delete a menu item
+      parameters:
+      - description: Menu ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete Menu
+      tags:
+      - Menus
+    put:
+      consumes:
+      - multipart/form-data
+      description: Update an existing menu item by its ID
+      parameters:
+      - description: Menu ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Menu name
+        in: formData
+        name: name
+        type: string
+      - description: Menu description
+        in: formData
+        name: description
+        type: string
+      - description: Price
+        in: formData
+        name: price
+        type: number
+      - description: Stock quantity
+        in: formData
+        name: stock
+        type: integer
+      - description: Category
+        in: formData
+        name: category
+        type: string
+      - description: Is available
+        in: formData
+        name: available
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update Menu
+      tags:
+      - Menus
+  /orders:
+    get:
+      description: Returns all orders sorted by creation date (newest first)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List All Orders
+      tags:
+      - Orders
+    post:
+      consumes:
+      - application/json
+      description: Place a new order. Validates menus, calculates total, inserts in
+        a single DB transaction.
+      parameters:
+      - description: Order payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.CreateOrderBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create Order
+      tags:
+      - Orders
+  /orders/{id}:
+    get:
+      description: Returns full detail of a specific order including its line items
+      parameters:
+      - description: Order ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Order Detail
+      tags:
+      - Orders
+  /orders/{id}/pay:
+    put:
+      description: Mark an order as paid. Updates both order status and payment_status
+        to PAID.
+      parameters:
+      - description: Order ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Pay Order
+      tags:
+      - Orders
+  /orders/{id}/status:
+    put:
+      consumes:
+      - application/json
+      description: Update the seller-side order status (WAITING_CONFIRMATION, CONFIRMED,
+        COOKING, READY, DELIVERED, CANCELLED)
+      parameters:
+      - description: Order ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Status payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UpdateStatusBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update Order Status
+      tags:
+      - Orders
+  /sellers:
+    get:
+      description: Returns all registered warteg seller profiles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/github_com_krisn4novianto_wartegkita_backend_database_seller.CustomerSeller'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List All Sellers
+      tags:
+      - Sellers
+  /sellers/{seller_id}:
+    get:
+      description: Returns the full profile detail of a specific seller
+      parameters:
+      - description: Seller ID
+        in: path
+        name: seller_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Seller Detail
+      tags:
+      - Sellers
+  /sellers/{seller_id}/profile:
+    get:
+      description: Returns the internal profile data of a seller (nama warteg, pemilik,
+        bank, dll)
+      parameters:
+      - description: Seller ID
+        in: path
+        name: seller_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github_com_krisn4novianto_wartegkita_backend_database_seller.SellerProfile'
+      summary: Get Seller Profile
+      tags:
+      - Sellers
+    put:
+      consumes:
+      - application/json
+      description: Create or update the seller's internal profile (upsert by seller_id)
+      parameters:
+      - description: Seller ID
+        in: path
+        name: seller_id
+        required: true
+        type: integer
+      - description: Seller profile payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_krisn4novianto_wartegkita_backend_database_seller.SellerProfile'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update Seller Profile
+      tags:
+      - Sellers
+  /sellers/dashboard/{seller_id}:
+    get:
+      description: Returns revenue and transaction summary for a seller
+      parameters:
+      - description: Seller ID (UUID)
+        in: path
+        name: seller_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SellerDashboard'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Seller Dashboard
+      tags:
+      - Sellers
+  /users/address:
+    get:
+      description: Retrieve saved delivery address for the authenticated user (requires
+        Bearer JWT token)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get User Address
+      tags:
+      - Users
+    post:
+      consumes:
+      - application/json
+      description: Create or update delivery address for the authenticated user (requires
+        Bearer JWT token)
+      parameters:
+      - description: User address payload
+        in: body
+        name: address
+        required: true
+        schema:
+          $ref: '#/definitions/models.UserAddress'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Save User Address
+      tags:
+      - Users
+  /users/profile:
+    get:
+      description: Retrieve user profile for the authenticated user (requires Bearer
+        JWT token)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get User Profile
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: Update user's name and email (requires Bearer JWT token)
+      parameters:
+      - description: Profile update payload
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/routes.UpdateProfileBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Update User Profile
+      tags:
+      - Users
+  /wilayah/cities/{provinceId}:
+    get:
+      description: Returns all cities/regencies within a given province
+      parameters:
+      - description: Province ID
+        in: path
+        name: provinceId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Wilayah'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Cities by Province
+      tags:
+      - Wilayah
+  /wilayah/districts/{cityId}:
+    get:
+      description: Returns all districts (kecamatan) within a given city
+      parameters:
+      - description: City ID
+        in: path
+        name: cityId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Wilayah'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get Districts by City
+      tags:
+      - Wilayah
+  /wilayah/provinces:
+    get:
+      description: Returns a list of all Indonesian provinces
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/database.Wilayah'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get All Provinces
+      tags:
+      - Wilayah
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your JWT token as: Bearer <your_token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

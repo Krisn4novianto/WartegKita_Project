@@ -9,15 +9,7 @@ import (
 	"github.com/krisn4novianto/wartegkita/backend/models"
 )
 
-func CreateAddressRoutes(api *gin.RouterGroup) {
-
-	api.POST(
-		"/users/address",
-		createAddress,
-	)
-
-}
-
+// createAddress is handled by saveAddress in user_routes.go
 func createAddress(c *gin.Context) {
 
 	var address models.UserAddress

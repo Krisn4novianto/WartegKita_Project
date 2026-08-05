@@ -2,178 +2,97 @@ package seller
 
 import (
 	"github.com/krisn4novianto/wartegkita/backend/database"
+	"github.com/krisn4novianto/wartegkita/backend/models"
 )
 
-type Menu struct {
-	ID int `json:"id"`
+type Menu = models.Menu
 
-	SellerID int `json:"seller_id"`
+// =====================================================
+// GET MENUS
+// =====================================================
 
-	Name string `json:"name"`
-
-	Description string `json:"description"`
-
-	Price float64 `json:"price"`
-
-	Stock int `json:"stock"`
-
-	Category string `json:"category"`
-
-	Image string `json:"image"`
-
-	Available bool `json:"available"`
-
-	CreatedAt string `json:"created_at"`
-}
-
-// ================================
-// GET ALL MENU SELLER
-// ================================
-
-func GetMenus(
-	sellerID string,
-) ([]Menu, error) {
-
-	rows, err := database.SellerDB.Query(
-
-		`
-		SELECT
-			id,
-			seller_id,
-			name,
-			description,
-			price,
-			stock,
-			category,
-			image,
-			available,
-			created_at
-		FROM menus
-		WHERE seller_id=$1
-		ORDER BY created_at DESC
-		`,
-		sellerID,
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
+func GetMenus(sellerID string) ([]Menu, error) {
 
 	var menus []Menu
 
-	for rows.Next() {
+	query := database.DB.
+		Order("created_at DESC")
 
-		var menu Menu
-
-		err := rows.Scan(
-
-			&menu.ID,
-
-			&menu.SellerID,
-
-			&menu.Name,
-
-			&menu.Description,
-
-			&menu.Price,
-
-			&menu.Stock,
-
-			&menu.Category,
-
-			&menu.Image,
-
-			&menu.Available,
-
-			&menu.CreatedAt,
+	if sellerID != "" {
+		query = query.Where(
+			"seller_id = ?",
+			sellerID,
 		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		menus = append(
-			menus,
-			menu,
-		)
-
 	}
 
-	return menus, nil
+	err := query.Find(&menus).Error
 
+	return menus, err
 }
 
-// ================================
-// CREATE MENU
-// ================================
+// =====================================================
+// GET MENU
+// =====================================================
 
-func CreateMenu(
-	menu Menu,
+func GetMenu(id string) (Menu, error) {
+
+	var menu Menu
+
+	err := database.DB.
+		Where("id = ?", id).
+		First(&menu).
+		Error
+
+	return menu, err
+}
+
+// =====================================================
+// CREATE MENU
+// =====================================================
+
+func CreateMenu(menu Menu) error {
+
+	return database.DB.
+		Create(&menu).
+		Error
+}
+
+// =====================================================
+// UPDATE MENU
+// =====================================================
+
+func UpdateMenu(
+	id string,
+	sellerID string,
+	updates map[string]interface{},
 ) error {
 
-	_, err := database.SellerDB.Exec(
-
-		`
-		INSERT INTO menus
-		(
-			seller_id,
-			name,
-			description,
-			price,
-			stock,
-			category,
-			image,
-			available
-		)
-
-		VALUES
-		(
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7,
-			$8
-		)
-
-		`,
-
-		menu.SellerID,
-		menu.Name,
-		menu.Description,
-		menu.Price,
-		menu.Stock,
-		menu.Category,
-		menu.Image,
-		menu.Available,
-	)
-
-	return err
-
+	return database.DB.
+		Model(&Menu{}).
+		Where(
+			"id = ? AND seller_id = ?",
+			id,
+			sellerID,
+		).
+		Updates(updates).
+		Error
 }
 
-// ================================
+// =====================================================
 // DELETE MENU
-// ================================
+// =====================================================
 
 func DeleteMenu(
 	id string,
+	sellerID string,
 ) error {
 
-	_, err := database.SellerDB.Exec(
-
-		`
-		DELETE FROM menus
-		WHERE id=$1
-		`,
-
-		id,
-	)
-
-	return err
-
+	return database.DB.
+		Where(
+			"id = ? AND seller_id = ?",
+			id,
+			sellerID,
+		).
+		Delete(&Menu{}).
+		Error
 }

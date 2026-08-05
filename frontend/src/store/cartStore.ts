@@ -8,14 +8,16 @@ export interface CartItem {
 
 interface CartState {
   items: CartItem[];
+  storeId?: number | string;
+  setStoreId: (id?: number | string) => void;
 
   addItem: (menu: Menu) => void;
 
-  increase: (menuId: number) => void;
+  increase: (menuId: number | string) => void;
 
-  decrease: (menuId: number) => void;
+  decrease: (menuId: number | string) => void;
 
-  remove: (menuId: number) => void;
+  remove: (menuId: number | string) => void;
 
   clear: () => void;
 
@@ -26,6 +28,8 @@ export const useCartStore =
   create<CartState>((set, get) => ({
 
     items: [],
+    storeId: undefined,
+    setStoreId: (id) => set({ storeId: id }),
 
 
     // TAMBAH MENU KE KERANJANG

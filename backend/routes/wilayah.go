@@ -22,10 +22,14 @@ func CreateWilayahRoutes(api *gin.RouterGroup) {
 	wilayah.GET("/districts/:cityId", getDistricts)
 }
 
-// ========================================
-// GET PROVINCES
-// ========================================
-
+// getProvinces godoc
+// @Summary      Get All Provinces
+// @Description  Returns a list of all Indonesian provinces
+// @Tags         Wilayah
+// @Produce      json
+// @Success      200 {array}  database.Wilayah
+// @Failure      500 {object} map[string]string
+// @Router       /wilayah/provinces [get]
 func getProvinces(c *gin.Context) {
 
 	data, err := database.GetProvinces()
@@ -41,10 +45,16 @@ func getProvinces(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-// ========================================
-// GET CITIES
-// ========================================
-
+// getCities godoc
+// @Summary      Get Cities by Province
+// @Description  Returns all cities/regencies within a given province
+// @Tags         Wilayah
+// @Produce      json
+// @Param        provinceId path int true "Province ID"
+// @Success      200 {array}  database.Wilayah
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /wilayah/cities/{provinceId} [get]
 func getCities(c *gin.Context) {
 
 	provinceID, err := strconv.Atoi(c.Param("provinceId"))
@@ -70,10 +80,16 @@ func getCities(c *gin.Context) {
 	c.JSON(http.StatusOK, data)
 }
 
-// ========================================
-// GET DISTRICTS
-// ========================================
-
+// getDistricts godoc
+// @Summary      Get Districts by City
+// @Description  Returns all districts (kecamatan) within a given city
+// @Tags         Wilayah
+// @Produce      json
+// @Param        cityId path int true "City ID"
+// @Success      200 {array}  database.Wilayah
+// @Failure      400 {object} map[string]string
+// @Failure      500 {object} map[string]string
+// @Router       /wilayah/districts/{cityId} [get]
 func getDistricts(c *gin.Context) {
 
 	cityID, err := strconv.Atoi(c.Param("cityId"))

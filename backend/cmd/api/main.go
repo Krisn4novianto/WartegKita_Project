@@ -1,146 +1,194 @@
+// Package main is the entry point for the WartegKita API server.
+//
+//	@title			WartegKita API
+//	@version		1.0
+//	@description	REST API for WartegKita — connecting customers with traditional Indonesian Warteg sellers.
+//	@contact.name	WartegKita Team
+//	@contact.url	https://github.com/Krisn4novianto/WartegKita_Project
+//	@host			localhost:8080
+//	@BasePath		/api/v1
+//	@securityDefinitions.apikey BearerAuth
+//	@in header
+//	@name Authorization
+//	@description Enter your JWT token as: Bearer <your_token>
+
 package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
 	"github.com/krisn4novianto/wartegkita/backend/database"
-	sellerDB "github.com/krisn4novianto/wartegkita/backend/database/seller"
+	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
+
+	_ "github.com/krisn4novianto/wartegkita/backend/docs"
+
 	"github.com/krisn4novianto/wartegkita/backend/routes"
 )
 
 func main() {
 
-	// =========================
+	// =====================================================
 	// LOAD ENV
-	// =========================
+	// =====================================================
 
 	if err := godotenv.Load(); err != nil {
-
-		log.Println(".env tidak ditemukan")
-
+		log.Println(
+			"⚠️ .env tidak ditemukan, menggunakan environment variable",
+		)
 	}
 
-	// =========================
-	// DATABASE CUSTOMER
-	// =========================
+	// =====================================================
+	// DATABASE
+	// =====================================================
 
 	database.Connect()
 
-	// =========================
-	// DATABASE SELLER
-	// =========================
+	// =====================================================
+	// SELLER PROFILE TABLE
+	// =====================================================
 
-	database.ConnectSellerDB()
+	sellerdb.CreateSellerProfileTable()
 
-	// =========================
-	// CREATE TABLE CUSTOMER
-	// =========================
-
-	database.CreateUserTables()
-
-	database.CreateOrderTable()
-
-	database.CreateOrderItemsTable()
-
-	// =========================
-	// CREATE TABLE SELLER
-	// =========================
-
-	sellerDB.CreateSellerPendapatanTable(
-		database.SellerDB,
-	)
-
-	// =========================
-	// CLEANUP ORDER
-	// =========================
+	// =====================================================
+	// CLEANUP EXPIRED ORDERS
+	// =====================================================
 
 	database.DeleteExpiredOrders()
 
-	// =========================
+	// =====================================================
+	// CHAT TABLE
+	// =====================================================
+	//
+	// Membuat / memastikan tabel:
+	//
+	// - chat_rooms
+	// - bubble_chats
+	//
+	// =====================================================
+
+	database.CreateChatTables()
+
+	// =====================================================
+	// CLEANUP EXPIRED ORDERS
+	// =====================================================
+
+	database.DeleteExpiredOrders()
+
+	// =====================================================
 	// PORT
-	// =========================
+	// =====================================================
 
 	port := os.Getenv("PORT")
 
 	if port == "" {
-
 		port = "8080"
-
 	}
 
-	// =========================
+	// =====================================================
 	// GIN ROUTER
-	// =========================
+	// =====================================================
 
 	router := gin.Default()
 
-	// =========================
-	// STATIC IMAGE UPLOAD
-	// =========================
+	// =====================================================
+	// CORS
+	// =====================================================
 
-	router.Static(
-		"/uploads",
-		"./uploads",
+	router.Use(
+		cors.New(
+			cors.Config{
+				AllowOrigins: []string{
+					"http://localhost:5173",
+					"http://localhost:5174",
+					"http://localhost:5175",
+
+					"http://127.0.0.1:5173",
+					"http://127.0.0.1:5174",
+					"http://127.0.0.1:5175",
+				},
+
+				AllowMethods: []string{
+					http.MethodGet,
+					http.MethodPost,
+					http.MethodPut,
+					http.MethodPatch,
+					http.MethodDelete,
+					http.MethodOptions,
+				},
+
+				AllowHeaders: []string{
+					"Origin",
+					"Content-Type",
+					"Accept",
+					"Authorization",
+					"X-Requested-With",
+				},
+
+				ExposeHeaders: []string{
+					"Content-Length",
+					"Content-Type",
+				},
+
+				AllowCredentials: true,
+
+				OptionsResponseStatusCode: http.StatusNoContent,
+			},
+		),
 	)
 
-	// =========================
-	// CORS
-	// =========================
+	// =====================================================
+	// SWAGGER
+	// =====================================================
 
-	router.Use(cors.New(cors.Config{
+	router.GET(
+		"/docs/*any",
+		ginSwagger.WrapHandler(
+			swaggerFiles.Handler,
+		),
+	)
 
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://localhost:5174",
-			"http://localhost:5175",
+	router.GET(
+		"/docs",
+		func(c *gin.Context) {
+			c.Redirect(
+				http.StatusMovedPermanently,
+				"/docs/index.html",
+			)
 		},
+	)
 
-		AllowMethods: []string{
-			"GET",
-			"POST",
-			"PUT",
-			"PATCH",
-			"DELETE",
-			"OPTIONS",
-		},
+	// =====================================================
+	// API ROUTES
+	// =====================================================
 
-		AllowHeaders: []string{
-			"Origin",
-			"Content-Type",
-			"Accept",
-			"Authorization",
-		},
-
-		ExposeHeaders: []string{
-			"Content-Length",
-		},
-
-		AllowCredentials: true,
-	}))
-
-	// =========================
-	// ROUTES
-	// =========================
-
+	// routes.Register() menangani:
+	// - /uploads
+	// - /api/v1/*
+	//
+	// Jadi jangan daftarkan /uploads lagi di main.go.
 	routes.Register(router)
 
-	// =========================
-	// RUN SERVER
-	// =========================
+	// =====================================================
+	// START SERVER
+	// =====================================================
 
 	log.Println(
-		"🚀 WartegKita API running on http://localhost:" + port,
+		"🚀 WartegKita API running on :" + port,
 	)
 
 	if err := router.Run(":" + port); err != nil {
-
-		log.Fatal(err)
-
+		log.Fatal(
+			"❌ Gagal menjalankan server:",
+			err,
+		)
 	}
-
 }

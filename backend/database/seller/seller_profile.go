@@ -1,182 +1,552 @@
 package seller
 
 import (
+	"errors"
+	"log"
+	"strings"
+	"time"
+
+	"gorm.io/gorm"
+
 	"github.com/krisn4novianto/wartegkita/backend/database"
+	"github.com/krisn4novianto/wartegkita/backend/models"
 )
 
-// =====================================
-// SELLER PROFILE MODEL
-// =====================================
+// =====================================================
+// TYPE ALIAS
+// =====================================================
 
-type SellerProfile struct {
-	ID            int    `json:"id"`
-	SellerID      int    `json:"seller_id"`
-	NamaWarteg    string `json:"nama_warteg"`
-	NamaPemilik   string `json:"nama_pemilik"`
-	NomorHP       string `json:"nomor_hp"`
-	Alamat        string `json:"alamat"`
-	Deskripsi     string `json:"deskripsi"`
-	Bank          string `json:"bank"`
-	NomorRekening string `json:"nomor_rekening"`
+type SellerProfile = models.SellerProfile
+type CustomerSeller = models.CustomerSeller
+
+// =====================================================
+// CONSTANT
+// =====================================================
+
+const jakartaTimezone = "Asia/Jakarta"
+
+// =====================================================
+// CREATE / MIGRATE SELLER PROFILE TABLE
+// =====================================================
+
+func CreateSellerProfileTable() {
+
+	if database.DB == nil {
+		log.Println("❌ Database belum terhubung")
+		return
+	}
+
+	if err := database.DB.AutoMigrate(
+		&models.SellerProfile{},
+	); err != nil {
+
+		log.Println(
+			"❌ Gagal migrate tabel seller_profiles:",
+			err,
+		)
+
+		return
+	}
+
+	log.Println(
+		"✅ Tabel seller_profiles berhasil dibuat / dimigrasikan",
+	)
 }
 
-type CustomerSeller struct {
-	ID          int     `json:"id"`
-	StoreName   string  `json:"store_name"`
-	Description string  `json:"description"`
-	Address     string  `json:"address"`
-	Owner       string  `json:"owner"`
-	Phone       string  `json:"phone"`
-	Rating      float64 `json:"rating"`
-}
-
-// =====================================
+// =====================================================
 // GET SELLER PROFILE
-// =====================================
+// =====================================================
 
-func GetProfile(sellerID string) (SellerProfile, error) {
+func GetProfile(
+	sellerID string,
+) (SellerProfile, error) {
 
 	var profile SellerProfile
 
-	err := database.SellerDB.QueryRow(
+	if database.DB == nil {
+		return profile, errors.New(
+			"database belum terhubung",
+		)
+	}
 
-		`
-		SELECT
-			id,
-			seller_id,
-			nama_warteg,
-			nama_pemilik,
-			nomor_hp,
-			alamat,
-			deskripsi,
-			bank,
-			nomor_rekening
-		FROM seller_profile
-		WHERE seller_id = $1
-		`,
-		sellerID,
-	).Scan(
+	sellerID = strings.TrimSpace(sellerID)
 
-		&profile.ID,
-		&profile.SellerID,
-		&profile.NamaWarteg,
-		&profile.NamaPemilik,
-		&profile.NomorHP,
-		&profile.Alamat,
-		&profile.Deskripsi,
-		&profile.Bank,
-		&profile.NomorRekening,
-	)
+	if sellerID == "" {
+		return profile, errors.New(
+			"seller ID tidak boleh kosong",
+		)
+	}
 
-	return profile, err
+	err := database.DB.
+		Where(
+			"seller_id = ?",
+			sellerID,
+		).
+		First(&profile).
+		Error
+
+	if err != nil {
+		return profile, err
+	}
+
+	profile.UserID = strings.TrimSpace(profile.UserID)
+
+	profile.JamBuka =
+		normalizeOperationalTime(profile.JamBuka)
+
+	profile.JamTutup =
+		normalizeOperationalTime(profile.JamTutup)
+
+	return profile, nil
 }
 
-// =====================================
-// SAVE / UPDATE PROFILE
-// =====================================
+// =====================================================
+// SAVE / UPDATE SELLER PROFILE
+// =====================================================
 
 func SaveProfile(
 	sellerID string,
+	userID string,
 	data SellerProfile,
 ) error {
 
-	_, err := database.SellerDB.Exec(
-
-		`
-		INSERT INTO seller_profile
-		(
-			seller_id,
-			nama_warteg,
-			nama_pemilik,
-			nomor_hp,
-			alamat,
-			deskripsi,
-			bank,
-			nomor_rekening,
-			updated_at
+	if database.DB == nil {
+		return errors.New(
+			"database belum terhubung",
 		)
-		VALUES
-		(
-			$1,
-			$2,
-			$3,
-			$4,
-			$5,
-			$6,
-			$7,
-			$8,
-			NOW()
+	}
+
+	sellerID = strings.TrimSpace(sellerID)
+	userID = strings.TrimSpace(userID)
+
+	if sellerID == "" {
+		return errors.New(
+			"seller ID tidak boleh kosong",
 		)
+	}
 
-		ON CONFLICT (seller_id)
-		DO UPDATE SET
-			nama_warteg = EXCLUDED.nama_warteg,
-			nama_pemilik = EXCLUDED.nama_pemilik,
-			nomor_hp = EXCLUDED.nomor_hp,
-			alamat = EXCLUDED.alamat,
-			deskripsi = EXCLUDED.deskripsi,
-			bank = EXCLUDED.bank,
-			nomor_rekening = EXCLUDED.nomor_rekening,
-			updated_at = NOW()
-		`,
+	if userID == "" {
+		return errors.New(
+			"user ID tidak boleh kosong",
+		)
+	}
 
-		sellerID,
-		data.NamaWarteg,
-		data.NamaPemilik,
-		data.NomorHP,
-		data.Alamat,
-		data.Deskripsi,
-		data.Bank,
-		data.NomorRekening,
-	)
+	// =================================================
+	// FORCE OWNERSHIP
+	// =================================================
 
-	return err
+	data.SellerID = sellerID
+	data.UserID = userID
+
+	// =================================================
+	// NORMALIZE BASIC DATA
+	// =================================================
+
+	data.NamaWarteg = strings.TrimSpace(data.NamaWarteg)
+	data.NamaPemilik = strings.TrimSpace(data.NamaPemilik)
+	data.NomorHP = strings.TrimSpace(data.NomorHP)
+	data.Alamat = strings.TrimSpace(data.Alamat)
+	data.Deskripsi = strings.TrimSpace(data.Deskripsi)
+
+	// =================================================
+	// NORMALIZE JAM
+	// =================================================
+
+	data.JamBuka =
+		normalizeOperationalTime(data.JamBuka)
+
+	data.JamTutup =
+		normalizeOperationalTime(data.JamTutup)
+
+	// =================================================
+	// NORMALIZE BANK
+	// =================================================
+
+	data.Bank = strings.TrimSpace(data.Bank)
+	data.NomorRekening = strings.TrimSpace(data.NomorRekening)
+	data.NamaRekening = strings.TrimSpace(data.NamaRekening)
+
+	// =================================================
+	// CEK EXISTING
+	// =================================================
+
+	var existing SellerProfile
+
+	err := database.DB.
+		Where(
+			"seller_id = ?",
+			sellerID,
+		).
+		First(&existing).
+		Error
+
+	// =================================================
+	// UPDATE
+	// =================================================
+
+	if err == nil {
+
+		updateData := map[string]interface{}{
+
+			"user_id": userID,
+
+			"nama_warteg":  data.NamaWarteg,
+			"nama_pemilik": data.NamaPemilik,
+			"nomor_hp":     data.NomorHP,
+			"alamat":       data.Alamat,
+			"deskripsi":    data.Deskripsi,
+
+			"jam_buka":  data.JamBuka,
+			"jam_tutup": data.JamTutup,
+
+			"latitude":  data.Latitude,
+			"longitude": data.Longitude,
+
+			"bank":              data.Bank,
+			"nomor_rekening":    data.NomorRekening,
+			"rekening_verified": data.RekeningVerified,
+			"nama_rekening":     data.NamaRekening,
+		}
+
+		return database.DB.
+			Model(&existing).
+			Updates(updateData).
+			Error
+	}
+
+	// =================================================
+	// DATABASE ERROR
+	// =================================================
+
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+
+	// =================================================
+	// CREATE
+	// =================================================
+
+	data.SellerID = sellerID
+	data.UserID = userID
+
+	return database.DB.
+		Create(&data).
+		Error
 }
 
-// =====================================
-// GET ALL SELLERS
-// =====================================
+// =====================================================
+// NORMALIZE OPERATIONAL TIME
+// =====================================================
 
-func GetAllProfiles() ([]CustomerSeller, error) {
+func normalizeOperationalTime(
+	value string,
+) string {
 
-	rows, err := database.SellerDB.Query(`
-		SELECT
-			seller_id,
-			nama_warteg,
-			deskripsi,
-			alamat,
-			nama_pemilik,
-			nomor_hp
-		FROM seller_profile
-		ORDER BY nama_warteg
-	`)
+	value = strings.TrimSpace(value)
+
+	if value == "" {
+		return ""
+	}
+
+	location, err := time.LoadLocation(
+		jakartaTimezone,
+	)
+
+	if err != nil {
+		return value
+	}
+
+	parsed, err := parseOperationalTime(
+		value,
+		location,
+	)
+
+	if err != nil {
+		return value
+	}
+
+	return parsed.Format("15:04")
+}
+
+// =====================================================
+// PARSE OPERATIONAL TIME
+// =====================================================
+
+func parseOperationalTime(
+	value string,
+	location *time.Location,
+) (time.Time, error) {
+
+	value = strings.TrimSpace(value)
+
+	if value == "" {
+		return time.Time{}, errors.New(
+			"jam kosong",
+		)
+	}
+
+	formats := []string{
+		"15:04",
+		"15:04:05",
+	}
+
+	for _, format := range formats {
+
+		parsed, err := time.ParseInLocation(
+			format,
+			value,
+			location,
+		)
+
+		if err == nil {
+			return parsed, nil
+		}
+	}
+
+	return time.Time{}, errors.New(
+		"format jam tidak valid",
+	)
+}
+
+// =====================================================
+// CALCULATE SELLER OPEN STATUS
+// =====================================================
+
+func CalculateIsOpen(
+	openingTime string,
+	closingTime string,
+) bool {
+
+	openingTime = strings.TrimSpace(openingTime)
+	closingTime = strings.TrimSpace(closingTime)
+
+	if openingTime == "" ||
+		closingTime == "" {
+		return false
+	}
+
+	location, err := time.LoadLocation(
+		jakartaTimezone,
+	)
+
+	if err != nil {
+		return false
+	}
+
+	now := time.Now().In(location)
+
+	open, err := parseOperationalTime(
+		openingTime,
+		location,
+	)
+
+	if err != nil {
+		return false
+	}
+
+	closeTime, err := parseOperationalTime(
+		closingTime,
+		location,
+	)
+
+	if err != nil {
+		return false
+	}
+
+	currentMinutes :=
+		now.Hour()*60 +
+			now.Minute()
+
+	openingMinutes :=
+		open.Hour()*60 +
+			open.Minute()
+
+	closingMinutes :=
+		closeTime.Hour()*60 +
+			closeTime.Minute()
+
+	if openingMinutes == closingMinutes {
+		return false
+	}
+
+	if openingMinutes < closingMinutes {
+
+		return currentMinutes >= openingMinutes &&
+			currentMinutes < closingMinutes
+	}
+
+	return currentMinutes >= openingMinutes ||
+		currentMinutes < closingMinutes
+}
+
+// =====================================================
+// ENSURE SELLER PROFILE
+// =====================================================
+
+func EnsureProfile(
+	sellerID string,
+	userID string,
+	sellerName string,
+) (SellerProfile, error) {
+
+	if database.DB == nil {
+		return SellerProfile{}, errors.New(
+			"database belum terhubung",
+		)
+	}
+
+	sellerID = strings.TrimSpace(sellerID)
+	userID = strings.TrimSpace(userID)
+	sellerName = strings.TrimSpace(sellerName)
+
+	if sellerID == "" {
+		return SellerProfile{}, errors.New(
+			"seller ID tidak boleh kosong",
+		)
+	}
+
+	if userID == "" {
+		return SellerProfile{}, errors.New(
+			"user ID tidak boleh kosong",
+		)
+	}
+
+	profile, err := GetProfile(sellerID)
+
+	if err == nil {
+
+		// =================================================
+		// REPAIR OWNERSHIP
+		// =================================================
+
+		if strings.TrimSpace(profile.UserID) != userID {
+
+			if err := database.DB.
+				Model(&SellerProfile{}).
+				Where(
+					"seller_id = ?",
+					sellerID,
+				).
+				Update(
+					"user_id",
+					userID,
+				).
+				Error; err != nil {
+
+				return SellerProfile{}, err
+			}
+
+			profile.UserID = userID
+		}
+
+		return profile, nil
+	}
+
+	if !errors.Is(
+		err,
+		gorm.ErrRecordNotFound,
+	) {
+		return SellerProfile{}, err
+	}
+
+	profile = SellerProfile{
+
+		SellerID: sellerID,
+		UserID:   userID,
+
+		NamaWarteg:  sellerName,
+		NamaPemilik: sellerName,
+
+		NomorHP:   "",
+		Alamat:    "",
+		Deskripsi: "",
+
+		JamBuka:  "",
+		JamTutup: "",
+
+		Latitude:  0,
+		Longitude: 0,
+
+		Bank:             "",
+		NomorRekening:    "",
+		RekeningVerified: false,
+		NamaRekening:     "",
+	}
+
+	if err := SaveProfile(
+		sellerID,
+		userID,
+		profile,
+	); err != nil {
+		return SellerProfile{}, err
+	}
+
+	return GetProfile(sellerID)
+}
+
+// =====================================================
+// GET ALL SELLER PROFILES
+// =====================================================
+
+func GetAllProfiles() (
+	[]CustomerSeller,
+	error,
+) {
+
+	if database.DB == nil {
+		return nil, errors.New(
+			"database belum terhubung",
+		)
+	}
+
+	var profiles []SellerProfile
+
+	err := database.DB.
+		Order("nama_warteg ASC").
+		Find(&profiles).
+		Error
+
 	if err != nil {
 		return nil, err
 	}
 
-	defer rows.Close()
+	sellers := make(
+		[]CustomerSeller,
+		0,
+		len(profiles),
+	)
 
-	var sellers []CustomerSeller
+	for _, p := range profiles {
 
-	for rows.Next() {
+		openingTime :=
+			normalizeOperationalTime(p.JamBuka)
 
-		var s CustomerSeller
+		closingTime :=
+			normalizeOperationalTime(p.JamTutup)
 
-		err := rows.Scan(
-			&s.ID,
-			&s.StoreName,
-			&s.Description,
-			&s.Address,
-			&s.Owner,
-			&s.Phone,
+		isOpen := CalculateIsOpen(
+			openingTime,
+			closingTime,
 		)
-		if err != nil {
-			return nil, err
-		}
 
-		s.Rating = 0
+		sellers = append(
+			sellers,
+			CustomerSeller{
 
-		sellers = append(sellers, s)
+				ID: p.SellerID,
+
+				StoreName:   p.NamaWarteg,
+				Description: p.Deskripsi,
+				Address:     p.Alamat,
+				Owner:       p.NamaPemilik,
+				Phone:       p.NomorHP,
+
+				OpeningTime: openingTime,
+				ClosingTime: closingTime,
+
+				IsOpen: isOpen,
+			},
+		)
 	}
 
 	return sellers, nil

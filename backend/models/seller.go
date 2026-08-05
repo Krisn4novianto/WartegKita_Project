@@ -1,35 +1,147 @@
 package models
 
 import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
-type Seller struct {
-	ID bson.ObjectID `bson:"_id,omitempty" json:"id"`
+// =====================================================
+// SELLER PROFILE
+// =====================================================
 
-	StoreName string `bson:"store_name" json:"store_name"`
+type SellerProfile struct {
+	// =================================================
+	// PRIMARY KEY
+	// =================================================
 
-	Description string `bson:"description" json:"description"`
+	ID string `json:"id" gorm:"column:id;type:uuid;primaryKey"`
 
-	Address string `bson:"address" json:"address"`
+	// =================================================
+	// RELATION
+	// =================================================
 
-	Phone string `bson:"phone" json:"phone"`
+	SellerID string `json:"seller_id" gorm:"column:seller_id;type:uuid;uniqueIndex;not null"`
 
-	Image string `bson:"image" json:"image"`
+	UserID string `json:"user_id" gorm:"column:user_id;type:uuid"`
 
-	IsOpen bool `bson:"is_open" json:"is_open"`
+	// =================================================
+	// PROFILE
+	// =================================================
 
-	Rating float64 `bson:"rating" json:"rating"`
+	NamaWarteg string `json:"nama_warteg" gorm:"column:nama_warteg"`
 
-	DistanceKM float64 `bson:"distance_km" json:"distance_km"`
+	NamaPemilik string `json:"nama_pemilik" gorm:"column:nama_pemilik"`
 
-	Latitude float64 `bson:"latitude" json:"latitude"`
+	NomorHP string `json:"nomor_hp" gorm:"column:nomor_hp"`
 
-	Longitude float64 `bson:"longitude" json:"longitude"`
+	Alamat string `json:"alamat" gorm:"column:alamat"`
 
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
+	Deskripsi string `json:"deskripsi" gorm:"column:deskripsi"`
 
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+	// =================================================
+	// JAM OPERASIONAL
+	// =================================================
+
+	JamBuka string `json:"jam_buka" gorm:"column:jam_buka"`
+
+	JamTutup string `json:"jam_tutup" gorm:"column:jam_tutup"`
+
+	// =================================================
+	// LOKASI WARTEG
+	// =================================================
+
+	Latitude float64 `json:"latitude" gorm:"column:latitude"`
+
+	Longitude float64 `json:"longitude" gorm:"column:longitude"`
+
+	// =================================================
+	// BANK
+	// =================================================
+
+	Bank string `json:"bank" gorm:"column:bank"`
+
+	NomorRekening string `json:"nomor_rekening" gorm:"column:nomor_rekening"`
+
+	NamaRekening string `json:"nama_rekening" gorm:"column:nama_rekening"`
+
+	RekeningVerified bool `json:"rekening_verified" gorm:"column:rekening_verified"`
+
+	// =================================================
+	// TIMESTAMP
+	// =================================================
+
+	CreatedAt string `json:"created_at" gorm:"column:created_at"`
+
+	UpdatedAt string `json:"updated_at" gorm:"column:updated_at"`
+}
+
+// =====================================================
+// GENERATE SELLER PROFILE ID
+// =====================================================
+//
+// PostgreSQL:
+//
+// seller_profiles.id = UUID
+//
+// Kalau ID belum diberikan ketika Create(),
+// otomatis generate UUID.
+//
+
+func (s *SellerProfile) BeforeCreate(tx *gorm.DB) error {
+
+	if s.ID == "" {
+		s.ID = uuid.New().String()
+	}
+
+	return nil
+}
+
+// =====================================================
+// CUSTOMER SELLER
+// =====================================================
+//
+// Data seller yang dikirim ke customer / Explore page.
+//
+
+type CustomerSeller struct {
+
+	// =================================================
+	// IDENTIFIER
+	// =================================================
+
+	ID string `json:"id"`
+
+	// =================================================
+	// PROFILE
+	// =================================================
+
+	StoreName string `json:"store_name"`
+
+	Description string `json:"description"`
+
+	Address string `json:"address"`
+
+	Owner string `json:"owner"`
+
+	Phone string `json:"phone"`
+
+	// =================================================
+	// JAM OPERASIONAL
+	// =================================================
+
+	OpeningTime string `json:"opening_time"`
+
+	ClosingTime string `json:"closing_time"`
+
+	IsOpen bool `json:"is_open"`
+
+	// =================================================
+	// DATA DINAMIS CUSTOMER
+	// =================================================
+
+	Rating float64 `json:"rating"`
+
+	DistanceKM float64 `json:"distance_km"`
+
+	TotalMenu int `json:"total_menu"`
 }

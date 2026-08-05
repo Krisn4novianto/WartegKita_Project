@@ -1,408 +1,750 @@
 package controllers
 
 import (
-	"database/sql"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
+	"github.com/krisn4novianto/wartegkita/backend/models"
 )
 
-// =====================================
-// GET MENU
-// =====================================
+// =====================================================
+// GET MENUS
+// =====================================================
+
 func GetMenuController(c *gin.Context) {
 
 	sellerID := c.Query("seller_id")
 
-	var rows *sql.Rows
-	var err error
+	if sellerID == "" {
+		sellerID = c.Param("seller_id")
+	}
+
+	var menus []models.Menu
+
+	query := database.DB.
+		Preload("Seller").
+		Order("created_at DESC")
 
 	if sellerID != "" {
 
-		rows, err =
-			database.SellerDB.Query(
-				`
-				SELECT
-					id,
-					seller_id,
-					name,
-					description,
-					price,
-					stock,
-					category,
-					image,
-					available,
-					created_at
-				FROM menus
-				WHERE seller_id=$1
-				ORDER BY created_at DESC
-				`,
-				sellerID,
-			)
+		if _, err := uuid.Parse(sellerID); err != nil {
 
-	} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "seller_id harus berupa UUID yang valid",
+			})
 
-		rows, err =
-			database.SellerDB.Query(
-				`
-				SELECT
-					id,
-					seller_id,
-					name,
-					description,
-					price,
-					stock,
-					category,
-					image,
-					available,
-					created_at
-				FROM menus
-				ORDER BY created_at DESC
-				`,
-			)
-
-	}
-
-	if err != nil {
-
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-
-	}
-
-	if err != nil {
-
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-
-		return
-
-	}
-
-	defer rows.Close()
-
-	menus := []gin.H{}
-
-	for rows.Next() {
-
-		var (
-			id           int
-			menuSellerID int
-			name         string
-			description  string
-			price        float64
-			stock        int
-			category     string
-			image        string
-			available    bool
-			createdAt    string
-		)
-
-		err :=
-			rows.Scan(
-				&id,
-				&menuSellerID,
-				&name,
-				&description,
-				&price,
-				&stock,
-				&category,
-				&image,
-				&available,
-				&createdAt,
-			)
-
-		if err != nil {
-			continue
+			return
 		}
 
-		menus = append(
-			menus,
-			gin.H{
-
-				"id": id,
-
-				"seller_id": menuSellerID,
-
-				"name": name,
-
-				"description": description,
-
-				"price": price,
-
-				"stock": stock,
-
-				"category": category,
-
-				"image": image,
-
-				"available": available,
-
-				"created_at": createdAt,
-			},
+		query = query.Where(
+			"seller_id = ?",
+			sellerID,
 		)
-
 	}
 
-	c.JSON(
-		200,
-		menus,
-	)
+	if err := query.Find(&menus).Error; err != nil {
 
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, menus)
 }
+
+// =====================================================
+// CREATE MENU
+// =====================================================
 
 func CreateMenuController(c *gin.Context) {
 
-	fmt.Println("===== CREATE MENU =====")
+	fmt.Println("====================================")
+	fmt.Println("CREATE MENU")
+	fmt.Println("====================================")
 
-	fmt.Println("seller_id:", c.PostForm("seller_id"))
-	fmt.Println("name:", c.PostForm("name"))
-	fmt.Println("description:", c.PostForm("description"))
-	fmt.Println("price:", c.PostForm("price"))
-	fmt.Println("stock:", c.PostForm("stock"))
-	fmt.Println("category:", c.PostForm("category"))
-	fmt.Println("available:", c.PostForm("available"))
+	// =================================================
+	// GET FORM DATA
+	// =================================================
 
-	sellerID := toInt(
+	sellerID := strings.TrimSpace(
 		c.PostForm("seller_id"),
 	)
 
-	price := toFloat(
+	name := strings.TrimSpace(
+		c.PostForm("name"),
+	)
+
+	description := strings.TrimSpace(
+		c.PostForm("description"),
+	)
+
+	priceStr := strings.TrimSpace(
 		c.PostForm("price"),
 	)
 
-	stock := toInt(
+	stockStr := strings.TrimSpace(
 		c.PostForm("stock"),
 	)
 
-	available :=
-		c.PostForm("available") == "true"
+	category := strings.TrimSpace(
+		c.PostForm("category"),
+	)
 
-	// IMAGE
+	availableStr := strings.TrimSpace(
+		c.PostForm("available"),
+	)
+
+	fmt.Println("seller_id :", sellerID)
+	fmt.Println("name      :", name)
+	fmt.Println("price     :", priceStr)
+	fmt.Println("stock     :", stockStr)
+	fmt.Println("category  :", category)
+	fmt.Println("available :", availableStr)
+
+	// =================================================
+	// VALIDATE SELLER ID
+	// =================================================
+
+	if sellerID == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "seller_id wajib diisi",
+		})
+
+		return
+	}
+
+	if _, err := uuid.Parse(sellerID); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "seller_id bukan UUID yang valid",
+		})
+
+		return
+	}
+
+	// =================================================
+	// VALIDATE NAME
+	// =================================================
+
+	if name == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Nama menu wajib diisi",
+		})
+
+		return
+	}
+
+	// =================================================
+	// VALIDATE CATEGORY
+	// =================================================
+
+	if category == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Kategori menu wajib diisi",
+		})
+
+		return
+	}
+
+	// =================================================
+	// PARSE PRICE
+	// =================================================
+
+	price, err := strconv.ParseFloat(
+		priceStr,
+		64,
+	)
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Format harga tidak valid",
+			"detail": err.Error(),
+		})
+
+		return
+	}
+
+	if price <= 0 {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Harga harus lebih dari 0",
+		})
+
+		return
+	}
+
+	// =================================================
+	// PARSE STOCK
+	// =================================================
+
+	stock, err := strconv.Atoi(
+		stockStr,
+	)
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "Format stok tidak valid",
+			"detail": err.Error(),
+		})
+
+		return
+	}
+
+	if stock < 0 {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Stok tidak boleh kurang dari 0",
+		})
+
+		return
+	}
+
+	// =================================================
+	// PARSE AVAILABLE
+	// =================================================
+
+	available := true
+
+	if availableStr != "" {
+
+		available, err = strconv.ParseBool(
+			availableStr,
+		)
+
+		if err != nil {
+
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Format available tidak valid",
+			})
+
+			return
+		}
+	}
+
+	// =================================================
+	// IMAGE UPLOAD
+	// =================================================
 
 	imageURL := ""
 
 	file, err := c.FormFile("image")
 
-	if err == nil {
+	if err == nil && file != nil {
 
-		uploadPath :=
-			"./uploads/" + file.Filename
+		// ---------------------------------------------
+		// VALIDATE IMAGE EXTENSION
+		// ---------------------------------------------
 
-		err =
-			c.SaveUploadedFile(
-				file,
-				uploadPath,
+		extension :=
+			strings.ToLower(
+				filepath.Ext(file.Filename),
 			)
 
-		if err != nil {
+		allowedExtensions :=
+			map[string]bool{
+				".jpg":  true,
+				".jpeg": true,
+				".png":  true,
+				".webp": true,
+			}
 
-			c.JSON(
-				500,
-				gin.H{
-					"error": "Gagal upload gambar",
-				},
+		if !allowedExtensions[extension] {
+
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Format gambar harus JPG, JPEG, PNG, atau WEBP",
+			})
+
+			return
+		}
+
+		// ---------------------------------------------
+		// CREATE UPLOAD DIRECTORY
+		// ---------------------------------------------
+
+		uploadDir := "./uploads"
+
+		if err := os.MkdirAll(
+			uploadDir,
+			0755,
+		); err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Gagal membuat folder upload",
+			})
+
+			return
+		}
+
+		// ---------------------------------------------
+		// GENERATE UNIQUE FILE NAME
+		// ---------------------------------------------
+
+		fileName :=
+			uuid.New().String() +
+				extension
+
+		filePath :=
+			filepath.Join(
+				uploadDir,
+				fileName,
 			)
+
+		// ---------------------------------------------
+		// SAVE FILE
+		// ---------------------------------------------
+
+		if err := c.SaveUploadedFile(
+			file,
+			filePath,
+		); err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Gagal menyimpan gambar",
+			})
 
 			return
 		}
 
 		imageURL =
-			"uploads/" + file.Filename
-
+			"uploads/" + fileName
 	}
 
-	_, err =
-		database.SellerDB.Exec(
-			`
-			INSERT INTO menus
-			(
-				seller_id,
-				name,
-				description,
-				price,
-				stock,
-				category,
-				image,
-				available
-			)
+	// =================================================
+	// GENERATE MENU ID
+	// =================================================
 
-			VALUES
-			(
-				$1,
-				$2,
-				$3,
-				$4,
-				$5,
-				$6,
-				$7,
-				$8
-			)
-			`,
-
-			sellerID,
-
-			c.PostForm("name"),
-
-			c.PostForm("description"),
-
-			price,
-
-			stock,
-
-			c.PostForm("category"),
-
-			imageURL,
-
-			available,
-		)
+	menuID, err :=
+		uuid.NewV7()
 
 	if err != nil {
 
-		c.JSON(
-			500,
-			gin.H{
-				"error": err.Error(),
-			},
-		)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Gagal membuat ID menu",
+		})
 
 		return
 	}
 
-	c.JSON(
-		201,
-		gin.H{
+	// =================================================
+	// CREATE MENU
+	// =================================================
 
-			"message": "Menu berhasil ditambahkan",
-		},
-	)
+	menu := models.Menu{
 
+		ID: menuID.String(),
+
+		SellerID: sellerID,
+
+		Name: name,
+
+		Description: description,
+
+		Price: price,
+
+		Stock: stock,
+
+		Category: category,
+
+		Image: imageURL,
+
+		Available: available,
+	}
+
+	// =================================================
+	// SAVE DATABASE
+	// =================================================
+
+	if err := database.DB.Create(
+		&menu,
+	).Error; err != nil {
+
+		// hapus file jika database gagal
+		if imageURL != "" {
+
+			_ = os.Remove(
+				"./" + imageURL,
+			)
+		}
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "Gagal menyimpan menu",
+			"detail": err.Error(),
+		})
+
+		return
+	}
+
+	// =================================================
+	// RESPONSE
+	// =================================================
+
+	c.JSON(http.StatusCreated, gin.H{
+
+		"message": "Menu berhasil ditambahkan",
+
+		"id": menu.ID,
+
+		"menu": menu,
+	})
 }
 
-// =====================================
+// =====================================================
 // UPDATE MENU
-// =====================================
+// =====================================================
 
 func UpdateMenuController(c *gin.Context) {
 
-	id := c.Param("id")
+	id := strings.TrimSpace(
+		c.Param("id"),
+	)
 
-	price := toFloat(
+	// =================================================
+	// VALIDATE MENU ID
+	// =================================================
+
+	if _, err := uuid.Parse(id); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID menu tidak valid",
+		})
+
+		return
+	}
+
+	// =================================================
+	// FIND MENU
+	// =================================================
+
+	var menu models.Menu
+
+	if err := database.DB.
+		Where("id = ?", id).
+		First(&menu).
+		Error; err != nil {
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Menu tidak ditemukan",
+		})
+
+		return
+	}
+
+	// =================================================
+	// GET FORM DATA
+	// =================================================
+
+	name := strings.TrimSpace(
+		c.PostForm("name"),
+	)
+
+	description := strings.TrimSpace(
+		c.PostForm("description"),
+	)
+
+	priceStr := strings.TrimSpace(
 		c.PostForm("price"),
 	)
 
-	stock := toInt(
+	stockStr := strings.TrimSpace(
 		c.PostForm("stock"),
 	)
 
-	available := c.PostForm("available") == "true"
+	category := strings.TrimSpace(
+		c.PostForm("category"),
+	)
 
-	_, err :=
-		database.SellerDB.Exec(
-			`
-			UPDATE menus
+	availableStr := strings.TrimSpace(
+		c.PostForm("available"),
+	)
 
-			SET
+	// =================================================
+	// VALIDATE NAME
+	// =================================================
 
-				name=$1,
+	if name == "" {
 
-				description=$2,
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Nama menu wajib diisi",
+		})
 
-				price=$3,
+		return
+	}
 
-				stock=$4,
+	// =================================================
+	// PARSE PRICE
+	// =================================================
 
-				category=$5,
-
-				available=$6
-
-			WHERE id=$7
-
-			`,
-
-			c.PostForm("name"),
-
-			c.PostForm("description"),
-
-			price,
-
-			stock,
-
-			c.PostForm("category"),
-
-			available,
-
-			id,
+	price, err :=
+		strconv.ParseFloat(
+			priceStr,
+			64,
 		)
 
 	if err != nil {
 
-		c.JSON(
-			500,
-			gin.H{
-				"error": err.Error(),
-			},
-		)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Format harga tidak valid",
+		})
 
 		return
-
 	}
 
-	c.JSON(
-		200,
-		gin.H{
+	if price <= 0 {
 
-			"message": "Menu berhasil diperbarui",
-		},
-	)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Harga harus lebih dari 0",
+		})
 
+		return
+	}
+
+	// =================================================
+	// PARSE STOCK
+	// =================================================
+
+	stock, err :=
+		strconv.Atoi(
+			stockStr,
+		)
+
+	if err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Format stok tidak valid",
+		})
+
+		return
+	}
+
+	if stock < 0 {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Stok tidak boleh kurang dari 0",
+		})
+
+		return
+	}
+
+	// =================================================
+	// PARSE AVAILABLE
+	// =================================================
+
+	available :=
+		menu.Available
+
+	if availableStr != "" {
+
+		available, err =
+			strconv.ParseBool(
+				availableStr,
+			)
+
+		if err != nil {
+
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Format available tidak valid",
+			})
+
+			return
+		}
+	}
+
+	// =================================================
+	// IMAGE
+	// =================================================
+
+	imageURL :=
+		menu.Image
+
+	file, err :=
+		c.FormFile("image")
+
+	if err == nil && file != nil {
+
+		extension :=
+			strings.ToLower(
+				filepath.Ext(
+					file.Filename,
+				),
+			)
+
+		allowedExtensions :=
+			map[string]bool{
+				".jpg":  true,
+				".jpeg": true,
+				".png":  true,
+				".webp": true,
+			}
+
+		if !allowedExtensions[extension] {
+
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Format gambar harus JPG, JPEG, PNG, atau WEBP",
+			})
+
+			return
+		}
+
+		uploadDir :=
+			"./uploads"
+
+		if err := os.MkdirAll(
+			uploadDir,
+			0755,
+		); err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Gagal membuat folder upload",
+			})
+
+			return
+		}
+
+		fileName :=
+			uuid.New().String() +
+				extension
+
+		filePath :=
+			filepath.Join(
+				uploadDir,
+				fileName,
+			)
+
+		if err := c.SaveUploadedFile(
+			file,
+			filePath,
+		); err != nil {
+
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Gagal menyimpan gambar",
+			})
+
+			return
+		}
+
+		imageURL =
+			"uploads/" + fileName
+	}
+
+	// =================================================
+	// UPDATE DATABASE
+	// =================================================
+
+	updates := map[string]interface{}{
+
+		"name": name,
+
+		"description": description,
+
+		"price": price,
+
+		"stock": stock,
+
+		"category": category,
+
+		"available": available,
+
+		"image": imageURL,
+
+		"updated_at": time.Now(),
+	}
+
+	if err := database.DB.
+		Model(&models.Menu{}).
+		Where("id = ?", id).
+		Updates(updates).
+		Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":  "Gagal memperbarui menu",
+			"detail": err.Error(),
+		})
+
+		return
+	}
+
+	// =================================================
+	// RESPONSE
+	// =================================================
+
+	c.JSON(http.StatusOK, gin.H{
+
+		"message": "Menu berhasil diperbarui",
+
+		"id": id,
+	})
 }
 
-// =====================================
+// =====================================================
 // DELETE MENU
-// =====================================
+// =====================================================
 
-func DeleteMenuController(
-	c *gin.Context,
-) {
+func DeleteMenuController(c *gin.Context) {
 
 	id :=
-		c.Param("id")
-
-	_, err :=
-		database.SellerDB.Exec(
-			`
-			DELETE FROM menus
-			WHERE id=$1
-			`,
-			id,
+		strings.TrimSpace(
+			c.Param("id"),
 		)
 
-	if err != nil {
+	if _, err := uuid.Parse(id); err != nil {
 
-		c.JSON(
-			500,
-			gin.H{
-				"error": err.Error(),
-			},
-		)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "ID menu tidak valid",
+		})
 
 		return
-
 	}
 
-	c.JSON(
-		200,
-		gin.H{
+	var menu models.Menu
 
-			"message": "Menu berhasil dihapus",
-		},
-	)
+	if err := database.DB.
+		Where("id = ?", id).
+		First(&menu).
+		Error; err != nil {
 
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "Menu tidak ditemukan",
+		})
+
+		return
+	}
+
+	if err := database.DB.
+		Delete(&menu).
+		Error; err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+
+		return
+	}
+
+	// optional: hapus file gambar
+	if menu.Image != "" {
+
+		_ = os.Remove(
+			"./" + menu.Image,
+		)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Menu berhasil dihapus",
+	})
 }

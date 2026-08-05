@@ -4,7 +4,6 @@ import {
     LayoutDashboard,
     ShoppingBag,
     Utensils,
-    LogOut,
     UserRound,
 } from "lucide-react";
 
@@ -16,105 +15,265 @@ import {
 
 import "../../styles/seller/SellerNavbar.css";
 
+
+/* =====================================================
+   TYPES
+===================================================== */
+
 interface SellerNavbarProps {
     openMenu: boolean;
-    setOpenMenu: React.Dispatch<React.SetStateAction<boolean>>;
+    setOpenMenu: React.Dispatch<
+        React.SetStateAction<boolean>
+    >;
 }
+
+
+/* =====================================================
+   COMPONENT
+===================================================== */
 
 export default function SellerNavbar({
     openMenu,
     setOpenMenu,
 }: SellerNavbarProps) {
-    const { seller_id } = useParams();
 
-    const location = useLocation();
+    const {
+        seller_id,
+    } = useParams();
 
-    const isActive = (path: string) => {
+
+    const location =
+        useLocation();
+
+
+    /* =====================================================
+       ACTIVE MENU
+    ===================================================== */
+
+    const isActive = (
+        path: string
+    ) => {
+
         return location.pathname === path
             ? "seller-link active"
             : "seller-link";
+
     };
 
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
+
     return (
+
         <aside
-            className={`seller-navbar ${openMenu ? "open" : "close"
-                }`}
+            className={
+                `seller-navbar ${openMenu
+                    ? "open"
+                    : "close"
+                }`
+            }
         >
+
+
+            {/* =================================================
+               TOGGLE
+            ================================================= */}
+
             <button
+                type="button"
                 className="seller-toggle"
-                onClick={() => setOpenMenu(!openMenu)}
+                onClick={() =>
+                    setOpenMenu(
+                        !openMenu
+                    )
+                }
+                aria-label={
+                    openMenu
+                        ? "Tutup menu"
+                        : "Buka menu"
+                }
             >
-                {openMenu ? <X size={22} /> : <Menu size={22} />}
+
+                {openMenu ? (
+
+                    <X
+                        size={22}
+                    />
+
+                ) : (
+
+                    <Menu
+                        size={22}
+                    />
+
+                )}
+
             </button>
 
+
+            {/* =================================================
+               LOGO
+            ================================================= */}
+
             <div className="seller-logo">
+
                 {openMenu ? (
+
                     <>
-                        <span>Warteg</span>
-                        <b>Kita</b>
+                        <span>
+                            Warteg
+                        </span>
+
+                        <b>
+                            Kita
+                        </b>
                     </>
+
                 ) : (
+
                     "WK"
+
                 )}
+
             </div>
+
+
+            {/* =================================================
+               MENU
+            ================================================= */}
 
             <nav className="seller-menu">
 
-                {/* Dashboard */}
+
+                {/* =================================================
+                   DASHBOARD
+                ================================================= */}
+
                 <Link
-                    to={`/seller/${seller_id}/dashboard`}
-                    className={isActive(
+                    to={
                         `/seller/${seller_id}/dashboard`
-                    )}
+                    }
+                    className={
+                        isActive(
+                            `/seller/${seller_id}/dashboard`
+                        )
+                    }
                 >
-                    <LayoutDashboard size={21} />
-                    {openMenu && <span>Dashboard</span>}
+
+                    <LayoutDashboard
+                        size={21}
+                        strokeWidth={2}
+                    />
+
+                    {openMenu && (
+
+                        <span>
+                            Dashboard
+                        </span>
+
+                    )}
+
                 </Link>
 
 
-                {/* Menu Warteg */}
+                {/* =================================================
+                   MENU WARTEG
+                ================================================= */}
+
                 <Link
-                    to={`/seller/${seller_id}/menus`}
-                    className={isActive(
+                    to={
                         `/seller/${seller_id}/menus`
-                    )}
+                    }
+                    className={
+                        isActive(
+                            `/seller/${seller_id}/menus`
+                        )
+                    }
                 >
-                    <Utensils size={21} />
-                    {openMenu && <span>Menu Warteg</span>}
+
+                    <Utensils
+                        size={21}
+                        strokeWidth={2}
+                    />
+
+                    {openMenu && (
+
+                        <span>
+                            Menu Warteg
+                        </span>
+
+                    )}
+
                 </Link>
 
 
-                {/* Pesanan */}
+                {/* =================================================
+                   PESANAN
+                ================================================= */}
+
                 <Link
-                    to={`/seller/${seller_id}/orders`}
-                    className={isActive(
+                    to={
                         `/seller/${seller_id}/orders`
-                    )}
+                    }
+                    className={
+                        isActive(
+                            `/seller/${seller_id}/orders`
+                        )
+                    }
                 >
-                    <ShoppingBag size={21} />
-                    {openMenu && <span>Pesanan</span>}
+
+                    <ShoppingBag
+                        size={21}
+                        strokeWidth={2}
+                    />
+
+                    {openMenu && (
+
+                        <span>
+                            Pesanan
+                        </span>
+
+                    )}
+
                 </Link>
 
 
-                {/* Profile Usaha */}
+                {/* =================================================
+                   PROFILE USAHA
+                ================================================= */}
+
                 <Link
-                    to={`/seller/${seller_id}/profile`}
-                    className={isActive(
+                    to={
                         `/seller/${seller_id}/profile`
-                    )}
+                    }
+                    className={
+                        isActive(
+                            `/seller/${seller_id}/profile`
+                        )
+                    }
                 >
-                    <UserRound size={21} />
-                    {openMenu && <span>Profile Usaha</span>}
+
+                    <UserRound
+                        size={21}
+                        strokeWidth={2}
+                    />
+
+                    {openMenu && (
+
+                        <span>
+                            Profile Usaha
+                        </span>
+
+                    )}
+
                 </Link>
 
             </nav>
 
-            <div className="seller-bottom">
-                <button className="logout-button">
-                    <LogOut size={21} />
-                    {openMenu && <span>Logout</span>}
-                </button>
-            </div>
         </aside>
+
     );
+
 }

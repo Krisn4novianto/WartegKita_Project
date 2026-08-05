@@ -785,16 +785,6 @@ export default function Profile() {
           </div>
 
 
-
-          <div className="profile-badge">
-
-            <User size={16} />
-
-            Customer
-
-          </div>
-
-
           <div className="profile-info">
             {
               editProfile ? (
@@ -984,30 +974,40 @@ export default function Profile() {
 
                     <div className="saved-address">
 
-                      <div>
+                      <div className="saved-address-content">
 
-                        <strong>
-                          {savedAddress.label}
-                        </strong>
+                        {savedAddress.detail && (
+                          <p className="saved-address-detail">
+                            {savedAddress.detail}
+                          </p>
+                        )}
 
-                        <p>
-                          {savedAddress.detail}
-                        </p>
+                        {(savedAddress.district || savedAddress.city) && (
+                          <p className="saved-address-region">
+                            {[
+                              savedAddress.district,
+                              savedAddress.city,
+                            ]
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
+                        )}
 
-                        <span>
-                          {savedAddress.district}, {savedAddress.city}
-                        </span>
-
-                        <br />
-
-                        <span>
-                          {savedAddress.province}
-                          {savedAddress.postalCode &&
-                            ` - ${savedAddress.postalCode}`}
-                        </span>
+                        {(savedAddress.province || savedAddress.postalCode) && (
+                          <p className="saved-address-province">
+                            {[
+                              savedAddress.province,
+                              savedAddress.postalCode,
+                            ]
+                              .filter(Boolean)
+                              .join(" - ")}
+                          </p>
+                        )}
 
                         {savedAddress.note && (
-                          <p>{savedAddress.note}</p>
+                          <p className="saved-address-note">
+                            Catatan: {savedAddress.note}
+                          </p>
                         )}
 
                       </div>

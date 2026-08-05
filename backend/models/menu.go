@@ -1,29 +1,28 @@
 package models
 
-import (
-	"time"
-
-	"go.mongodb.org/mongo-driver/v2/bson"
-)
+import "time"
 
 type Menu struct {
-	ID bson.ObjectID `bson:"_id,omitempty" json:"id"`
+	ID          string    `gorm:"primaryKey;type:uuid" json:"id"`
+	SellerID    string    `gorm:"type:uuid;not null;index" json:"seller_id"`
+	Name        string    `gorm:"size:100;not null" json:"name"`
+	Description string    `gorm:"type:text" json:"description"`
+	Price       float64   `gorm:"type:numeric(12,2);not null;default:0" json:"price"`
+	Stock       int       `gorm:"not null;default:0" json:"stock"`
+	Category    string    `gorm:"size:50;not null" json:"category"`
+	Image       string    `gorm:"type:text" json:"image"`
+	Available   bool      `gorm:"default:true" json:"available"`
+	CreatedAt   time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt   time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 
-	SellerID bson.ObjectID `bson:"seller_id" json:"seller_id"`
+	Seller *SellerProfile `gorm:"foreignKey:SellerID;references:SellerID;constraint:OnDelete:CASCADE" json:"-"`
+}
 
-	Name string `bson:"name" json:"name"`
-
-	Description string `bson:"description" json:"description"`
-
-	Category string `bson:"category" json:"category"`
-
-	Price int64 `bson:"price" json:"price"`
-
-	Image string `bson:"image" json:"image"`
-
-	IsAvailable bool `bson:"is_available" json:"is_available"`
-
-	CreatedAt time.Time `bson:"created_at" json:"created_at"`
-
-	UpdatedAt time.Time `bson:"updated_at" json:"updated_at"`
+type MenuCategory struct {
+	ID        string    `gorm:"primaryKey;type:uuid" json:"id"`
+	Name      string    `gorm:"size:100;not null;unique" json:"name"`
+	Emoji     string    `gorm:"size:20;not null" json:"emoji"`
+	IsActive  bool      `gorm:"not null;default:true" json:"is_active"`
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updated_at"`
 }

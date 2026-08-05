@@ -13,6 +13,7 @@ import {
 
 
 import "../styles/navbar.css";
+import logo from "../assets/images/WartegKita.png";
 
 
 
@@ -33,11 +34,13 @@ export default function Navbar() {
           to="/"
           className="brand"
         >
+          <img
+            src={logo}
+            alt="WartegKita"
+            className="brand-logo"
+          />
 
-          <span>
-            WartegKita
-          </span>
-
+          <span>WartegKita</span>
         </NavLink>
 
 
