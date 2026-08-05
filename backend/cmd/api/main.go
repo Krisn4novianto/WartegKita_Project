@@ -11,6 +11,7 @@
 //	@in header
 //	@name Authorization
 //	@description Enter your JWT token as: Bearer <your_token>
+
 package main
 
 import (
@@ -26,142 +27,168 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
-	_ "github.com/krisn4novianto/wartegkita/backend/docs" // swag generated docs
+	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
+
+	_ "github.com/krisn4novianto/wartegkita/backend/docs"
+
 	"github.com/krisn4novianto/wartegkita/backend/routes"
 )
 
 func main() {
 
-	// =========================
+	// =====================================================
 	// LOAD ENV
-	// =========================
+	// =====================================================
 
 	if err := godotenv.Load(); err != nil {
-
-		log.Println(".env tidak ditemukan")
-
+		log.Println(
+			"⚠️ .env tidak ditemukan, menggunakan environment variable",
+		)
 	}
 
-	// =========================
-	// DATABASE (SINGLE GORM DB)
-	// =========================
+	// =====================================================
+	// DATABASE
+	// =====================================================
 
 	database.Connect()
 
-	// =========================
+	// =====================================================
+	// SELLER PROFILE TABLE
+	// =====================================================
+
+	sellerdb.CreateSellerProfileTable()
+
+	// =====================================================
 	// CLEANUP EXPIRED ORDERS
-	// =========================
+	// =====================================================
 
 	database.DeleteExpiredOrders()
 
+	// =====================================================
+	// CHAT TABLE
+	// =====================================================
+	//
+	// Membuat / memastikan tabel:
+	//
+	// - chat_rooms
+	// - bubble_chats
+	//
+	// =====================================================
 
-	// =========================
+	database.CreateChatTables()
+
+	// =====================================================
+	// CLEANUP EXPIRED ORDERS
+	// =====================================================
+
+	database.DeleteExpiredOrders()
+
+	// =====================================================
 	// PORT
-	// =========================
+	// =====================================================
 
 	port := os.Getenv("PORT")
 
 	if port == "" {
-
 		port = "8080"
-
 	}
 
-	// =========================
+	// =====================================================
 	// GIN ROUTER
-	// =========================
+	// =====================================================
 
 	router := gin.Default()
 
-	// =========================
-	// CORS MIDDLEWARE (MUST BE APPLIED FIRST)
-	// =========================
+	// =====================================================
+	// CORS
+	// =====================================================
 
-	router.Use(cors.New(cors.Config{
+	router.Use(
+		cors.New(
+			cors.Config{
+				AllowOrigins: []string{
+					"http://localhost:5173",
+					"http://localhost:5174",
+					"http://localhost:5175",
 
-		AllowOrigins: []string{
-			"http://localhost:5173",
-			"http://localhost:5174",
-			"http://localhost:5175",
-			"http://127.0.0.1:5173",
-			"http://127.0.0.1:5174",
-			"http://127.0.0.1:5175",
-		},
+					"http://127.0.0.1:5173",
+					"http://127.0.0.1:5174",
+					"http://127.0.0.1:5175",
+				},
 
-		AllowMethods: []string{
-			"GET",
-			"POST",
-			"PUT",
-			"PATCH",
-			"DELETE",
-			"OPTIONS",
-		},
+				AllowMethods: []string{
+					http.MethodGet,
+					http.MethodPost,
+					http.MethodPut,
+					http.MethodPatch,
+					http.MethodDelete,
+					http.MethodOptions,
+				},
 
-		AllowHeaders: []string{
-			"Origin",
-			"Content-Type",
-			"Accept",
-			"Authorization",
-			"X-Requested-With",
-		},
+				AllowHeaders: []string{
+					"Origin",
+					"Content-Type",
+					"Accept",
+					"Authorization",
+					"X-Requested-With",
+				},
 
-		ExposeHeaders: []string{
-			"Content-Length",
-			"Content-Type",
-		},
+				ExposeHeaders: []string{
+					"Content-Length",
+					"Content-Type",
+				},
 
-		AllowCredentials: true,
-	}))
+				AllowCredentials: true,
 
-	// =========================
-	// STATIC IMAGE UPLOAD
-	// =========================
-
-	router.Static(
-		"/uploads",
-		"./uploads",
+				OptionsResponseStatusCode: http.StatusNoContent,
+			},
+		),
 	)
 
-
-	// =========================
-	// SWAGGER UI (FastAPI Style at /docs)
-	// =========================
+	// =====================================================
+	// SWAGGER
+	// =====================================================
 
 	router.GET(
 		"/docs/*any",
-		ginSwagger.WrapHandler(swaggerFiles.Handler),
+		ginSwagger.WrapHandler(
+			swaggerFiles.Handler,
+		),
 	)
 
-	router.GET("/docs", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")
-	})
+	router.GET(
+		"/docs",
+		func(c *gin.Context) {
+			c.Redirect(
+				http.StatusMovedPermanently,
+				"/docs/index.html",
+			)
+		},
+	)
 
-	// Legacy alias redirect
-	router.GET("/swagger/*any", func(c *gin.Context) {
-		c.Redirect(http.StatusMovedPermanently, "/docs/index.html")
-	})
+	// =====================================================
+	// API ROUTES
+	// =====================================================
 
-	// =========================
-	// ROUTES
-	// =========================
-
+	// routes.Register() menangani:
+	// - /uploads
+	// - /api/v1/*
+	//
+	// Jadi jangan daftarkan /uploads lagi di main.go.
 	routes.Register(router)
 
-	// =========================
-	// RUN SERVER
-	// =========================
+	// =====================================================
+	// START SERVER
+	// =====================================================
 
 	log.Println(
-		"🚀 WartegKita API running on http://localhost:" + port,
-	)
-	log.Println(
-		"📖 API Documentation (FastAPI style): http://localhost:" + port + "/docs",
+		"🚀 WartegKita API running on :" + port,
 	)
 
 	if err := router.Run(":" + port); err != nil {
-
-		log.Fatal(err)
-
+		log.Fatal(
+			"❌ Gagal menjalankan server:",
+			err,
+		)
 	}
-
 }

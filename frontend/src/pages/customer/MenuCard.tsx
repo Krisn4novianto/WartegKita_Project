@@ -1,99 +1,249 @@
 import {
-    Plus,
     Minus,
+    Plus,
     ShoppingCart,
 } from "lucide-react";
 
-import { Menu } from "../../types";
-
+import {
+    Menu,
+} from "../../types";
 
 interface MenuCardProps {
-    menu: Menu;
-    quantity: number;
-    onAdd: () => void;
-    onIncrease: () => void;
-    onDecrease: () => void;
-}
 
+    menu: Menu;
+
+    quantity: number;
+
+    onIncrease: () => void;
+
+    onDecrease: () => void;
+
+    onAdd?: () => void;
+
+}
 
 export default function MenuCard({
     menu,
     quantity,
-    onAdd,
     onIncrease,
     onDecrease,
+    onAdd,
 }: MenuCardProps) {
 
+    const formatPrice =
+        (price: number) =>
+            new Intl.NumberFormat(
+                "id-ID",
+                {
+                    style: "currency",
+                    currency: "IDR",
+                    maximumFractionDigits: 0,
+                }
+            ).format(price);
+
+
+    const unavailable =
+        !menu.available ||
+        menu.stock <= 0;
+
+
     return (
-        <div className="menu-card">
 
-            <img
-                src={menu.image}
-                alt={menu.name}
-                className="menu-image"
-            />
+        <article
+            className={
+                `menu-card ${unavailable
+                    ? "menu-card-unavailable"
+                    : ""
+                }`
+            }
+        >
+
+            {/* =================================================
+                IMAGE
+            ================================================= */}
+
+            <div className="menu-card-image">
+
+                {menu.image ? (
+
+                    <img
+                        src={menu.image}
+                        alt={menu.name}
+                        loading="lazy"
+                    />
+
+                ) : (
+
+                    <div className="menu-card-image-placeholder">
+                        <span>🍛</span>
+                    </div>
+
+                )}
 
 
-            <div className="menu-content">
+                {unavailable && (
 
-                <h3>
+                    <div className="menu-unavailable-badge">
+                        Habis
+                    </div>
+
+                )}
+
+            </div>
+
+
+            {/* =================================================
+                CONTENT
+            ================================================= */}
+
+            <div className="menu-card-content">
+
+                {/* CATEGORY */}
+
+                {menu.category && (
+
+                    <span className="menu-card-category">
+                        {menu.category}
+                    </span>
+
+                )}
+
+
+                {/* NAME */}
+
+                <h3 className="menu-card-name">
                     {menu.name}
                 </h3>
 
 
-                <p>
-                    {menu.description}
-                </p>
+                {/* DESCRIPTION */}
+
+                {menu.description && (
+
+                    <p className="menu-card-description">
+                        {menu.description}
+                    </p>
+
+                )}
 
 
-                <strong>
-                    Rp {menu.price.toLocaleString("id-ID")}
-                </strong>
+                {/* =================================================
+                    PRICE + QUANTITY
+                ================================================= */}
+
+                <div className="menu-card-bottom">
+
+                    <div className="menu-card-price">
+                        {formatPrice(menu.price)}
+                    </div>
 
 
-                <div className="quantity-control">
+                    {!unavailable ? (
 
-                    <button
-                        type="button"
-                        onClick={onDecrease}
-                        disabled={quantity === 0}
-                    >
-                        <Minus size={16} />
-                    </button>
+                        <div
+                            className={
+                                `menu-quantity ${quantity > 0
+                                    ? "has-quantity"
+                                    : ""
+                                }`
+                            }
+                        >
+
+                            <button
+                                type="button"
+                                className="quantity-button quantity-minus"
+                                onClick={onDecrease}
+                                disabled={quantity <= 0}
+                                aria-label={`Kurangi ${menu.name}`}
+                            >
+
+                                <Minus
+                                    size={16}
+                                    strokeWidth={2.5}
+                                />
+
+                            </button>
 
 
-                    <span>
-                        {quantity}
-                    </span>
+                            <span className="quantity-value">
+                                {quantity}
+                            </span>
 
 
-                    <button
-                        type="button"
-                        onClick={onIncrease}
-                    >
-                        <Plus size={16} />
-                    </button>
+                            <button
+                                type="button"
+                                className="quantity-button quantity-plus"
+                                onClick={onIncrease}
+                                disabled={
+                                    quantity >= menu.stock
+                                }
+                                aria-label={`Tambah ${menu.name}`}
+                            >
+
+                                <Plus
+                                    size={16}
+                                    strokeWidth={2.5}
+                                />
+
+                            </button>
+
+                        </div>
+
+                    ) : (
+
+                        <span className="menu-stock-empty">
+                            Tidak tersedia
+                        </span>
+
+                    )}
 
                 </div>
 
 
+                {/* =================================================
+                    STOCK WARNING
+                ================================================= */}
 
-                <button
-                    type="button"
-                    className="add-cart-button"
-                    onClick={onAdd}
-                    disabled={quantity === 0}
-                >
+                {!unavailable &&
+                    menu.stock > 0 &&
+                    menu.stock <= 5 && (
 
-                    <ShoppingCart size={18} />
+                        <span className="menu-stock-warning">
+                            Tinggal {menu.stock} porsi
+                        </span>
 
-                    Tambah ke Keranjang
+                    )}
 
-                </button>
 
+                {/* =================================================
+                    ADD TO CART
+                ================================================= */}
+
+                {!unavailable && quantity > 0 && onAdd && (
+
+                    <button
+                        type="button"
+                        className="menu-add-cart-button"
+                        onClick={onAdd}
+                    >
+
+                        <ShoppingCart
+                            size={17}
+                            strokeWidth={2.5}
+                        />
+
+                        <span>
+                            Tambah ke Keranjang
+                        </span>
+
+                    </button>
+
+                )}
 
             </div>
 
-        </div>
+        </article>
+
     );
+
 }

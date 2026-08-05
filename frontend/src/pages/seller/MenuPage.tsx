@@ -2,6 +2,7 @@ import {
     useEffect,
     useMemo,
     useState,
+    type ChangeEvent,
 } from "react";
 
 import {
@@ -17,599 +18,804 @@ import {
 } from "lucide-react";
 
 import Swal from "sweetalert2";
+import { useParams } from "react-router-dom";
 
 import SellerNavbar from "./SellerNavbar";
-
-
-import {
-    useParams,
-} from "react-router-dom";
 
 import api from "../../services/api";
 
 import "../../styles/seller/MenuPage.css";
 
 
+/* =====================================================
+   TYPES
+===================================================== */
 
 interface Menu {
-
-    id: number;
-
-    seller_id: number;
-
+    id: string;
+    seller_id: string;
     name: string;
-
     description: string;
-
     price: number;
-
     stock: number;
-
-    category:
-    | "Makanan"
-    | "Minuman";
-
-    image?: string;
-
+    category: string;
+    image: string;
     available: boolean;
-
     created_at: string;
-
+    updated_at: string;
 }
 
 
+/* =====================================================
+   EMPTY MENU
+===================================================== */
 
-const emptyMenu: Menu = {
-
-    id: 0,
-
-    seller_id: 0,
-
+/**
+ * Membuat object menu kosong untuk form tambah menu.
+ */
+const createEmptyMenu = (
+    sellerId: string = ""
+): Menu => ({
+    id: "",
+    seller_id: sellerId,
     name: "",
-
     description: "",
-
     price: 0,
-
     stock: 0,
-
     category: "Makanan",
-
     image: "",
-
     available: true,
-
     created_at: "",
+    updated_at: "",
+});
 
+
+/* =====================================================
+   UUID VALIDATION
+===================================================== */
+
+/**
+ * Memvalidasi UUID yang digunakan oleh backend.
+ *
+ * Backend menggunakan UUID termasuk UUIDv7.
+ *
+ * Contoh UUIDv7:
+ *
+ * 019fb5bd-1a29-7bfa-9675-d2b1c228388f
+ *
+ * Posisi karakter ke-13 menunjukkan versi UUID.
+ * Karena aplikasi menggunakan UUIDv7, versi 7 harus
+ * diterima oleh validasi frontend.
+ */
+const isValidUUID = (
+    value?: string
+): boolean => {
+
+    if (!value) {
+        return false;
+    }
+
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        value
+    );
 };
 
 
+/* =====================================================
+   IMAGE URL
+===================================================== */
+
+/**
+ * Mengubah path gambar dari backend menjadi URL
+ * yang dapat digunakan oleh browser.
+ *
+ * Mendukung:
+ * - http://
+ * - https://
+ * - blob:
+ * - relative path
+ */
+const getImageUrl = (
+    image?: string
+): string => {
+
+    if (!image) {
+        return "";
+    }
+
+    const value = image.trim();
+
+    if (!value) {
+        return "";
+    }
+
+    if (
+        value.startsWith("http://") ||
+        value.startsWith("https://") ||
+        value.startsWith("blob:")
+    ) {
+        return value;
+    }
+
+    const baseURL =
+        api.defaults.baseURL || "";
+
+    let origin =
+        baseURL;
+
+    try {
+
+        if (
+            baseURL.startsWith("http://") ||
+            baseURL.startsWith("https://")
+        ) {
+
+            origin =
+                new URL(
+                    baseURL
+                ).origin;
+        }
+
+    } catch {
+
+        origin =
+            baseURL;
+    }
+
+    origin =
+        origin.replace(
+            /\/+$/,
+            ""
+        );
+
+    const encodedPath =
+        value
+            .split("/")
+            .map(
+                part =>
+                    encodeURIComponent(
+                        part
+                    )
+            )
+            .join("/");
+
+    return `${origin}/${encodedPath}`;
+};
+
+
+/* =====================================================
+   COMPONENT
+===================================================== */
 
 export default function MenuPage() {
 
+    /* =================================================
+       ROUTE PARAMETER
+    ================================================= */
 
-    const { seller_id } = useParams();
+    const {
+        seller_id,
+    } = useParams<{
+        seller_id: string;
+    }>();
+
+
+    /* =================================================
+       SIDEBAR STATE
+    ================================================= */
 
     const [
         openMenu,
-        setOpenMenu
+        setOpenMenu,
     ] = useState(true);
+
+
+    /* =================================================
+       MENU DATA
+    ================================================= */
 
     const [
         menus,
-        setMenus
+        setMenus,
     ] = useState<Menu[]>([]);
-
 
 
     const [
         loading,
-        setLoading
+        setLoading,
     ] = useState(true);
 
 
+    /* =================================================
+       SEARCH & FILTER
+    ================================================= */
 
     const [
         search,
-        setSearch
+        setSearch,
     ] = useState("");
-
 
 
     const [
         category,
-        setCategory
+        setCategory,
     ] = useState("Semua");
-
 
 
     const [
         statusFilter,
-        setStatusFilter
+        setStatusFilter,
     ] = useState("Semua");
-
 
 
     const [
         sortBy,
-        setSortBy
+        setSortBy,
     ] = useState("Terbaru");
 
 
+    /* =================================================
+       MODAL STATE
+    ================================================= */
 
     const [
         showModal,
-        setShowModal
+        setShowModal,
     ] = useState(false);
-
 
 
     const [
         editing,
-        setEditing
+        setEditing,
     ] = useState(false);
 
 
+    /* =================================================
+       FORM STATE
+    ================================================= */
 
     const [
         menu,
-        setMenu
-    ] = useState<Menu>(emptyMenu);
+        setMenu,
+    ] = useState<Menu>(
+        createEmptyMenu(
+            seller_id || ""
+        )
+    );
 
 
+    /* =================================================
+       IMAGE STATE
+    ================================================= */
 
     const [
         preview,
-        setPreview
+        setPreview,
     ] = useState("");
-
 
 
     const [
         imageFile,
-        setImageFile
+        setImageFile,
     ] = useState<File | null>(null);
 
 
+    /* =================================================
+       SAVE STATE
+    ================================================= */
 
-    // =========================
-    // GET MENU
-    // =========================
+    const [
+        saving,
+        setSaving,
+    ] = useState(false);
 
-    const loadMenus = async () => {
 
-        try {
+    /* =================================================
+       SELLER ID VALIDATION
+    ================================================= */
 
-            setLoading(true);
+    const sellerIdIsValid =
+        useMemo(
+            () =>
+                isValidUUID(
+                    seller_id
+                ),
+            [seller_id]
+        );
 
-            const res =
-                await api.get(
-                    `/menus?seller_id=${seller_id}`
+
+    /* =================================================
+       LOAD MENUS
+    ================================================= */
+
+    const loadMenus =
+        async () => {
+
+            if (!seller_id) {
+
+                console.error(
+                    "Seller ID tidak tersedia."
+                );
+
+                setMenus([]);
+                setLoading(false);
+
+                return;
+            }
+
+
+            if (!sellerIdIsValid) {
+
+                console.error(
+                    "Seller ID bukan UUID:",
+                    seller_id
+                );
+
+                setMenus([]);
+                setLoading(false);
+
+                return;
+            }
+
+
+            try {
+
+                setLoading(true);
+
+
+                const response =
+                    await api.get(
+                        `/menus?seller_id=${encodeURIComponent(
+                            seller_id
+                        )}`
+                    );
+
+
+                const data =
+                    Array.isArray(
+                        response.data
+                    )
+                        ? response.data
+                        : [];
+
+
+                /**
+                 * Normalisasi response backend
+                 * agar bentuk data konsisten
+                 * dengan interface Menu.
+                 */
+                const normalized:
+                    Menu[] =
+                    data.map(
+                        (
+                            item: any
+                        ) => ({
+
+                            id:
+                                String(
+                                    item?.id ?? ""
+                                ),
+
+                            seller_id:
+                                String(
+                                    item?.seller_id ??
+                                    seller_id
+                                ),
+
+                            name:
+                                String(
+                                    item?.name ?? ""
+                                ),
+
+                            description:
+                                String(
+                                    item?.description ??
+                                    ""
+                                ),
+
+                            price:
+                                Number(
+                                    item?.price ?? 0
+                                ),
+
+                            stock:
+                                Number(
+                                    item?.stock ?? 0
+                                ),
+
+                            category:
+                                String(
+                                    item?.category ??
+                                    "Makanan"
+                                ),
+
+                            image:
+                                String(
+                                    item?.image ?? ""
+                                ),
+
+                            available:
+                                item?.available !== false,
+
+                            created_at:
+                                String(
+                                    item?.created_at ??
+                                    ""
+                                ),
+
+                            updated_at:
+                                String(
+                                    item?.updated_at ??
+                                    ""
+                                ),
+
+                        })
+                    );
+
+
+                setMenus(
+                    normalized
+                );
+
+            } catch (
+            error: any
+            ) {
+
+                console.error(
+                    "GET MENU ERROR:",
+                    error
+                );
+
+                console.error(
+                    "GET MENU RESPONSE:",
+                    error?.response?.data
                 );
 
 
-            console.log("DATA MENU API:", res.data);
+                Swal.fire({
+
+                    icon:
+                        "error",
+
+                    title:
+                        "Gagal",
+
+                    text:
+                        error?.response?.data?.error ||
+                        error?.response?.data?.message ||
+                        "Tidak dapat mengambil data menu.",
+
+                });
+
+            } finally {
+
+                setLoading(false);
+
+            }
+        };
 
 
-            setMenus(
-                res.data
-            );
-
-
-        } catch (error) {
-
-            console.log(error);
-
-            Swal.fire({
-
-                icon: "error",
-
-                title: "Gagal",
-
-                text:
-                    "Tidak dapat mengambil data menu",
-
-            });
-
-
-        } finally {
-
-            setLoading(false);
-
-        }
-
-    };
-
-
-
-
+    /* =================================================
+       LOAD DATA WHEN SELLER CHANGES
+    ================================================= */
 
     useEffect(() => {
 
-        if (seller_id) {
-            loadMenus();
-        }
+        loadMenus();
 
-    }, [seller_id]);
-
-
-
+    }, [
+        seller_id,
+        sellerIdIsValid,
+    ]);
 
 
-
-
-    // =========================
-    // STATISTICS
-    // =========================
-
+    /* =================================================
+       STATISTICS
+    ================================================= */
 
     const totalMenu =
         menus.length;
 
 
-
     const totalFood =
         menus.filter(
             item =>
-                item.category === "Makanan"
+                item.category
+                    .toLowerCase() ===
+                "makanan"
         ).length;
-
 
 
     const totalDrink =
         menus.filter(
             item =>
-                item.category === "Minuman"
+                item.category
+                    .toLowerCase() ===
+                "minuman"
         ).length;
-
 
 
     const outStock =
         menus.filter(
             item =>
-                item.stock === 0
+                item.stock <= 0 ||
+                !item.available
         ).length;
 
 
+    /* =================================================
+       CATEGORY OPTIONS
+    ================================================= */
+
+    const categories =
+        useMemo(() => {
+
+            return Array.from(
+                new Set(
+                    menus
+                        .map(
+                            item =>
+                                item.category
+                        )
+                        .filter(Boolean)
+                )
+            );
+
+        }, [
+            menus,
+        ]);
 
 
-
-    // =========================
-    // FILTER + SORT
-    // =========================
-
+    /* =================================================
+       FILTER & SORT MENU
+    ================================================= */
 
     const filteredMenus =
         useMemo(() => {
 
+            const keyword =
+                search
+                    .trim()
+                    .toLowerCase();
 
-            let result =
+
+            const result =
                 menus.filter(
                     item => {
 
-
-                        const keyword =
+                        const matchesSearch =
+                            !keyword ||
                             item.name
                                 .toLowerCase()
                                 .includes(
-                                    search.toLowerCase()
+                                    keyword
                                 );
 
 
-
-                        const cat =
-                            category === "Semua"
-                            ||
+                        const matchesCategory =
+                            category === "Semua" ||
                             item.category === category;
 
 
-
-                        const status =
-                            statusFilter === "Semua"
-                            ||
+                        const matchesStatus =
+                            statusFilter === "Semua" ||
                             (
-                                statusFilter === "Tersedia"
-                                &&
+                                statusFilter === "Tersedia" &&
                                 item.available
-                            )
-                            ||
+                            ) ||
                             (
-                                statusFilter === "Habis"
-                                &&
+                                statusFilter === "Habis" &&
                                 !item.available
                             );
 
 
-
                         return (
-                            keyword
-                            &&
-                            cat
-                            &&
-                            status
+                            matchesSearch &&
+                            matchesCategory &&
+                            matchesStatus
                         );
-
                     }
                 );
 
 
+            /* Sort menu berdasarkan pilihan user. */
 
-
-
-            if (sortBy === "Nama A-Z") {
-
+            if (
+                sortBy === "Nama A-Z"
+            ) {
 
                 result.sort(
-                    (a, b) =>
+                    (
+                        a,
+                        b
+                    ) =>
                         a.name.localeCompare(
-                            b.name
+                            b.name,
+                            "id"
                         )
                 );
-
-
             }
 
 
-
-            if (sortBy === "Harga Murah") {
-
+            if (
+                sortBy === "Harga Murah"
+            ) {
 
                 result.sort(
-                    (a, b) =>
-                        a.price - b.price
+                    (
+                        a,
+                        b
+                    ) =>
+                        a.price -
+                        b.price
                 );
-
-
             }
 
 
-
-            if (sortBy === "Harga Mahal") {
-
+            if (
+                sortBy === "Harga Mahal"
+            ) {
 
                 result.sort(
-                    (a, b) =>
-                        b.price - a.price
+                    (
+                        a,
+                        b
+                    ) =>
+                        b.price -
+                        a.price
                 );
-
-
             }
 
 
-
-            if (sortBy === "Terbaru") {
-
+            if (
+                sortBy === "Terbaru"
+            ) {
 
                 result.sort(
-                    (a, b) =>
-                        new Date(
-                            b.created_at
-                        ).getTime()
-                        -
-                        new Date(
-                            a.created_at
-                        ).getTime()
+                    (
+                        a,
+                        b
+                    ) => {
+
+                        const dateA =
+                            new Date(
+                                a.created_at
+                            ).getTime();
+
+
+                        const dateB =
+                            new Date(
+                                b.created_at
+                            ).getTime();
+
+
+                        return (
+                            dateB -
+                            dateA
+                        );
+                    }
                 );
-
-
             }
-
 
 
             return result;
-
-
 
         }, [
             menus,
             search,
             category,
             statusFilter,
-            sortBy
+            sortBy,
         ]);
 
 
-
-
-
-
-
-    // =========================
-    // IMAGE
-    // =========================
-
+    /* =================================================
+       IMAGE UPLOAD
+    ================================================= */
 
     const handleImage = (
-        e:
-            React.ChangeEvent<HTMLInputElement>
+        event: ChangeEvent<HTMLInputElement>
     ) => {
-
-
-        if (!e.target.files)
-            return;
-
-
 
         const file =
-            e.target.files[0];
+            event.target.files?.[0];
 
 
-
-        setImageFile(file);
-
-
-
-        setPreview(
-            URL.createObjectURL(file)
-        );
-
-
-    };
-
-
-
-
-
-
-
-    // =========================
-    // ADD
-    // =========================
-
-
-    const openAdd = () => {
-
-
-        setEditing(false);
-
-
-        setMenu({
-
-            ...emptyMenu,
-
-            seller_id:
-                Number(seller_id)
-
-        });
-
-
-        setPreview("");
-
-        setImageFile(null);
-
-
-        setShowModal(true);
-
-
-    };
-
-
-
-
-
-
-
-    // =========================
-    // EDIT
-    // =========================
-
-
-    const openEdit = (
-        item: Menu
-    ) => {
-
-
-        setEditing(true);
-
-
-        setMenu(item);
-
-
-        setPreview(
-            item.image || ""
-        );
-
-
-        setShowModal(true);
-
-
-    };
-
-
-    // =========================
-    // STOK TERSEDIA MENU
-    // =========================
-
-    const updateStock = (action: "plus" | "minus") => {
-        setMenu((prev) => {
-            const newStock =
-                action === "plus"
-                    ? prev.stock + 1
-                    : Math.max(0, prev.stock - 1);
-
-            return {
-                ...prev,
-                stock: newStock,
-            };
-        });
-    };
-
-
-
-    // =========================
-    // DELETE MENU
-    // =========================
-
-    const removeMenu = async (
-        id: number
-    ) => {
-
-
-        const confirm =
-            await Swal.fire({
-
-                title:
-                    "Hapus Menu?",
-
-                text:
-                    "Menu yang dihapus tidak bisa dikembalikan",
-
-                icon:
-                    "warning",
-
-                showCancelButton:
-                    true,
-
-                confirmButtonText:
-                    "Ya, Hapus",
-
-                cancelButtonText:
-                    "Batal"
-
-            });
-
-
-
-        if (!confirm.isConfirmed)
+        if (!file) {
             return;
+        }
 
 
+        /* Pastikan file yang dipilih adalah gambar. */
 
-        try {
-
-
-            await api.delete(
-                `/menus/${id}`
-            );
-
+        if (
+            !file.type.startsWith("image/")
+        ) {
 
             Swal.fire({
 
                 icon:
-                    "success",
+                    "warning",
 
                 title:
-                    "Berhasil",
+                    "File Tidak Valid",
 
                 text:
-                    "Menu berhasil dihapus",
-
-                timer:
-                    1500,
-
-                showConfirmButton:
-                    false
+                    "Silakan pilih file gambar.",
 
             });
 
+            event.target.value = "";
+
+            return;
+        }
 
 
-            loadMenus();
+        /* Batasi ukuran gambar maksimal 5 MB. */
+
+        const maxSize =
+            5 * 1024 * 1024;
 
 
+        if (
+            file.size > maxSize
+        ) {
 
-        } catch {
+            Swal.fire({
 
+                icon:
+                    "warning",
+
+                title:
+                    "Ukuran Terlalu Besar",
+
+                text:
+                    "Ukuran gambar maksimal 5 MB.",
+
+            });
+
+            event.target.value = "";
+
+            return;
+        }
+
+
+        /* Hapus object URL sebelumnya agar tidak terjadi memory leak. */
+
+        if (
+            preview.startsWith("blob:")
+        ) {
+
+            URL.revokeObjectURL(
+                preview
+            );
+        }
+
+
+        const objectUrl =
+            URL.createObjectURL(
+                file
+            );
+
+
+        setImageFile(
+            file
+        );
+
+
+        setPreview(
+            objectUrl
+        );
+    };
+
+
+    /* =================================================
+       OPEN ADD MENU
+    ================================================= */
+
+    const openAdd = () => {
+
+        if (!seller_id) {
 
             Swal.fire({
 
@@ -617,193 +823,699 @@ export default function MenuPage() {
                     "error",
 
                 title:
-                    "Gagal",
+                    "Seller Tidak Ditemukan",
 
                 text:
-                    "Tidak dapat menghapus menu"
+                    "Seller ID tidak tersedia pada URL.",
 
             });
 
-
+            return;
         }
 
 
+        if (!sellerIdIsValid) {
+
+            Swal.fire({
+
+                icon:
+                    "error",
+
+                title:
+                    "Seller ID Tidak Valid",
+
+                text:
+                    `Seller ID "${seller_id}" bukan UUID yang valid.`,
+
+            });
+
+            return;
+        }
+
+
+        setEditing(false);
+
+
+        setMenu(
+            createEmptyMenu(
+                seller_id
+            )
+        );
+
+
+        setPreview("");
+
+
+        setImageFile(null);
+
+
+        setShowModal(true);
     };
 
 
+    /* =================================================
+       OPEN EDIT MENU
+    ================================================= */
+
+    const openEdit = (
+        item: Menu
+    ) => {
+
+        if (
+            !seller_id ||
+            !sellerIdIsValid
+        ) {
+
+            Swal.fire({
+
+                icon:
+                    "error",
+
+                title:
+                    "Seller ID Tidak Valid",
+
+                text:
+                    "Seller ID pada URL tidak valid.",
+
+            });
+
+            return;
+        }
 
 
+        setEditing(true);
 
 
+        /**
+         * Seller ID diambil dari URL.
+         * Ini mencegah menu diedit menggunakan
+         * seller ID yang berbeda dari halaman.
+         */
+        setMenu({
 
-    // =========================
-    // SAVE MENU
-    // =========================
+            ...item,
 
-    const saveMenu = async () => {
+            seller_id:
+                seller_id,
 
-        console.log("MENU STATE:", menu);
-
-        try {
-
-            const form = new FormData();
+        });
 
 
-            form.append(
-                "seller_id",
-                String(seller_id)
+        setPreview(
+            item.image
+                ? getImageUrl(
+                    item.image
+                )
+                : ""
+        );
+
+
+        setImageFile(null);
+
+
+        setShowModal(true);
+    };
+
+
+    /* =================================================
+       CLOSE MODAL
+    ================================================= */
+
+    const closeModal = () => {
+
+        /* Bersihkan object URL preview jika berasal dari file lokal. */
+
+        if (
+            preview.startsWith("blob:")
+        ) {
+
+            URL.revokeObjectURL(
+                preview
             );
+        }
 
 
-            form.append(
-                "name",
-                menu.name.trim()
-            );
+        setShowModal(false);
 
 
-            form.append(
-                "description",
-                menu.description.trim()
-            );
+        setEditing(false);
 
 
-            form.append(
-                "price",
-                String(menu.price)
-            );
+        setMenu(
+            createEmptyMenu(
+                seller_id || ""
+            )
+        );
 
 
-            form.append(
-                "stock",
-                String(menu.stock)
-            );
+        setPreview("");
 
 
-            form.append(
-                "category",
-                menu.category
-            );
+        setImageFile(null);
+    };
 
 
-            form.append(
-                "available",
-                menu.available ? "true" : "false"
-            );
+    /* =================================================
+       UPDATE STOCK
+    ================================================= */
+
+    const updateStock = (
+        action:
+            | "plus"
+            | "minus"
+    ) => {
+
+        setMenu(
+            previous => {
+
+                const nextStock =
+                    action === "plus"
+                        ? previous.stock + 1
+                        : Math.max(
+                            0,
+                            previous.stock - 1
+                        );
 
 
-            if (imageFile) {
+                return {
+
+                    ...previous,
+
+                    stock:
+                        nextStock,
+
+                };
+            }
+        );
+    };
+
+
+    /* =================================================
+       DELETE MENU
+    ================================================= */
+
+    const removeMenu =
+        async (
+            id: string
+        ) => {
+
+            if (!id) {
+                return;
+            }
+
+
+            const confirmation =
+                await Swal.fire({
+
+                    title:
+                        "Hapus Menu?",
+
+                    text:
+                        "Menu yang dihapus tidak bisa dikembalikan.",
+
+                    icon:
+                        "warning",
+
+                    showCancelButton:
+                        true,
+
+                    confirmButtonText:
+                        "Ya, Hapus",
+
+                    cancelButtonText:
+                        "Batal",
+
+                    reverseButtons:
+                        true,
+
+                });
+
+
+            if (
+                !confirmation.isConfirmed
+            ) {
+                return;
+            }
+
+
+            try {
+
+                await api.delete(
+                    `/menus/${encodeURIComponent(
+                        id
+                    )}`
+                );
+
+
+                await Swal.fire({
+
+                    icon:
+                        "success",
+
+                    title:
+                        "Berhasil",
+
+                    text:
+                        "Menu berhasil dihapus.",
+
+                    timer:
+                        1500,
+
+                    showConfirmButton:
+                        false,
+
+                });
+
+
+                await loadMenus();
+
+            } catch (
+            error: any
+            ) {
+
+                console.error(
+                    "DELETE MENU ERROR:",
+                    error
+                );
+
+
+                Swal.fire({
+
+                    icon:
+                        "error",
+
+                    title:
+                        "Gagal",
+
+                    text:
+                        error?.response?.data?.error ||
+                        error?.response?.data?.message ||
+                        "Tidak dapat menghapus menu.",
+
+                });
+            }
+        };
+
+
+    /* =================================================
+       SAVE MENU
+    ================================================= */
+
+    const saveMenu =
+        async () => {
+
+            /* Validasi seller ID sebelum request. */
+
+            if (!seller_id) {
+
+                Swal.fire({
+
+                    icon:
+                        "error",
+
+                    title:
+                        "Gagal",
+
+                    text:
+                        "Seller ID tidak ditemukan.",
+
+                });
+
+                return;
+            }
+
+
+            if (!sellerIdIsValid) {
+
+                Swal.fire({
+
+                    icon:
+                        "error",
+
+                    title:
+                        "Gagal",
+
+                    text:
+                        `Seller ID "${seller_id}" bukan UUID yang valid.`,
+
+                });
+
+                return;
+            }
+
+
+            /* Ambil nilai form yang sudah dibersihkan. */
+
+            const name =
+                menu.name.trim();
+
+
+            const description =
+                menu.description.trim();
+
+
+            /* Validasi nama menu. */
+
+            if (!name) {
+
+                Swal.fire({
+
+                    icon:
+                        "warning",
+
+                    title:
+                        "Nama Menu Kosong",
+
+                    text:
+                        "Silakan masukkan nama menu.",
+
+                });
+
+                return;
+            }
+
+
+            /* Validasi harga. */
+
+            if (
+                menu.price <= 0
+            ) {
+
+                Swal.fire({
+
+                    icon:
+                        "warning",
+
+                    title:
+                        "Harga Tidak Valid",
+
+                    text:
+                        "Harga menu harus lebih dari 0.",
+
+                });
+
+                return;
+            }
+
+
+            /* Validasi stok. */
+
+            if (
+                menu.stock < 0
+            ) {
+
+                Swal.fire({
+
+                    icon:
+                        "warning",
+
+                    title:
+                        "Stok Tidak Valid",
+
+                    text:
+                        "Stok tidak boleh kurang dari 0.",
+
+                });
+
+                return;
+            }
+
+
+            /* Validasi kategori. */
+
+            if (
+                !menu.category.trim()
+            ) {
+
+                Swal.fire({
+
+                    icon:
+                        "warning",
+
+                    title:
+                        "Kategori Kosong",
+
+                    text:
+                        "Kategori menu wajib diisi.",
+
+                });
+
+                return;
+            }
+
+
+            /* Cegah request dikirim dua kali. */
+
+            if (saving) {
+                return;
+            }
+
+
+            try {
+
+                setSaving(true);
+
+
+                /* =====================================
+                   BUILD FORM DATA
+                ===================================== */
+
+                const form =
+                    new FormData();
+
 
                 form.append(
-                    "image",
-                    imageFile
+                    "seller_id",
+                    seller_id
                 );
 
-            }
 
-
-
-            // CEK DATA YANG DIKIRIM
-            console.log("FORM DATA:");
-
-            for (const item of form.entries()) {
-
-                console.log(
-                    item[0],
-                    item[1]
+                form.append(
+                    "name",
+                    name
                 );
 
-            }
 
-
-
-            if (editing) {
-
-                await api.put(
-                    `/menus/${menu.id}`,
-                    form
+                form.append(
+                    "description",
+                    description
                 );
 
-            } else {
 
-                await api.post(
-                    "/menus",
-                    form,
-                    {
-                        headers: {
-                            "Content-Type": "multipart/form-data",
-                        },
+                form.append(
+                    "price",
+                    String(
+                        menu.price
+                    )
+                );
+
+
+                form.append(
+                    "stock",
+                    String(
+                        menu.stock
+                    )
+                );
+
+
+                form.append(
+                    "category",
+                    menu.category.trim()
+                );
+
+
+                form.append(
+                    "available",
+                    menu.available
+                        ? "true"
+                        : "false"
+                );
+
+
+                /**
+                 * File hanya dikirim jika user
+                 * memilih gambar baru.
+                 *
+                 * Saat edit tanpa memilih file,
+                 * gambar lama tetap digunakan
+                 * oleh backend.
+                 */
+                if (imageFile) {
+
+                    form.append(
+                        "image",
+                        imageFile
+                    );
+                }
+
+
+                /* =====================================
+                   SEND REQUEST
+                ===================================== */
+
+                if (editing) {
+
+                    if (!menu.id) {
+
+                        Swal.fire({
+
+                            icon:
+                                "error",
+
+                            title:
+                                "Gagal",
+
+                            text:
+                                "ID menu tidak ditemukan.",
+
+                        });
+
+                        return;
                     }
+
+
+                    /**
+                     * Update menu:
+                     * PUT /menus/:id
+                     */
+                    await api.put(
+                        `/menus/${encodeURIComponent(
+                            menu.id
+                        )}`,
+                        form
+                    );
+
+                } else {
+
+                    /**
+                     * Tambah menu:
+                     * POST /menus
+                     */
+                    await api.post(
+                        "/menus",
+                        form
+                    );
+                }
+
+
+                /* =====================================
+                   SUCCESS
+                ===================================== */
+
+                await Swal.fire({
+
+                    icon:
+                        "success",
+
+                    title:
+                        "Berhasil",
+
+                    text:
+                        editing
+                            ? "Menu berhasil diperbarui."
+                            : "Menu berhasil ditambahkan.",
+
+                    timer:
+                        1500,
+
+                    showConfirmButton:
+                        false,
+
+                });
+
+
+                closeModal();
+
+
+                await loadMenus();
+
+            } catch (
+            error: any
+            ) {
+
+                console.error(
+                    "SAVE MENU ERROR:",
+                    error
                 );
 
+
+                console.error(
+                    "SAVE MENU RESPONSE:",
+                    error?.response?.data
+                );
+
+
+                const backendError =
+                    error?.response?.data;
+
+
+                Swal.fire({
+
+                    icon:
+                        "error",
+
+                    title:
+                        "Gagal",
+
+                    text:
+                        backendError?.error ||
+                        backendError?.message ||
+                        error?.message ||
+                        "Tidak dapat menyimpan menu.",
+
+                });
+
+            } finally {
+
+                setSaving(false);
+
             }
+        };
 
 
-
-            Swal.fire({
-                icon: "success",
-                title: "Berhasil",
-                timer: 1500,
-                showConfirmButton: false
-            });
-
-
-
-            setShowModal(false);
-
-            setMenu(emptyMenu);
-
-            setPreview("");
-
-            setImageFile(null);
-
-
-            await loadMenus();
-
-
-
-        } catch (error: any) {
-
-            console.error(error);
-
-            Swal.fire({
-                icon: "error",
-                title: "Gagal",
-                text: error.response?.data?.error || error.message
-            });
-
-        }
-
-    };
-
-
-
+    /* =================================================
+       RENDER
+    ================================================= */
 
     return (
 
         <div
-            className={`seller-layout ${openMenu
-                ? "menu-open"
-                : "menu-close"
-                }`}
+            className={
+                `seller-layout ${openMenu
+                    ? "menu-open"
+                    : "menu-close"
+                }`
+            }
         >
 
+            {/* =========================================
+                SELLER NAVBAR
+            ========================================= */}
 
             <SellerNavbar
-                openMenu={openMenu}
-                setOpenMenu={setOpenMenu}
+                openMenu={
+                    openMenu
+                }
+                setOpenMenu={
+                    setOpenMenu
+                }
             />
 
 
-            <main className="seller-content">
+            <main
+                className="seller-content"
+            >
 
+                {/* =====================================
+                    HEADER
+                ===================================== */}
 
-                {/* =========================
-        HEADER
-    ========================= */}
-
-                <div className="menu-header">
+                <div
+                    className="menu-header"
+                >
 
                     <div>
+
                         <h1>
                             Daftar Menu
                         </h1>
@@ -811,15 +1523,21 @@ export default function MenuPage() {
                         <p>
                             Kelola makanan dan minuman warteg kamu
                         </p>
+
                     </div>
 
 
                     <button
+                        type="button"
                         className="add-button"
-                        onClick={openAdd}
+                        onClick={
+                            openAdd
+                        }
                     >
 
-                        <Plus size={18} />
+                        <Plus
+                            size={18}
+                        />
 
                         Tambah Menu
 
@@ -828,37 +1546,42 @@ export default function MenuPage() {
                 </div>
 
 
+                {/* =====================================
+                    STATISTICS
+                ===================================== */}
 
+                <div
+                    className="menu-stats"
+                >
 
-                {/* =========================
-        STATISTIC
-    ========================= */}
+                    {/* TOTAL MENU */}
 
+                    <div
+                        className="stat-card"
+                    >
 
-                <div className="menu-stats">
+                        <div
+                            className="stat-icon total"
+                        >
 
-
-
-                    <div className="stat-card">
-
-                        <div className="stat-icon total">
-
-                            <Package size={28} />
+                            <Package
+                                size={28}
+                            />
 
                         </div>
 
 
-                        <div className="stat-content">
+                        <div
+                            className="stat-content"
+                        >
 
                             <span>
                                 Total Menu
                             </span>
 
-
                             <h2>
                                 {totalMenu}
                             </h2>
-
 
                             <small>
                                 Semua menu
@@ -866,343 +1589,325 @@ export default function MenuPage() {
 
                         </div>
 
-
                     </div>
 
 
+                    {/* MAKANAN */}
 
+                    <div
+                        className="stat-card"
+                    >
 
+                        <div
+                            className="stat-icon food"
+                        >
 
-
-                    <div className="stat-card">
-
-
-                        <div className="stat-icon food">
-
-                            <UtensilsCrossed size={28} />
+                            <UtensilsCrossed
+                                size={28}
+                            />
 
                         </div>
 
 
-                        <div className="stat-content">
-
+                        <div
+                            className="stat-content"
+                        >
 
                             <span>
                                 Makanan
                             </span>
 
-
                             <h2>
                                 {totalFood}
                             </h2>
-
 
                             <small>
                                 Menu makanan
                             </small>
 
-
                         </div>
-
 
                     </div>
 
 
+                    {/* MINUMAN */}
 
+                    <div
+                        className="stat-card"
+                    >
 
+                        <div
+                            className="stat-icon drink"
+                        >
 
-
-
-                    <div className="stat-card">
-
-
-                        <div className="stat-icon drink">
-
-
-                            <Coffee size={28} />
-
+                            <Coffee
+                                size={28}
+                            />
 
                         </div>
 
 
-                        <div className="stat-content">
-
+                        <div
+                            className="stat-content"
+                        >
 
                             <span>
                                 Minuman
                             </span>
 
-
                             <h2>
                                 {totalDrink}
                             </h2>
-
 
                             <small>
                                 Menu minuman
                             </small>
 
-
                         </div>
-
 
                     </div>
 
 
+                    {/* STOK HABIS */}
 
+                    <div
+                        className="stat-card"
+                    >
 
+                        <div
+                            className="stat-icon stock"
+                        >
 
-
-
-                    <div className="stat-card">
-
-
-                        <div className="stat-icon stock">
-
-
-                            <ImageIcon size={28} />
-
+                            <Package
+                                size={28}
+                            />
 
                         </div>
 
 
-                        <div className="stat-content">
-
+                        <div
+                            className="stat-content"
+                        >
 
                             <span>
                                 Stok Habis
                             </span>
 
-
                             <h2>
                                 {outStock}
                             </h2>
-
 
                             <small>
                                 Perlu isi ulang
                             </small>
 
-
                         </div>
 
-
                     </div>
 
+                </div>
 
 
-                </div >
+                {/* =====================================
+                    TOOLBAR
+                ===================================== */}
 
+                <div
+                    className="menu-toolbar"
+                >
 
+                    {/* SEARCH */}
 
+                    <div
+                        className="search-box"
+                    >
 
-
-
-
-
-
-                {/* =========================
-                        TOOLBAR
-                        ========================= */}
-
-
-                <div className="menu-toolbar">
-
-
-
-                    <div className="search-box">
-                        <Search size={18} />
-
+                        <Search
+                            size={18}
+                        />
 
                         <input
-
                             type="text"
-
                             placeholder="Cari menu..."
-
-                            value={search}
-
+                            value={
+                                search
+                            }
                             onChange={
-                                (e) =>
+                                event =>
                                     setSearch(
-                                        e.target.value
+                                        event.target.value
                                     )
                             }
-
                         />
+
                     </div>
 
 
+                    {/* FILTERS */}
 
+                    <div
+                        className="toolbar-actions"
+                    >
 
+                        {/* CATEGORY */}
 
+                        <div
+                            className="filter-group"
+                        >
 
-                    <div className="toolbar-actions">
-
-
-
-                        <div className="filter-group">
-
-
-                            <Filter size={18} />
-
+                            <Filter
+                                size={18}
+                            />
 
                             <select
-
-                                value={category}
-
+                                value={
+                                    category
+                                }
                                 onChange={
-                                    (e) =>
+                                    event =>
                                         setCategory(
-                                            e.target.value
+                                            event.target.value
                                         )
                                 }
-
                             >
-
 
                                 <option value="Semua">
                                     Semua Kategori
                                 </option>
 
 
-                                <option value="Makanan">
-                                    🍛 Makanan
-                                </option>
+                                {
+                                    categories.map(
+                                        item => (
 
+                                            <option
+                                                key={
+                                                    item
+                                                }
+                                                value={
+                                                    item
+                                                }
+                                            >
+                                                {item}
+                                            </option>
 
-                                <option value="Minuman">
-                                    🥤 Minuman
-                                </option>
-
+                                        )
+                                    )
+                                }
 
                             </select>
-
 
                         </div>
 
 
+                        {/* STATUS */}
 
-
-
-                        <div className="filter-group">
-
+                        <div
+                            className="filter-group"
+                        >
 
                             <select
-
-                                value={statusFilter}
-
+                                value={
+                                    statusFilter
+                                }
                                 onChange={
-                                    (e) =>
+                                    event =>
                                         setStatusFilter(
-                                            e.target.value
+                                            event.target.value
                                         )
                                 }
-
                             >
-
 
                                 <option value="Semua">
                                     Semua Status
                                 </option>
 
-
                                 <option value="Tersedia">
-                                    ✅ Tersedia
+                                    Tersedia
                                 </option>
-
 
                                 <option value="Habis">
-                                    ❌ Habis
+                                    Habis
                                 </option>
 
-
                             </select>
-
 
                         </div>
 
 
+                        {/* SORT */}
 
-
-
-
-                        <div className="filter-group">
-
+                        <div
+                            className="filter-group"
+                        >
 
                             <select
-
-                                value={sortBy}
-
+                                value={
+                                    sortBy
+                                }
                                 onChange={
-                                    (e) =>
+                                    event =>
                                         setSortBy(
-                                            e.target.value
+                                            event.target.value
                                         )
                                 }
-
                             >
-
 
                                 <option value="Terbaru">
                                     Terbaru
                                 </option>
 
-
                                 <option value="Nama A-Z">
                                     Nama A-Z
                                 </option>
-
 
                                 <option value="Harga Murah">
                                     Harga Termurah
                                 </option>
 
-
                                 <option value="Harga Mahal">
                                     Harga Termahal
                                 </option>
 
-
                             </select>
-
 
                         </div>
 
-
-
                     </div>
 
+                </div>
 
 
-                </div >
+                {/* =====================================
+                    MENU GRID
+                ===================================== */}
 
-
-                {/* =========================
-    MENU GRID
-========================= */}
-
-                <div className="menu-grid">
-
+                <div
+                    className="menu-grid"
+                >
 
                     {
                         loading ? (
 
-                            <div className="loading-menu" >
-
+                            <div
+                                className="loading-menu"
+                            >
                                 Memuat menu...
-
                             </div>
-
 
                         ) : filteredMenus.length === 0 ? (
 
+                            <div
+                                className="empty-menu"
+                            >
 
-                            <div className="empty-menu">
+                                <div
+                                    className="empty-icon"
+                                >
 
-                                <div className="empty-icon">
-
-                                    <Package size={55} />
+                                    <Package
+                                        size={55}
+                                    />
 
                                 </div>
 
@@ -1220,312 +1925,282 @@ export default function MenuPage() {
 
 
                                 <button
+                                    type="button"
                                     className="empty-add-button"
-                                    onClick={openAdd}
+                                    onClick={
+                                        openAdd
+                                    }
                                 >
 
-                                    <Plus size={18} />
+                                    <Plus
+                                        size={18}
+                                    />
 
                                     Tambah Menu Pertama
 
                                 </button>
 
-
                             </div>
-
 
                         ) : (
 
+                            filteredMenus.map(
+                                item => {
 
-                            filteredMenus.map((item) => (
-
-
-                                <div
-                                    className="menu-card"
-                                    key={item.id}
-                                >
-
+                                    const imageUrl =
+                                        getImageUrl(
+                                            item.image
+                                        );
 
 
-                                    {/* IMAGE */}
+                                    return (
 
-                                    <div className="menu-image">
+                                        <div
+                                            className="menu-card"
+                                            key={
+                                                item.id
+                                            }
+                                        >
+
+                                            {/* =================================
+                                                MENU IMAGE
+                                            ================================= */}
+
+                                            <div
+                                                className="menu-image"
+                                            >
+
+                                                {
+                                                    imageUrl ? (
+
+                                                        <img
+                                                            src={
+                                                                imageUrl
+                                                            }
+                                                            alt={
+                                                                item.name
+                                                            }
+                                                            onError={
+                                                                event => {
+
+                                                                    console.error(
+                                                                        "IMAGE LOAD ERROR:",
+                                                                        imageUrl
+                                                                    );
+
+                                                                    event.currentTarget.style.display =
+                                                                        "none";
+                                                                }
+                                                            }
+                                                        />
+
+                                                    ) : (
+
+                                                        <div
+                                                            className="no-image"
+                                                        >
+
+                                                            <ImageIcon
+                                                                size={35}
+                                                            />
+
+                                                        </div>
+
+                                                    )
+                                                }
 
 
-                                        {
-                                            item.image ? (
-
-                                                <img
-                                                    src={
-                                                        item.image
-                                                            ? item.image.startsWith("http")
-                                                                ? item.image
-                                                                : `http://localhost:8080/${item.image}`
-                                                            : "/default-food.png"
+                                                <span
+                                                    className={
+                                                        item.available
+                                                            ? "status available"
+                                                            : "status unavailable"
                                                     }
-                                                    alt={item.name}
-                                                />
+                                                >
+
+                                                    {
+                                                        item.available
+                                                            ? "Tersedia"
+                                                            : "Habis"
+                                                    }
+
+                                                </span>
+
+                                            </div>
 
 
-                                            ) : (
+                                            {/* =================================
+                                                MENU BODY
+                                            ================================= */}
+
+                                            <div
+                                                className="menu-card-body"
+                                            >
+
+                                                {/* TITLE */}
+
+                                                <div
+                                                    className="menu-title"
+                                                >
+
+                                                    <h3>
+                                                        {
+                                                            item.name
+                                                        }
+                                                    </h3>
 
 
-                                                <div className="no-image">
-
-                                                    <ImageIcon size={35} />
+                                                    <span
+                                                        className="category"
+                                                    >
+                                                        {
+                                                            item.category
+                                                        }
+                                                    </span>
 
                                                 </div>
 
 
-                                            )
+                                                {/* DESCRIPTION */}
 
+                                                <p
+                                                    className="menu-description"
+                                                >
 
-                                        }
+                                                    {
+                                                        item.description ||
+                                                        "Tidak ada deskripsi"
+                                                    }
 
+                                                </p>
 
 
-                                        <span
+                                                {/* PRICE & STOCK */}
 
-                                            className={
-                                                item.available
-                                                    ?
-                                                    "status available"
-                                                    :
-                                                    "status unavailable"
-                                            }
+                                                <div
+                                                    className="menu-info"
+                                                >
 
-                                        >
+                                                    <div>
 
+                                                        <span>
+                                                            Harga
+                                                        </span>
 
-                                            {
-                                                item.available
-                                                    ?
-                                                    "Tersedia"
-                                                    :
-                                                    "Habis"
-                                            }
+                                                        <strong>
+                                                            Rp{" "}
+                                                            {
+                                                                item.price.toLocaleString(
+                                                                    "id-ID"
+                                                                )
+                                                            }
+                                                        </strong>
 
+                                                    </div>
 
-                                        </span>
 
+                                                    <div>
 
-                                    </div>
+                                                        <span>
+                                                            Stok
+                                                        </span>
 
+                                                        <strong>
+                                                            {
+                                                                item.stock
+                                                            }
+                                                        </strong>
 
+                                                    </div>
 
+                                                </div>
 
 
+                                                {/* ACTIONS */}
 
+                                                <div
+                                                    className="menu-actions"
+                                                >
 
-                                    {/* BODY */}
+                                                    <button
+                                                        type="button"
+                                                        className="edit-menu"
+                                                        onClick={() =>
+                                                            openEdit(
+                                                                item
+                                                            )
+                                                        }
+                                                    >
 
-                                    <div className="menu-card-body">
+                                                        <Edit3
+                                                            size={17}
+                                                        />
 
+                                                        Edit
 
+                                                    </button>
 
-                                        <div className="menu-title">
 
+                                                    <button
+                                                        type="button"
+                                                        className="delete-menu"
+                                                        onClick={() =>
+                                                            removeMenu(
+                                                                item.id
+                                                            )
+                                                        }
+                                                    >
 
-                                            <h3>
+                                                        <Trash2
+                                                            size={17}
+                                                        />
 
-                                                {item.name}
+                                                        Hapus
 
-                                            </h3>
+                                                    </button>
 
-
-
-                                            <span className="category">
-
-
-                                                {
-                                                    item.category === "Makanan"
-                                                        ?
-                                                        "🍛"
-                                                        :
-                                                        "🥤"
-                                                }
-
-                                                {" "}
-
-                                                {item.category}
-
-
-                                            </span>
-
-
-
-                                        </div>
-
-
-
-
-
-
-                                        <p className="menu-description">
-
-
-                                            {
-                                                item.description
-                                                ||
-                                                "Tidak ada deskripsi"
-                                            }
-
-
-                                        </p>
-
-
-
-
-
-
-                                        <div className="menu-info">
-
-
-                                            <div>
-
-
-                                                <span>
-                                                    Harga
-                                                </span>
-
-
-                                                <strong>
-
-                                                    Rp {item.price.toLocaleString("id-ID")}
-
-                                                </strong>
-
+                                                </div>
 
                                             </div>
 
-
-
-
-
-                                            <div>
-
-
-                                                <span>
-                                                    Stok
-                                                </span>
-
-
-                                                <strong>
-
-                                                    {item.stock}
-
-                                                </strong>
-
-
-                                            </div>
-
-
-
                                         </div>
 
-
-
-
-
-
-
-                                        <div className="menu-actions">
-
-
-
-                                            <button
-
-                                                className="edit-menu"
-
-                                                onClick={() =>
-                                                    openEdit(item)
-                                                }
-
-                                            >
-
-                                                <Edit3 size={17} />
-
-                                                Edit
-
-                                            </button>
-
-
-
-
-
-
-
-                                            <button
-
-                                                className="delete-menu"
-
-                                                onClick={() =>
-                                                    removeMenu(item.id)
-                                                }
-
-                                            >
-
-
-                                                <Trash2 size={17} />
-
-                                                Hapus
-
-
-                                            </button>
-
-
-
-                                        </div>
-
-
-
-
-
-                                    </div>
-
-
-
-                                </div>
-
-
-
-                            ))
-
+                                    );
+                                }
+                            )
 
                         )
-
-
                     }
 
+                </div>
 
 
-                </div >
-
-
-
-
-
-                {/* =========================
-                MODAL 
-                ========================= */}
+                {/* =====================================
+                    ADD / EDIT MODAL
+                ===================================== */}
 
                 {
                     showModal && (
 
-                        <div className="modal-overlay">
+                        <div
+                            className="modal-overlay"
+                        >
 
+                            <div
+                                className="menu-modal"
+                            >
 
-                            <div className="menu-modal">
+                                {/* MODAL HEADER */}
 
-
-
-                                <div className="modal-header">
-
+                                <div
+                                    className="modal-header"
+                                >
 
                                     <div>
 
-
-                                        <div className="modal-title-center">
+                                        <div
+                                            className="modal-title-center"
+                                        >
 
                                             <h2>
                                                 {
@@ -1546,107 +2221,103 @@ export default function MenuPage() {
 
 
                                     <button
-
+                                        type="button"
                                         className="close-modal"
-
-                                        onClick={() =>
-                                            setShowModal(false)
+                                        onClick={
+                                            closeModal
                                         }
-
+                                        disabled={
+                                            saving
+                                        }
                                     >
                                         ×
                                     </button>
 
-
                                 </div>
 
 
+                                <div
+                                    className="menu-form"
+                                >
 
+                                    {/* =================================
+                                        IMAGE UPLOAD
+                                    ================================= */}
 
+                                    <div
+                                        className="image-upload"
+                                    >
 
-
-                                <div className="menu-form">
-
-
-
-                                    {/* FOTO */}
-
-                                    <div className="image-upload">
-
-                                        <div className="upload-box">
-
+                                        <div
+                                            className="upload-box"
+                                        >
 
                                             {
                                                 preview ? (
 
                                                     <img
-                                                        src={preview}
-                                                        alt="preview"
+                                                        src={
+                                                            preview
+                                                        }
+                                                        alt="Preview menu"
                                                     />
 
                                                 ) : (
 
-                                                    <div className="upload-placeholder">
+                                                    <div
+                                                        className="upload-placeholder"
+                                                    >
 
-
-                                                        <ImageIcon size={42} />
-
+                                                        <ImageIcon
+                                                            size={42}
+                                                        />
 
                                                         <span>
                                                             Upload gambar menu
                                                         </span>
 
-
                                                     </div>
 
                                                 )
-
                                             }
-
 
                                         </div>
 
 
+                                        <label
+                                            className="file-button"
+                                        >
 
-
-                                        <label className="file-button">
-
-
-                                            <ImageIcon size={18} />
-
+                                            <ImageIcon
+                                                size={18}
+                                            />
 
                                             Pilih Foto
 
 
                                             <input
-
                                                 type="file"
-
                                                 accept="image/*"
-
-                                                onChange={handleImage}
-
+                                                onChange={
+                                                    handleImage
+                                                }
+                                                disabled={
+                                                    saving
+                                                }
                                             />
 
-
                                         </label>
-
-
 
                                     </div>
 
 
+                                    {/* =================================
+                                        MENU NAME
+                                    ================================= */}
 
-
-
-
-
-
-
-                                    {/* NAMA */}
-
-                                    <div className="form-group">
-
+                                    <div
+                                        className="form-group"
+                                    >
 
                                         <label>
                                             Nama Menu
@@ -1654,48 +2325,42 @@ export default function MenuPage() {
 
 
                                         <input
-
                                             type="text"
-
                                             placeholder="Contoh: Ayam Goreng Sambal"
-
-                                            value={menu.name}
-
-
-                                            onChange={(e) =>
-
-                                                setMenu({
-
-                                                    ...menu,
-
-                                                    name: e.target.value
-
-                                                })
-
+                                            value={
+                                                menu.name
                                             }
-
-
+                                            onChange={
+                                                event =>
+                                                    setMenu(
+                                                        previous => ({
+                                                            ...previous,
+                                                            name:
+                                                                event.target.value,
+                                                        })
+                                                    )
+                                            }
+                                            disabled={
+                                                saving
+                                            }
                                         />
 
                                     </div>
 
 
+                                    {/* =================================
+                                        CATEGORY & PRICE
+                                    ================================= */}
 
+                                    <div
+                                        className="form-row"
+                                    >
 
+                                        {/* CATEGORY */}
 
-
-
-
-
-
-                                    {/* CATEGORY PRICE */}
-
-
-                                    <div className="form-row">
-
-
-                                        <div className="form-group">
-
+                                        <div
+                                            className="form-group"
+                                        >
 
                                             <label>
                                                 Kategori
@@ -1703,59 +2368,51 @@ export default function MenuPage() {
 
 
                                             <select
-
-
-                                                value={menu.category}
-
-
-                                                onChange={(e) =>
-
-                                                    setMenu({
-
-                                                        ...menu,
-
-                                                        category:
-                                                            e.target.value as
-                                                            "Makanan" |
-                                                            "Minuman"
-
-                                                    })
-
+                                                value={
+                                                    menu.category
                                                 }
-
-
+                                                onChange={
+                                                    event =>
+                                                        setMenu(
+                                                            previous => ({
+                                                                ...previous,
+                                                                category:
+                                                                    event.target.value,
+                                                            })
+                                                        )
+                                                }
+                                                disabled={
+                                                    saving
+                                                }
                                             >
-
 
                                                 <option value="Makanan">
                                                     🍛 Makanan
                                                 </option>
 
-
                                                 <option value="Minuman">
                                                     🥤 Minuman
                                                 </option>
 
-
                                             </select>
-
 
                                         </div>
 
 
+                                        {/* PRICE */}
 
-
-
-
-
-                                        <div className="form-group">
-
+                                        <div
+                                            className="form-group"
+                                        >
 
                                             <label>
                                                 Harga
                                             </label>
 
-                                            <div className="price-input">
+
+                                            <div
+                                                className="price-input"
+                                            >
 
                                                 <span>
                                                     Rp
@@ -1763,83 +2420,112 @@ export default function MenuPage() {
 
 
                                                 <input
-
                                                     type="text"
-
                                                     inputMode="numeric"
-
                                                     placeholder="15000"
-
                                                     value={
                                                         menu.price === 0
-                                                            ?
-                                                            ""
-                                                            :
-                                                            menu.price.toLocaleString("id-ID")
+                                                            ? ""
+                                                            : menu.price.toLocaleString(
+                                                                "id-ID"
+                                                            )
                                                     }
+                                                    onChange={
+                                                        event => {
+
+                                                            const raw =
+                                                                event.target.value
+                                                                    .replace(
+                                                                        /\D/g,
+                                                                        ""
+                                                                    );
 
 
-                                                    onChange={(e) => {
+                                                            const price =
+                                                                raw
+                                                                    ? Number(
+                                                                        raw
+                                                                    )
+                                                                    : 0;
 
 
-                                                        const value =
-                                                            e.target.value
-                                                                .replace(/\D/g, "");
+                                                            setMenu(
+                                                                previous => ({
+                                                                    ...previous,
+                                                                    price,
+                                                                })
+                                                            );
 
-
-                                                        setMenu({
-
-                                                            ...menu,
-
-                                                            price:
-                                                                Number(value)
-
-                                                        });
-
-
-                                                    }}
-
+                                                        }
+                                                    }
+                                                    disabled={
+                                                        saving
+                                                    }
                                                 />
 
                                             </div>
 
-
-
                                         </div>
-
-
 
                                     </div>
 
-                                    {/* STOCK + STATUS */}
-                                    <div className="form-row">
+
+                                    {/* =================================
+                                        STOCK & STATUS
+                                    ================================= */}
+
+                                    <div
+                                        className="form-row"
+                                    >
 
                                         {/* STOCK */}
-                                        <div className="form-group">
+
+                                        <div
+                                            className="form-group"
+                                        >
 
                                             <label>
                                                 Stok Tersedia
                                             </label>
 
 
-                                            <div className="stock-counter">
+                                            <div
+                                                className="stock-counter"
+                                            >
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => updateStock("minus")}
+                                                    onClick={() =>
+                                                        updateStock(
+                                                            "minus"
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        saving ||
+                                                        menu.stock <= 0
+                                                    }
                                                 >
                                                     −
                                                 </button>
 
 
                                                 <span>
-                                                    {menu.stock}
+                                                    {
+                                                        menu.stock
+                                                    }
                                                 </span>
 
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => updateStock("plus")}
+                                                    onClick={() =>
+                                                        updateStock(
+                                                            "plus"
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        saving
+                                                    }
                                                 >
                                                     +
                                                 </button>
@@ -1849,9 +2535,11 @@ export default function MenuPage() {
                                         </div>
 
 
-
                                         {/* STATUS */}
-                                        <div className="form-group">
+
+                                        <div
+                                            className="form-group"
+                                        >
 
                                             <label>
                                                 Status Penjualan
@@ -1859,24 +2547,34 @@ export default function MenuPage() {
 
 
                                             <select
-                                                value={menu.available ? "true" : "false"}
-                                                onChange={(e) =>
-                                                    setMenu({
-                                                        ...menu,
-                                                        available: e.target.value === "true",
-                                                    })
+                                                value={
+                                                    menu.available
+                                                        ? "true"
+                                                        : "false"
+                                                }
+                                                onChange={
+                                                    event =>
+                                                        setMenu(
+                                                            previous => ({
+                                                                ...previous,
+                                                                available:
+                                                                    event.target.value ===
+                                                                    "true",
+                                                            })
+                                                        )
+                                                }
+                                                disabled={
+                                                    saving
                                                 }
                                             >
 
                                                 <option value="true">
-                                                    ✅ Menu tersedia
+                                                    Tersedia
                                                 </option>
-
 
                                                 <option value="false">
-                                                    ❌ Menu habis
+                                                    Habis
                                                 </option>
-
 
                                             </select>
 
@@ -1885,29 +2583,59 @@ export default function MenuPage() {
                                     </div>
 
 
-                                    {/* DESCRIPTION */}
-                                    <div className="form-group">
-                                        <label>Deskripsi Menu</label>
+                                    {/* =================================
+                                        DESCRIPTION
+                                    ================================= */}
+
+                                    <div
+                                        className="form-group"
+                                    >
+
+                                        <label>
+                                            Deskripsi Menu
+                                        </label>
+
 
                                         <textarea
                                             placeholder="Contoh: Ayam goreng khas warteg dengan sambal pedas"
-                                            value={menu.description}
-                                            onChange={(e) =>
-                                                setMenu({
-                                                    ...menu,
-                                                    description: e.target.value,
-                                                })
+                                            value={
+                                                menu.description
+                                            }
+                                            onChange={
+                                                event =>
+                                                    setMenu(
+                                                        previous => ({
+                                                            ...previous,
+                                                            description:
+                                                                event.target.value,
+                                                        })
+                                                    )
+                                            }
+                                            disabled={
+                                                saving
                                             }
                                         />
+
                                     </div>
 
 
-                                    <div className="modal-footer">
+                                    {/* =================================
+                                        MODAL FOOTER
+                                    ================================= */}
+
+                                    <div
+                                        className="modal-footer"
+                                    >
 
                                         <button
                                             type="button"
                                             className="cancel-button"
-                                            onClick={() => setShowModal(false)}
+                                            onClick={
+                                                closeModal
+                                            }
+                                            disabled={
+                                                saving
+                                            }
                                         >
                                             Batal
                                         </button>
@@ -1916,18 +2644,35 @@ export default function MenuPage() {
                                         <button
                                             type="button"
                                             className="save-button"
-                                            onClick={saveMenu}
+                                            onClick={
+                                                saveMenu
+                                            }
+                                            disabled={
+                                                saving
+                                            }
                                         >
-                                            Simpan
+
+                                            {
+                                                saving
+                                                    ? "Menyimpan..."
+                                                    : "Simpan"
+                                            }
+
                                         </button>
 
                                     </div>
 
                                 </div>
+
                             </div>
+
                         </div>
-                    )}
+
+                    )
+                }
+
             </main>
+
         </div>
     );
 }

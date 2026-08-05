@@ -6,9 +6,18 @@ import {
 
 import CustomerLayout from "./layouts/CustomerLayout";
 
-/* ==========================
+/* =====================================================
+   AUTH
+===================================================== */
+
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+
+/* =====================================================
    CUSTOMER
-========================== */
+===================================================== */
 
 import Home from "./pages/customer/Home";
 import Explore from "./pages/customer/Explore";
@@ -22,121 +31,238 @@ import OrderDetail from "./pages/customer/OrderDetail";
 import Profile from "./pages/customer/Profile";
 import Chat from "./pages/customer/Chat";
 
-
-/* ==========================
+/* =====================================================
    SELLER
-========================== */
+===================================================== */
 
 import SellerDashboard from "./pages/seller/Dashboard";
 import BusinessProfile from "./pages/seller/BusinessProfile";
 import MenuPage from "./pages/seller/MenuPage";
-
-// nanti buat file ini:
-// src/pages/seller/Orders.tsx
 import SellerOrders from "./pages/seller/Orders";
-
 
 export default function App() {
   return (
     <BrowserRouter>
-
       <Routes>
 
-        {/* ==========================
+        {/* =================================================
+            AUTH
+        ================================================= */}
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        {/* =================================================
             CUSTOMER
-        ========================== */}
+        ================================================= */}
 
         <Route element={<CustomerLayout />}>
 
+          {/* HOME */}
+
           <Route
             path="/"
-            element={<Home />}
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
           />
+
+          {/* EXPLORE */}
 
           <Route
             path="/explore"
-            element={<Explore />}
+            element={
+              <ProtectedRoute>
+                <Explore />
+              </ProtectedRoute>
+            }
           />
+
+          {/* STORE */}
 
           <Route
             path="/store/:id"
-            element={<StoreDetail />}
+            element={
+              <ProtectedRoute>
+                <StoreDetail />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* =================================================
+              CART
+
+              Support both:
+              /cart
+              /cart/:storeId
+          ================================================= */}
+
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/cart/:storeId"
-            element={<Cart />}
+            element={
+              <ProtectedRoute>
+                <Cart />
+              </ProtectedRoute>
+            }
           />
+
+          {/* =================================================
+              CHECKOUT
+          ================================================= */}
 
           <Route
             path="/checkout"
-            element={<Checkout />}
+            element={
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            }
           />
 
+          {/* =================================================
+              PAYMENT
+          ================================================= */}
+
           <Route
-            path="/payment/:id"
-            element={<Payment />}
+            path="/payment/:orderId"
+            element={
+              <ProtectedRoute>
+                <Payment />
+              </ProtectedRoute>
+            }
           />
+
+          {/* =================================================
+              ORDER SUCCESS
+          ================================================= */}
 
           <Route
             path="/order-success"
-            element={<OrderSuccess />}
+            element={
+              <ProtectedRoute>
+                <OrderSuccess />
+              </ProtectedRoute>
+            }
           />
+
+          {/* =================================================
+              ORDERS
+          ================================================= */}
 
           <Route
             path="/orders"
-            element={<Orders />}
+            element={
+              <ProtectedRoute>
+                <Orders />
+              </ProtectedRoute>
+            }
           />
+
+          {/* =================================================
+              ORDER DETAIL
+          ================================================= */}
 
           <Route
             path="/orders/:id"
-            element={<OrderDetail />}
+            element={
+              <ProtectedRoute>
+                <OrderDetail />
+              </ProtectedRoute>
+            }
           />
+
+          {/* =================================================
+              CHAT
+          ================================================= */}
 
           <Route
             path="/chat"
-            element={<Chat />}
+            element={
+              <ProtectedRoute>
+                <Chat />
+              </ProtectedRoute>
+            }
           />
+
+          {/* =================================================
+              PROFILE
+          ================================================= */}
 
           <Route
             path="/profile"
-            element={<Profile />}
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            }
           />
 
         </Route>
 
-
-
-        {/* ==========================
+        {/* =================================================
             SELLER
-        ========================== */}
+        ================================================= */}
 
         <Route
           path="/seller/:seller_id/dashboard"
-          element={<SellerDashboard />}
+          element={
+            <ProtectedRoute>
+              <SellerDashboard />
+            </ProtectedRoute>
+          }
         />
-
 
         <Route
           path="/seller/:seller_id/profile"
-          element={<BusinessProfile />}
+          element={
+            <ProtectedRoute>
+              <BusinessProfile />
+            </ProtectedRoute>
+          }
         />
-
 
         <Route
           path="/seller/:seller_id/orders"
-          element={<SellerOrders />}
+          element={
+            <ProtectedRoute>
+              <SellerOrders />
+            </ProtectedRoute>
+          }
         />
-
 
         <Route
           path="/seller/:seller_id/menus"
-          element={<MenuPage />}
+          element={
+            <ProtectedRoute>
+              <MenuPage />
+            </ProtectedRoute>
+          }
         />
 
-
       </Routes>
-
     </BrowserRouter>
   );
 }

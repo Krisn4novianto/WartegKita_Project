@@ -54,16 +54,22 @@ export interface Seller {
   image?: string;
 }
 
+/* =====================================================
+   MENU
+===================================================== */
+
 export interface Menu {
-  id: string | number;
-  seller_id?: string | number;
+  id: string;
+  seller_id: string;
   name: string;
-  description?: string;
+  description: string;
   price: number;
-  stock?: number;
-  is_available?: boolean;
-  category?: string;
-  image?: string;
+  stock: number;
+  category: string;
+  image: string;
+  available: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CartItem {

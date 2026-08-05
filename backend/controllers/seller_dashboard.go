@@ -39,7 +39,6 @@ func SellerDashboard(c *gin.Context) {
 		sellerID,
 	)
 
-
 	if err != nil {
 
 		c.JSON(
