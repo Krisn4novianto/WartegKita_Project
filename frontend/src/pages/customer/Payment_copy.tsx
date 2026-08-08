@@ -1,23 +1,39 @@
 import {
-    QrCode,
-    Building2,
-    CreditCard,
-    ArrowRight,
     ArrowLeft,
-    MapPin,
+    Building2,
+    CheckCircle2,
+    Clock3,
+    CreditCard,
+    PackageCheck,
+    QrCode,
     ShoppingBag,
-    Bike,
-    WalletCards,
-    Banknote,
+    XCircle,
 } from "lucide-react";
 
-import { useNavigate, useLocation } from "react-router-dom";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from "react";
 
-import { useCartStore } from "../../store/cartStore";
-import { useCheckoutStore } from "../../store/checkoutStore";
+import {
+    useNavigate,
+    useParams,
+} from "react-router-dom";
+
 import api from "../../services/api";
 
-import "../../styles/checkout.css";
+import QRISPayment
+    from "./Payment/QRISPayment";
+
+import BankTransferPayment
+    from "./Payment/BankTransferPayment";
+
+import VirtualAccountPayment
+    from "./Payment/VirtualAccountPayment";
+
+import "../../styles/payment.css";
 
 /* =====================================================
    TYPES
@@ -26,108 +42,1109 @@ import "../../styles/checkout.css";
 type PaymentMethod =
     | "qris"
     | "bank_transfer"
-    | "virtual_account"
-    | "paypal"
-    | "cod";
+    | "virtual_account";
 
-type DeliveryType =
-    | "delivery"
-    | "pickup";
+type PaymentStatus =
+    | "pending"
+    | "paid"
+    | "success"
+    | "failed"
+    | "cancelled"
+    | "expired";
 
-interface CheckoutUser {
+interface OrderItem {
     id?: string;
-    user_id?: string;
+    menu_id?: string;
+    menu_name?: string;
+    menuName?: string;
+
+    quantity?: number;
+    price?: number;
+    subtotal?: number;
+
+    menu?: {
+        id?: string;
+        name?: string;
+        price?: number;
+    };
 }
 
-interface PaymentOptionProps {
-    active: boolean;
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-    onClick: () => void;
+interface Order {
+    id?: string;
+    order_id?: string;
+
+    order_number?: string;
+    orderNumber?: string;
+
+    user_id?: string;
+    userId?: string;
+
+    seller_id?: string;
+    sellerId?: string;
+
+    payment_method?: string;
+    paymentMethod?: string;
+
+    total_amount?: number;
+    totalAmount?: number;
+
+    payment_status?: string;
+    paymentStatus?: string;
+
+    status?: string;
+    order_status?: string;
+    orderStatus?: string;
+
+    items?: OrderItem[];
+
+    created_at?: string;
+    createdAt?: string;
+
+    updated_at?: string;
+    updatedAt?: string;
+
+    message?: string;
+}
+
+interface ApiErrorResponse {
+    response?: {
+        status?: number;
+
+        data?: {
+            error?: string;
+            message?: string;
+            details?: string;
+        };
+    };
 }
 
 /* =====================================================
-   CHECKOUT
+   CONSTANT
 ===================================================== */
 
-export default function Checkout() {
-    const navigate = useNavigate();
-    const location = useLocation();
+const PAYMENT_DURATION_MS =
+    15 * 60 * 1000;
 
-    const items =
-        useCartStore(
-            (state) => state.items
-        );
+/* =====================================================
+   PAYMENT
+===================================================== */
+
+export default function Payment() {
+
+    const navigate =
+        useNavigate();
 
     const {
-        pickupMethod,
-        address,
-        paymentMethod,
-        setCheckout,
-    } = useCheckoutStore();
+        orderId,
+    } = useParams<{
+        orderId: string;
+    }>();
 
-    /* =====================================================
-       CHANGE PAYMENT METHOD
-       
-       Payment.tsx mengirim state:
-       
-       {
-         changePaymentMethod: true
-       }
-       
-       State ini hanya sebagai informasi bahwa user
-       datang dari proses ganti metode pembayaran.
-       
-       Checkout tetap membuat ORDER BARU.
-    ===================================================== */
+    /* =================================================
+       STATE
+    ================================================= */
 
-    const changePaymentMethod =
-        Boolean(
-            location.state?.changePaymentMethod
+    const [
+        order,
+        setOrder,
+    ] = useState<Order | null>(null);
+
+    const [
+        loading,
+        setLoading,
+    ] = useState(true);
+
+    const [
+        processing,
+        setProcessing,
+    ] = useState(false);
+
+    const [
+        error,
+        setError,
+    ] = useState("");
+
+    const [
+        paymentStatus,
+        setPaymentStatus,
+    ] = useState<PaymentStatus>(
+        "pending"
+    );
+
+    const [
+        copied,
+        setCopied,
+    ] = useState(false);
+
+    const [
+        paymentDeadline,
+        setPaymentDeadline,
+    ] = useState<number | null>(
+        null
+    );
+
+    const [
+        remainingSeconds,
+        setRemainingSeconds,
+    ] = useState(0);
+
+    /* =================================================
+       LOAD ORDER
+    ================================================= */
+
+    const loadOrder = useCallback(
+        async () => {
+
+            if (!orderId) {
+
+                setError(
+                    "Order ID tidak ditemukan."
+                );
+
+                setLoading(false);
+
+                return;
+            }
+
+            try {
+
+                setLoading(true);
+                setError("");
+
+                /*
+                 * Jangan langsung menganggap
+                 * response.data adalah Order.
+                 *
+                 * Backend / Axios interceptor
+                 * bisa mengembalikan:
+                 *
+                 * {
+                 *   data: {...}
+                 * }
+                 *
+                 * atau:
+                 *
+                 * {
+                 *   order: {...}
+                 * }
+                 *
+                 * atau:
+                 *
+                 * {
+                 *   data: {
+                 *      order: {...}
+                 *   }
+                 * }
+                 */
+
+                const response =
+                    await api.get(
+                        `/orders/${orderId}`
+                    );
+
+                console.log(
+                    "========================================"
+                );
+
+                console.log(
+                    "RAW PAYMENT RESPONSE:"
+                );
+
+                console.log(
+                    response
+                );
+
+                console.log(
+                    "RAW PAYMENT RESPONSE DATA:"
+                );
+
+                console.log(
+                    response?.data
+                );
+
+                const rawData =
+                    response?.data;
+
+                const orderData =
+                    extractOrder(
+                        rawData
+                    );
+
+                console.log(
+                    "========================================"
+                );
+
+                console.log(
+                    "NORMALIZED PAYMENT ORDER"
+                );
+
+                console.log(
+                    "ORDER:",
+                    orderData
+                );
+
+                console.log(
+                    "ORDER ID:",
+                    orderData?.id
+                );
+
+                console.log(
+                    "ORDER NUMBER:",
+                    orderData?.order_number
+                );
+
+                console.log(
+                    "PAYMENT METHOD:",
+                    orderData?.payment_method
+                );
+
+                console.log(
+                    "PAYMENT STATUS:",
+                    orderData?.payment_status
+                );
+
+                console.log(
+                    "ORDER STATUS:",
+                    orderData?.status
+                );
+
+                console.log(
+                    "CREATED AT:",
+                    orderData?.created_at
+                );
+
+                console.log(
+                    "========================================"
+                );
+
+                if (!orderData) {
+
+                    setError(
+                        "Data pesanan tidak ditemukan dari server."
+                    );
+
+                    setOrder(null);
+
+                    return;
+                }
+
+                /*
+                 * Normalisasi semua kemungkinan
+                 * nama field backend.
+                 */
+
+                const normalizedOrder =
+                    normalizeOrder(
+                        orderData
+                    );
+
+                console.log(
+                    "FINAL NORMALIZED ORDER:",
+                    normalizedOrder
+                );
+
+                console.log(
+                    "FINAL PAYMENT METHOD:",
+                    normalizedOrder.payment_method
+                );
+
+                setOrder(
+                    normalizedOrder
+                );
+
+                const normalizedStatus =
+                    normalizePaymentStatus(
+                        normalizedOrder.payment_status
+                    );
+
+                setPaymentStatus(
+                    normalizedStatus
+                );
+
+                /*
+                 * Deadline pembayaran.
+                 */
+
+                let deadline =
+                    Date.now() +
+                    PAYMENT_DURATION_MS;
+
+                if (
+                    normalizedOrder.created_at
+                ) {
+
+                    const createdAt =
+                        new Date(
+                            normalizedOrder.created_at
+                        ).getTime();
+
+                    if (
+                        Number.isFinite(
+                            createdAt
+                        )
+                    ) {
+
+                        deadline =
+                            createdAt +
+                            PAYMENT_DURATION_MS;
+                    }
+                }
+
+                if (
+                    normalizedStatus ===
+                    "pending"
+                ) {
+
+                    setPaymentDeadline(
+                        deadline
+                    );
+
+                } else {
+
+                    setPaymentDeadline(
+                        null
+                    );
+
+                    setRemainingSeconds(
+                        0
+                    );
+                }
+
+            } catch (
+            err: unknown
+            ) {
+
+                console.error(
+                    "LOAD ORDER FAILED:",
+                    err
+                );
+
+                const axiosError =
+                    err as ApiErrorResponse;
+
+                const status =
+                    axiosError
+                        .response
+                        ?.status;
+
+                const data =
+                    axiosError
+                        .response
+                        ?.data;
+
+                if (
+                    data?.error
+                ) {
+
+                    setError(
+                        data.error
+                    );
+
+                    return;
+                }
+
+                if (
+                    data?.message
+                ) {
+
+                    setError(
+                        data.message
+                    );
+
+                    return;
+                }
+
+                if (
+                    status === 404
+                ) {
+
+                    setError(
+                        "Pesanan tidak ditemukan."
+                    );
+
+                    return;
+                }
+
+                if (
+                    status === 401
+                ) {
+
+                    setError(
+                        "Sesi login kamu sudah berakhir."
+                    );
+
+                    return;
+                }
+
+                setError(
+                    "Gagal mengambil data pesanan."
+                );
+
+            } finally {
+
+                setLoading(false);
+            }
+
+        },
+        [orderId]
+    );
+
+    /* =================================================
+       INITIAL LOAD
+    ================================================= */
+
+    useEffect(() => {
+
+        loadOrder();
+
+    }, [
+        loadOrder,
+    ]);
+
+    /* =================================================
+       PAYMENT METHOD
+    ================================================= */
+
+    const paymentMethod =
+        normalizePaymentMethod(
+            order?.payment_method
         );
 
-    /* =====================================================
-       DELIVERY TYPE
-    ===================================================== */
+    /* =================================================
+       TOTAL
+    ================================================= */
 
-    const deliveryType: DeliveryType =
-        pickupMethod === "pickup"
-            ? "pickup"
-            : "delivery";
+    const totalAmount =
+        useMemo(() => {
 
-    /* =====================================================
-       EMPTY CART
-    ===================================================== */
+            if (!order) {
+                return 0;
+            }
 
-    if (items.length === 0) {
+            if (
+                typeof order.total_amount ===
+                "number" &&
+                Number.isFinite(
+                    order.total_amount
+                )
+            ) {
+
+                return order.total_amount;
+            }
+
+            if (
+                order.total_amount
+            ) {
+
+                const parsed =
+                    Number(
+                        order.total_amount
+                    );
+
+                if (
+                    Number.isFinite(
+                        parsed
+                    )
+                ) {
+
+                    return parsed;
+                }
+            }
+
+            return (
+                order.items?.reduce(
+                    (
+                        total,
+                        item
+                    ) => {
+
+                        const price =
+                            Number(
+                                item.price ??
+                                item.menu?.price ??
+                                0
+                            );
+
+                        const quantity =
+                            Number(
+                                item.quantity ??
+                                0
+                            );
+
+                        if (
+                            !Number.isFinite(
+                                price
+                            ) ||
+                            !Number.isFinite(
+                                quantity
+                            )
+                        ) {
+
+                            return total;
+                        }
+
+                        return (
+                            total +
+                            price *
+                            quantity
+                        );
+
+                    },
+                    0
+                ) ?? 0
+            );
+
+        }, [order]);
+
+    /* =================================================
+       PAYMENT METHOD LABEL
+    ================================================= */
+
+    const paymentMethodLabel =
+        getPaymentMethodLabel(
+            paymentMethod
+        );
+
+    /* =================================================
+       LIVE COUNTDOWN
+    ================================================= */
+
+    useEffect(() => {
+
+        if (
+            paymentDeadline === null
+        ) {
+
+            return;
+        }
+
+        if (
+            paymentStatus !==
+            "pending"
+        ) {
+
+            return;
+        }
+
+        const updateTimer =
+            () => {
+
+                const now =
+                    Date.now();
+
+                const difference =
+                    paymentDeadline -
+                    now;
+
+                if (
+                    difference <= 0
+                ) {
+
+                    setRemainingSeconds(
+                        0
+                    );
+
+                    setPaymentStatus(
+                        "expired"
+                    );
+
+                    setError(
+                        "Waktu pembayaran 15 menit telah habis."
+                    );
+
+                    return;
+                }
+
+                const seconds =
+                    Math.ceil(
+                        difference /
+                        1000
+                    );
+
+                setRemainingSeconds(
+                    Math.max(
+                        0,
+                        seconds
+                    )
+                );
+            };
+
+        updateTimer();
+
+        const timer =
+            window.setInterval(
+                updateTimer,
+                1000
+            );
+
+        return () => {
+
+            window.clearInterval(
+                timer
+            );
+        };
+
+    }, [
+        paymentDeadline,
+        paymentStatus,
+    ]);
+
+    /* =================================================
+       TIMER FORMAT
+    ================================================= */
+
+    const formatCountdown =
+        (
+            seconds: number
+        ): string => {
+
+            if (
+                !Number.isFinite(
+                    seconds
+                ) ||
+                seconds <= 0
+            ) {
+
+                return "00:00";
+            }
+
+            const safeSeconds =
+                Math.max(
+                    0,
+                    Math.floor(
+                        seconds
+                    )
+                );
+
+            const minutes =
+                Math.floor(
+                    safeSeconds /
+                    60
+                );
+
+            const remaining =
+                safeSeconds %
+                60;
+
+            return `${String(
+                minutes
+            ).padStart(
+                2,
+                "0"
+            )}:${String(
+                remaining
+            ).padStart(
+                2,
+                "0"
+            )}`;
+        };
+
+    const countdownText =
+        formatCountdown(
+            remainingSeconds
+        );
+
+    /* =================================================
+       TIMER URGENCY
+    ================================================= */
+
+    const timerUrgent =
+        remainingSeconds > 0 &&
+        remainingSeconds <= 60;
+
+    /* =================================================
+       COPY
+    ================================================= */
+
+    const handleCopy = async (
+        value: string
+    ) => {
+
+        try {
+
+            await navigator
+                .clipboard
+                .writeText(
+                    value
+                );
+
+            setCopied(
+                true
+            );
+
+            window.setTimeout(
+                () => {
+
+                    setCopied(
+                        false
+                    );
+
+                },
+                1800
+            );
+
+        } catch (
+        copyError
+        ) {
+
+            console.error(
+                "COPY FAILED:",
+                copyError
+            );
+        }
+    };
+
+    /* =================================================
+       RETRY
+    ================================================= */
+
+    const handleRetry =
+        useCallback(
+            async () => {
+
+                setError("");
+
+                await loadOrder();
+
+            },
+            [loadOrder]
+        );
+
+    /* =================================================
+       PAYMENT
+    ================================================= */
+
+    const handlePayment =
+        async () => {
+
+            if (!orderId) {
+                return;
+            }
+
+            if (
+                paymentStatus ===
+                "paid" ||
+                paymentStatus ===
+                "success"
+            ) {
+
+                navigate(
+                    `/orders/${orderId}`
+                );
+
+                return;
+            }
+
+            if (
+                paymentStatus ===
+                "expired"
+            ) {
+
+                return;
+            }
+
+            if (
+                remainingSeconds <=
+                0
+            ) {
+
+                setPaymentStatus(
+                    "expired"
+                );
+
+                setError(
+                    "Waktu pembayaran 15 menit telah habis."
+                );
+
+                return;
+            }
+
+            if (
+                processing
+            ) {
+
+                return;
+            }
+
+            if (
+                !paymentMethod
+            ) {
+
+                setError(
+                    "Metode pembayaran pesanan tidak ditemukan."
+                );
+
+                return;
+            }
+
+            try {
+
+                setProcessing(
+                    true
+                );
+
+                setError("");
+
+                console.log(
+                    "========================================"
+                );
+
+                console.log(
+                    "PROCESS PAYMENT"
+                );
+
+                console.log(
+                    "ORDER ID:",
+                    orderId
+                );
+
+                console.log(
+                    "PAYMENT METHOD:",
+                    paymentMethod
+                );
+
+                console.log(
+                    "========================================"
+                );
+
+                /*
+                 * PERHATIAN:
+                 *
+                 * Dari route backend yang kamu kirim,
+                 * saat ini BELUM ADA:
+                 *
+                 * PATCH/PUT /orders/:order_id/pay
+                 *
+                 * Jadi endpoint ini mungkin 404.
+                 *
+                 * Untuk sementara kita tetap pertahankan
+                 * request ini supaya frontend siap ketika
+                 * endpoint payment backend ditambahkan.
+                 */
+
+                const response =
+                    await api.put(
+                        `/orders/${orderId}/pay`,
+                        {
+                            payment_method:
+                                paymentMethod,
+                        }
+                    );
+
+                console.log(
+                    "PAYMENT RESPONSE:",
+                    response?.data
+                );
+
+                setPaymentStatus(
+                    "paid"
+                );
+
+                setRemainingSeconds(
+                    0
+                );
+
+                setPaymentDeadline(
+                    null
+                );
+
+                await loadOrder();
+
+                setPaymentStatus(
+                    "paid"
+                );
+
+            } catch (
+            paymentError: unknown
+            ) {
+
+                console.warn(
+                    "Payment endpoint gagal:",
+                    paymentError
+                );
+
+                const axiosError =
+                    paymentError as ApiErrorResponse;
+
+                const status =
+                    axiosError
+                        .response
+                        ?.status;
+
+                const data =
+                    axiosError
+                        .response
+                        ?.data;
+
+                console.error(
+                    "PAYMENT STATUS:",
+                    status
+                );
+
+                console.error(
+                    "PAYMENT DATA:",
+                    data
+                );
+
+                if (
+                    status ===
+                    404
+                ) {
+
+                    setPaymentStatus(
+                        "failed"
+                    );
+
+                    setError(
+                        "Endpoint pembayaran belum tersedia di backend."
+                    );
+
+                    return;
+                }
+
+                if (
+                    status ===
+                    409
+                ) {
+
+                    await loadOrder();
+
+                    return;
+                }
+
+                setPaymentStatus(
+                    "failed"
+                );
+
+                if (
+                    data?.error
+                ) {
+
+                    setError(
+                        data.error
+                    );
+
+                } else if (
+                    data?.message
+                ) {
+
+                    setError(
+                        data.message
+                    );
+
+                } else {
+
+                    setError(
+                        "Pembayaran gagal diproses. Silakan coba lagi."
+                    );
+                }
+
+            } finally {
+
+                setProcessing(
+                    false
+                );
+            }
+        };
+
+    /* =================================================
+       BACK
+    ================================================= */
+
+    const handleBack = () => {
+
+        if (
+            processing
+        ) {
+
+            return;
+        }
+
+        navigate(
+            "/checkout"
+        );
+    };
+
+    /* =================================================
+       VIEW ORDER
+    ================================================= */
+
+    const handleViewOrder =
+        () => {
+
+            if (!orderId) {
+                return;
+            }
+
+            navigate(
+                `/orders/${orderId}`
+            );
+        };
+
+    /* =================================================
+       LOADING
+    ================================================= */
+
+    if (loading) {
+
         return (
-            <div className="checkout-page empty-checkout">
+            <div className="payment-page">
 
-                <div className="empty-card">
+                <div className="payment-loading">
 
-                    <div className="empty-checkout-icon">
-                        <ShoppingBag size={48} />
+                    <div className="payment-loading-spinner" />
+
+                    <h2>
+                        Memuat pembayaran...
+                    </h2>
+
+                    <p>
+                        Tunggu sebentar, kami sedang
+                        mengambil detail pesananmu.
+                    </p>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    /* =================================================
+       ORDER ERROR
+    ================================================= */
+
+    if (
+        error &&
+        !order
+    ) {
+
+        return (
+            <div className="payment-page">
+
+                <div className="payment-error">
+
+                    <div className="payment-error-icon">
+                        <XCircle size={40} />
                     </div>
 
                     <h1>
-                        Keranjang masih kosong
+                        Pesanan Tidak Ditemukan
                     </h1>
 
                     <p>
-                        Tambahkan makanan favoritmu
-                        terlebih dahulu sebelum
-                        melanjutkan ke proses checkout.
+                        {error}
                     </p>
 
                     <button
                         type="button"
-                        className="primary-button"
+                        className="payment-primary-button"
                         onClick={() =>
-                            navigate("/explore")
+                            navigate(
+                                "/cart"
+                            )
                         }
                     >
-                        Cari Makanan
+                        Kembali
                     </button>
 
                 </div>
@@ -136,516 +1153,335 @@ export default function Checkout() {
         );
     }
 
-    /* =====================================================
-       CALCULATION
-    ===================================================== */
+    /* =================================================
+       NO ORDER
+    ================================================= */
 
-    const subtotal =
-        items.reduce(
-            (total, item) => {
+    if (!order) {
 
-                const price =
-                    Number(
-                        item.menu.price
-                    );
+        return (
+            <div className="payment-page">
 
-                const quantity =
-                    Number(
-                        item.quantity
-                    );
+                <div className="payment-error">
 
-                return (
-                    total +
-                    price * quantity
-                );
-            },
-            0
+                    <div className="payment-error-icon">
+                        <XCircle size={40} />
+                    </div>
+
+                    <h1>
+                        Pesanan Tidak Ditemukan
+                    </h1>
+
+                    <p>
+                        Data pesanan tidak dapat ditemukan.
+                    </p>
+
+                    <button
+                        type="button"
+                        className="payment-primary-button"
+                        onClick={() =>
+                            navigate(
+                                "/cart"
+                            )
+                        }
+                    >
+                        Kembali
+                    </button>
+
+                </div>
+
+            </div>
         );
-
-    /*
-     * Delivery fee hanya perhitungan UI.
-     *
-     * Saat ini backend /orders belum menerima
-     * delivery_type / delivery_fee.
-     *
-     * Jadi Payment.tsx akan menggunakan
-     * total_amount dari backend.
-     */
-    const deliveryFee =
-        deliveryType === "delivery"
-            ? 5000
-            : 0;
-
-    const checkoutTotal =
-        subtotal +
-        deliveryFee;
-
-    /* =====================================================
-       GET USER ID
-    ===================================================== */
-
-    const getUserId = (): string => {
-
-        const possibleKeys = [
-            "user",
-            "currentUser",
-            "auth_user",
-            "user_data",
-        ];
-
-        for (
-            const key of possibleKeys
-        ) {
-
-            const stored =
-                localStorage.getItem(key);
-
-            if (!stored) {
-                continue;
-            }
-
-            try {
-
-                const parsed =
-                    JSON.parse(
-                        stored
-                    ) as CheckoutUser;
-
-                if (parsed.id) {
-                    return String(
-                        parsed.id
-                    );
-                }
-
-                if (parsed.user_id) {
-                    return String(
-                        parsed.user_id
-                    );
-                }
-
-            } catch {
-
-                /*
-                 * Jika value bukan JSON,
-                 * anggap sebagai user ID langsung.
-                 */
-
-                if (
-                    stored.trim() !== ""
-                ) {
-                    return stored.trim();
-                }
-            }
-        }
-
-        const directUserId =
-            localStorage.getItem(
-                "user_id"
-            );
-
-        if (directUserId) {
-            return directUserId.trim();
-        }
-
-        return "";
-    };
-
-    /* =====================================================
-       BACK TO CART
-    ===================================================== */
-
-    const handleBack = () => {
-
-        if (changePaymentMethod) {
-
-            /*
-             * Jika user batal mengganti metode,
-             * kembali ke cart tetap aman.
-             */
-
-            navigate("/cart");
-
-            return;
-        }
-
-        navigate("/cart");
-    };
-
-    /* =====================================================
-       HANDLE PAYMENT
-    ===================================================== */
-
-    const handlePayment =
-        async () => {
-
-            console.log(
-                "========================================"
-            );
-
-            console.log(
-                "CREATE ORDER"
-            );
-
-            console.log(
-                "========================================"
-            );
-
-            /* =================================================
-               USER
-            ================================================= */
-
-            const userId =
-                getUserId();
-
-            console.log(
-                "USER ID:",
-                userId
-            );
-
-            if (!userId) {
-
-                alert(
-                    "User tidak ditemukan. Silakan login kembali."
-                );
-
-                navigate("/login");
-
-                return;
-            }
-
-            /* =================================================
-               ADDRESS
-            ================================================= */
-
-            if (
-                deliveryType ===
-                "delivery" &&
-                address.trim() === ""
-            ) {
-
-                alert(
-                    "Masukkan alamat pengantaran terlebih dahulu."
-                );
-
-                return;
-            }
-
-            /* =================================================
-               PAYMENT METHOD
-            ================================================= */
-
-            if (!paymentMethod) {
-
-                alert(
-                    "Pilih metode pembayaran terlebih dahulu."
-                );
-
-                return;
-            }
-
-            /* =================================================
-               SELLER
-            ================================================= */
-
-            const sellerId =
-                items[0]?.menu?.seller_id;
-
-            if (!sellerId) {
-
-                alert(
-                    "Seller tidak ditemukan dari menu."
-                );
-
-                return;
-            }
-
-            /* =================================================
-               SINGLE SELLER VALIDATION
-            ================================================= */
-
-            const differentSeller =
-                items.some(
-                    (item) =>
-                        item.menu.seller_id !==
-                        sellerId
-                );
-
-            if (differentSeller) {
-
-                alert(
-                    "Pesanan hanya dapat berisi menu dari satu warteg."
-                );
-
-                return;
-            }
-
-            /* =================================================
-               ITEM VALIDATION
-            ================================================= */
-
-            const invalidItem =
-                items.some(
-                    (item) =>
-                        !item.menu.id ||
-                        Number(
-                            item.quantity
-                        ) <= 0
-                );
-
-            if (invalidItem) {
-
-                alert(
-                    "Terdapat menu atau quantity yang tidak valid."
-                );
-
-                return;
-            }
-
-            /* =================================================
-               PAYMENT METHOD
-            ================================================= */
-
-            const normalizedPaymentMethod =
-                paymentMethod as PaymentMethod;
-
-            /* =================================================
-               PAYLOAD
-               
-               HARUS SESUAI BACKEND:
-               
-               {
-                 user_id,
-                 seller_id,
-                 payment_method,
-                 items: [
-                   {
-                     menu_id,
-                     quantity
-                   }
-                 ]
-               }
-            ================================================= */
-
-            const payload = {
-
-                user_id:
-                    userId,
-
-                seller_id:
-                    sellerId,
-
-                payment_method:
-                    normalizedPaymentMethod,
-
-                items:
-                    items.map(
-                        (item) => ({
-
-                            menu_id:
-                                item.menu.id,
-
-                            quantity:
-                                Number(
-                                    item.quantity
-                                ),
-
-                        })
-                    ),
-            };
-
-            console.log(
-                "PAYLOAD CREATE ORDER:",
-                payload
-            );
-
-            console.log(
-                "SUBTOTAL:",
-                subtotal
-            );
-
-            console.log(
-                "DELIVERY TYPE:",
-                deliveryType
-            );
-
-            console.log(
-                "DELIVERY FEE UI:",
-                deliveryFee
-            );
-
-            console.log(
-                "CHECKOUT TOTAL UI:",
-                checkoutTotal
-            );
-
-            console.log(
-                "PAYMENT METHOD:",
-                normalizedPaymentMethod
-            );
-
-            /* =================================================
-               CREATE ORDER
-            ================================================= */
-
-            try {
-
-                const response =
-                    await api.post(
-                        "/orders",
-                        payload
-                    );
-
-                console.log(
-                    "========================================"
-                );
-
-                console.log(
-                    "ORDER SUCCESS"
-                );
-
-                console.log(
-                    "RESPONSE:",
-                    response.data
-                );
-
-                console.log(
-                    "========================================"
-                );
-
-                /* =================================================
-                   GET ORDER ID
-                ================================================= */
-
-                const orderId =
-                    response.data?.id;
-
-                if (!orderId) {
-
-                    console.error(
-                        "Backend tidak mengembalikan order ID:",
-                        response.data
-                    );
-
-                    alert(
-                        "Order berhasil dibuat, tetapi ID order tidak ditemukan."
-                    );
-
-                    return;
-                }
-
-                console.log(
-                    "ORDER ID:",
-                    orderId
-                );
-
-                /* =================================================
-                   PAYMENT PAGE
-                   
-                   Payment.tsx menggunakan:
-                   
-                   useParams<{ id: string }>()
-                   
-                   sehingga URL harus:
-                   
-                   /payment/123
-                ================================================= */
-
-                navigate(
-                    `/payment/${orderId}`,
-                    {
-                        replace: true,
-                    }
-                );
-
-            } catch (
-            err: any
-            ) {
-
-                console.error(
-                    "========================================"
-                );
-
-                console.error(
-                    "CREATE ORDER FAILED"
-                );
-
-                console.error(
-                    "STATUS:",
-                    err?.response?.status
-                );
-
-                console.error(
-                    "DATA:",
-                    err?.response?.data
-                );
-
-                console.error(
-                    "ERROR:",
-                    err
-                );
-
-                console.error(
-                    "========================================"
-                );
-
-                const backendError =
-                    err?.response?.data?.error;
-
-                const backendMessage =
-                    err?.response?.data?.message;
-
-                const backendDetails =
-                    err?.response?.data?.details;
-
-                if (
-                    backendError
-                ) {
-
-                    alert(
-                        backendDetails
-                            ? `${backendError}\n\n${backendDetails}`
-                            : backendError
-                    );
-
-                    return;
-                }
-
-                if (
-                    backendMessage
-                ) {
-
-                    alert(
-                        backendMessage
-                    );
-
-                    return;
-                }
-
-                alert(
-                    "Checkout gagal. Silakan coba lagi."
-                );
-            }
-        };
-
-    /* =====================================================
-       RENDER
-    ===================================================== */
+    }
+
+    /* =================================================
+       PAYMENT METHOD MISSING
+    ================================================= */
+
+    if (
+        !paymentMethod
+    ) {
+
+        return (
+            <div className="payment-page">
+
+                <div className="payment-error">
+
+                    <div className="payment-error-icon">
+                        <XCircle size={40} />
+                    </div>
+
+                    <h1>
+                        Metode Pembayaran Tidak Ditemukan
+                    </h1>
+
+                    <p>
+                        Metode pembayaran dari pesanan
+                        tidak tersedia. Silakan kembali
+                        ke checkout dan pilih metode
+                        pembayaran.
+                    </p>
+
+                    <button
+                        type="button"
+                        className="payment-primary-button"
+                        onClick={() =>
+                            navigate(
+                                "/checkout"
+                            )
+                        }
+                    >
+                        Kembali ke Checkout
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    /* =================================================
+       PAID
+    ================================================= */
+
+    if (
+        paymentStatus ===
+        "paid" ||
+        paymentStatus ===
+        "success"
+    ) {
+
+        return (
+            <div className="payment-page">
+
+                <div className="payment-success">
+
+                    <div className="payment-success-icon">
+                        <CheckCircle2 size={48} />
+                    </div>
+
+                    <span className="payment-success-label">
+                        PEMBAYARAN BERHASIL
+                    </span>
+
+                    <h1>
+                        Pesanan Berhasil Dibayar
+                    </h1>
+
+                    <p>
+                        Pembayaran untuk pesanan{" "}
+                        <strong>
+                            {
+                                order.order_number ??
+                                order.id
+                            }
+                        </strong>{" "}
+                        telah berhasil.
+                    </p>
+
+                    <div className="payment-success-total">
+
+                        <span>
+                            Total Pembayaran
+                        </span>
+
+                        <strong>
+                            {formatRupiah(
+                                totalAmount
+                            )}
+                        </strong>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        className="payment-primary-button"
+                        onClick={
+                            handleViewOrder
+                        }
+                    >
+                        <PackageCheck
+                            size={19}
+                        />
+
+                        Lihat Pesanan
+                    </button>
+
+                    <button
+                        type="button"
+                        className="payment-secondary-button"
+                        onClick={() =>
+                            navigate("/")
+                        }
+                    >
+                        Kembali ke Beranda
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    /* =================================================
+       EXPIRED
+    ================================================= */
+
+    if (
+        paymentStatus ===
+        "expired"
+    ) {
+
+        return (
+            <div className="payment-page">
+
+                <div className="payment-error">
+
+                    <div className="payment-error-icon">
+                        <Clock3 size={40} />
+                    </div>
+
+                    <span className="payment-status-label">
+                        WAKTU HABIS
+                    </span>
+
+                    <h1>
+                        Pembayaran Kedaluwarsa
+                    </h1>
+
+                    <p>
+                        Waktu pembayaran untuk pesanan{" "}
+                        <strong>
+                            {
+                                order.order_number ??
+                                order.id
+                            }
+                        </strong>{" "}
+                        telah habis setelah 15 menit.
+                    </p>
+
+                    <p>
+                        Silakan buat pesanan baru
+                        jika kamu masih ingin melakukan
+                        pembelian.
+                    </p>
+
+                    <button
+                        type="button"
+                        className="payment-primary-button"
+                        onClick={() =>
+                            navigate(
+                                "/checkout"
+                            )
+                        }
+                    >
+                        Kembali ke Checkout
+                    </button>
+
+                    <button
+                        type="button"
+                        className="payment-secondary-button"
+                        onClick={() =>
+                            navigate("/")
+                        }
+                    >
+                        Kembali ke Beranda
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    /* =================================================
+       FAILED / CANCELLED
+    ================================================= */
+
+    if (
+        paymentStatus ===
+        "failed" ||
+        paymentStatus ===
+        "cancelled"
+    ) {
+
+        return (
+            <div className="payment-page">
+
+                <div className="payment-error">
+
+                    <div className="payment-error-icon">
+                        <XCircle size={40} />
+                    </div>
+
+                    <span className="payment-status-label">
+                        PEMBAYARAN GAGAL
+                    </span>
+
+                    <h1>
+                        Pembayaran Tidak Berhasil
+                    </h1>
+
+                    <p>
+                        Pembayaran untuk pesananmu
+                        tidak dapat diproses.
+                    </p>
+
+                    {error && (
+                        <p>
+                            {error}
+                        </p>
+                    )}
+
+                    <button
+                        type="button"
+                        className="payment-primary-button"
+                        onClick={
+                            handleRetry
+                        }
+                    >
+                        Coba Lagi
+                    </button>
+
+                    <button
+                        type="button"
+                        className="payment-secondary-button"
+                        onClick={
+                            handleBack
+                        }
+                    >
+                        Kembali
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+    /* =================================================
+       MAIN PAYMENT
+    ================================================= */
 
     return (
-        <div className="checkout-page">
+        <div className="payment-page">
 
             {/* =================================================
-          HEADER
-      ================================================= */}
+                TOP
+            ================================================= */}
 
-            <div className="checkout-top">
+            <div className="payment-top">
 
                 <button
                     type="button"
-                    className="page-back-button"
-                    onClick={handleBack}
+                    className="back-button"
+                    onClick={
+                        handleBack
+                    }
+                    disabled={
+                        processing
+                    }
                 >
-
                     <ArrowLeft
                         size={19}
                     />
@@ -656,287 +1492,136 @@ export default function Checkout() {
 
                 </button>
 
-                <div className="checkout-hero">
+            </div>
 
-                    <div className="checkout-header">
+            {/* =================================================
+                HERO
+            ================================================= */}
 
-                        {changePaymentMethod && (
-                            <span className="checkout-eyebrow">
-                                GANTI METODE PEMBAYARAN
-                            </span>
-                        )}
+            <section className="payment-hero">
 
-                        <h1>
-                            {changePaymentMethod
-                                ? "Pilih Metode Pembayaran Baru"
-                                : "Selesaikan Pesananmu"}
-                        </h1>
+                <div className="payment-hero-content">
 
-                        <p>
-                            {changePaymentMethod
-                                ? "Pilih metode pembayaran baru untuk melanjutkan pesananmu."
-                                : "Tinggal satu langkah lagi. Pastikan alamat, metode pengambilan, dan pembayaran sudah benar sebelum melanjutkan."}
-                        </p>
+                    <h1>
+                        Selesaikan Pembayaran
+                    </h1>
+
+                    <p>
+                        Gunakan metode{" "}
+                        <strong>
+                            {
+                                paymentMethodLabel
+                            }
+                        </strong>{" "}
+                        yang kamu pilih saat checkout.
+                    </p>
+
+                </div>
+
+                <div className="payment-progress">
+
+                    <div className="payment-progress-step done">
+
+                        <div className="payment-step-circle">
+                            ✓
+                        </div>
+
+                        <span>
+                            Keranjang
+                        </span>
 
                     </div>
 
-                    {/* =================================================
-              PROGRESS
-          ================================================= */}
+                    <div className="payment-progress-line done" />
 
-                    <div className="checkout-progress">
+                    <div className="payment-progress-step done">
 
-                        <div className="progress-step done">
-
-                            <div className="step-circle">
-                                ✓
-                            </div>
-
-                            <span>
-                                Keranjang
-                            </span>
-
+                        <div className="payment-step-circle">
+                            ✓
                         </div>
 
-                        <div className="progress-line done" />
+                        <span>
+                            Checkout
+                        </span>
 
-                        <div className="progress-step active">
+                    </div>
 
-                            <div className="step-circle">
-                                2
-                            </div>
+                    <div className="payment-progress-line active" />
 
-                            <span>
-                                Checkout
-                            </span>
+                    <div className="payment-progress-step active">
 
+                        <div className="payment-step-circle">
+                            3
                         </div>
 
-                        <div className="progress-line" />
-
-                        <div className="progress-step">
-
-                            <div className="step-circle">
-                                3
-                            </div>
-
-                            <span>
-                                Pembayaran
-                            </span>
-
-                        </div>
+                        <span>
+                            Pembayaran
+                        </span>
 
                     </div>
 
                 </div>
 
-            </div>
+            </section>
 
             {/* =================================================
-          CONTENT
-      ================================================= */}
+                COUNTDOWN
+            ================================================= */}
 
-            <div className="checkout-layout">
+            <section
+                className={
+                    `payment-countdown ${timerUrgent
+                        ? "payment-countdown-urgent"
+                        : ""
+                    }`
+                }
+            >
+
+                <div className="payment-countdown-icon">
+                    <Clock3 size={22} />
+                </div>
+
+                <div className="payment-countdown-content">
+
+                    <span>
+                        Batas Waktu Pembayaran
+                    </span>
+
+                    <strong>
+                        {countdownText}
+                    </strong>
+
+                </div>
+
+                <div className="payment-countdown-info">
+                    Selesaikan pembayaran
+                    sebelum waktu habis.
+                </div>
+
+            </section>
+
+            {/* =================================================
+                CONTENT
+            ================================================= */}
+
+            <div className="payment-layout">
 
                 {/* =================================================
-            LEFT
-        ================================================= */}
+                    LEFT
+                ================================================= */}
 
-                <main className="checkout-main">
+                <main className="payment-main">
 
                     {/* =================================================
-              DELIVERY
-          ================================================= */}
+                        METHOD
+                    ================================================= */}
 
-                    <section className="checkout-card">
+                    <section className="payment-card">
 
-                        <div className="checkout-card-header">
+                        <div className="payment-card-header">
 
-                            <div className="checkout-number">
+                            <div className="payment-card-number">
                                 1
-                            </div>
-
-                            <div>
-
-                                <h2>
-                                    Metode Pengambilan
-                                </h2>
-
-                                <p>
-                                    Pilih bagaimana pesananmu
-                                    diterima.
-                                </p>
-
-                            </div>
-
-                        </div>
-
-                        <div className="delivery-options">
-
-                            {/* DELIVERY */}
-
-                            <button
-                                type="button"
-                                className={
-                                    deliveryType ===
-                                        "delivery"
-                                        ? "delivery-option active"
-                                        : "delivery-option"
-                                }
-                                onClick={() =>
-                                    setCheckout({
-                                        pickupMethod:
-                                            "delivery",
-                                    })
-                                }
-                            >
-
-                                <span className="delivery-icon">
-                                    <Bike size={25} />
-                                </span>
-
-                                <span className="delivery-text">
-
-                                    <strong>
-                                        Diantar
-                                    </strong>
-
-                                    <small>
-                                        Pesanan diantar ke
-                                        alamatmu
-                                    </small>
-
-                                </span>
-
-                                <span className="custom-radio">
-
-                                    {deliveryType ===
-                                        "delivery" && (
-                                            <span />
-                                        )}
-
-                                </span>
-
-                            </button>
-
-                            {/* PICKUP */}
-
-                            <button
-                                type="button"
-                                className={
-                                    deliveryType ===
-                                        "pickup"
-                                        ? "delivery-option active"
-                                        : "delivery-option"
-                                }
-                                onClick={() =>
-                                    setCheckout({
-                                        pickupMethod:
-                                            "pickup",
-                                    })
-                                }
-                            >
-
-                                <span className="delivery-icon">
-                                    <ShoppingBag
-                                        size={25}
-                                    />
-                                </span>
-
-                                <span className="delivery-text">
-
-                                    <strong>
-                                        Ambil Sendiri
-                                    </strong>
-
-                                    <small>
-                                        Ambil langsung di
-                                        warteg
-                                    </small>
-
-                                </span>
-
-                                <span className="custom-radio">
-
-                                    {deliveryType ===
-                                        "pickup" && (
-                                            <span />
-                                        )}
-
-                                </span>
-
-                            </button>
-
-                        </div>
-
-                    </section>
-
-                    {/* =================================================
-              ADDRESS
-          ================================================= */}
-
-                    {deliveryType ===
-                        "delivery" && (
-
-                            <section className="checkout-card">
-
-                                <div className="checkout-card-header">
-
-                                    <div className="checkout-number">
-                                        2
-                                    </div>
-
-                                    <div>
-
-                                        <h2>
-                                            Alamat Pengantaran
-                                        </h2>
-
-                                        <p>
-                                            Masukkan alamat lengkap
-                                            tujuan pesanan.
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                                <div className="address-input-wrapper">
-
-                                    <MapPin
-                                        size={20}
-                                    />
-
-                                    <textarea
-                                        rows={4}
-                                        value={address}
-                                        onChange={(
-                                            event
-                                        ) =>
-                                            setCheckout({
-                                                address:
-                                                    event.target
-                                                        .value,
-                                            })
-                                        }
-                                        placeholder="Contoh: Jl. Kemang Raya No. 12, Jakarta Selatan"
-                                    />
-
-                                </div>
-
-                            </section>
-                        )}
-
-                    {/* =================================================
-              PAYMENT
-          ================================================= */}
-
-                    <section className="checkout-card">
-
-                        <div className="checkout-card-header">
-
-                            <div className="checkout-number">
-                                3
                             </div>
 
                             <div>
@@ -946,125 +1631,145 @@ export default function Checkout() {
                                 </h2>
 
                                 <p>
-                                    Pilih metode pembayaran
-                                    yang kamu inginkan.
+                                    Metode yang dipilih
+                                    saat checkout.
                                 </p>
 
                             </div>
 
                         </div>
 
-                        <div className="payment-method-list">
+                        <div className="selected-payment">
 
-                            {/* =================================================
-                  QRIS
-              ================================================= */}
+                            <div className="selected-payment-icon">
 
-                            <PaymentOption
-                                active={
-                                    paymentMethod ===
-                                    "qris"
-                                }
-                                icon={
-                                    <QrCode size={22} />
-                                }
-                                title="QRIS"
-                                description="Scan menggunakan mobile banking atau e-wallet."
-                                onClick={() =>
-                                    setCheckout({
-                                        paymentMethod:
-                                            "qris",
-                                    })
-                                }
+                                {getPaymentIcon(
+                                    paymentMethod
+                                )}
+
+                            </div>
+
+                            <div className="selected-payment-content">
+
+                                <strong>
+                                    {
+                                        paymentMethodLabel
+                                    }
+                                </strong>
+
+                                <span>
+                                    Metode pembayaran
+                                    pesananmu
+                                </span>
+
+                            </div>
+
+                            <CheckCircle2
+                                size={21}
+                                className="selected-payment-check"
                             />
 
-                            {/* =================================================
-                  BANK TRANSFER
-              ================================================= */}
+                        </div>
 
-                            <PaymentOption
-                                active={
-                                    paymentMethod ===
-                                    "bank_transfer"
-                                }
-                                icon={
-                                    <Building2 size={22} />
-                                }
-                                title="Transfer Bank"
-                                description="Transfer melalui ATM atau mobile banking."
-                                onClick={() =>
-                                    setCheckout({
-                                        paymentMethod:
-                                            "bank_transfer",
-                                    })
-                                }
-                            />
+                    </section>
 
-                            {/* =================================================
-                  VIRTUAL ACCOUNT
-              ================================================= */}
+                    {/* =================================================
+                        INSTRUCTION
+                    ================================================= */}
 
-                            <PaymentOption
-                                active={
-                                    paymentMethod ===
-                                    "virtual_account"
-                                }
-                                icon={
-                                    <CreditCard size={22} />
-                                }
-                                title="Virtual Account"
-                                description="Bayar menggunakan nomor virtual account."
-                                onClick={() =>
-                                    setCheckout({
-                                        paymentMethod:
-                                            "virtual_account",
-                                    })
-                                }
-                            />
+                    <section className="payment-card">
 
-                            {/* =================================================
-                  PAYPAL
-              ================================================= */}
+                        <div className="payment-card-header">
 
-                            <PaymentOption
-                                active={
-                                    paymentMethod ===
-                                    "paypal"
-                                }
-                                icon={
-                                    <WalletCards size={22} />
-                                }
-                                title="PayPal"
-                                description="Bayar menggunakan akun PayPal."
-                                onClick={() =>
-                                    setCheckout({
-                                        paymentMethod:
-                                            "paypal",
-                                    })
-                                }
-                            />
+                            <div className="payment-card-number">
+                                2
+                            </div>
 
-                            {/* =================================================
-                  COD
-              ================================================= */}
+                            <div>
 
-                            <PaymentOption
-                                active={
-                                    paymentMethod ===
-                                    "cod"
-                                }
-                                icon={
-                                    <Banknote size={22} />
-                                }
-                                title="Cash On Delivery"
-                                description="Bayar langsung saat pesanan diterima."
-                                onClick={() =>
-                                    setCheckout({
-                                        paymentMethod:
-                                            "cod",
-                                    })
-                                }
-                            />
+                                <h2>
+                                    Cara Pembayaran
+                                </h2>
+
+                                <p>
+                                    Ikuti instruksi
+                                    sesuai metode
+                                    pembayaranmu.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        {paymentMethod ===
+                            "qris" && (
+
+                                <QRISPayment
+                                    total={
+                                        totalAmount
+                                    }
+                                    remainingSeconds={
+                                        remainingSeconds
+                                    }
+                                    expired={
+                                        paymentStatus ===
+                                        "expired"
+                                    }
+                                    onRetry={
+                                        handleRetry
+                                    }
+                                />
+                            )}
+
+                        {paymentMethod ===
+                            "bank_transfer" && (
+
+                                <BankTransferPayment
+                                    total={
+                                        totalAmount
+                                    }
+                                />
+                            )}
+
+                        {paymentMethod ===
+                            "virtual_account" && (
+
+                                <VirtualAccountPayment
+                                    totalAmount={
+                                        totalAmount
+                                    }
+                                    onCopy={
+                                        handleCopy
+                                    }
+                                    copied={
+                                        copied
+                                    }
+                                />
+                            )}
+
+                    </section>
+
+                    {/* =================================================
+                        STATUS
+                    ================================================= */}
+
+                    <section className="payment-status-card">
+
+                        <div className="payment-status-icon">
+                            <Clock3 size={22} />
+                        </div>
+
+                        <div>
+
+                            <strong>
+                                Menunggu Pembayaran
+                            </strong>
+
+                            <p>
+                                Selesaikan pembayaran
+                                sebelum timer mencapai
+                                00:00.
+                            </p>
 
                         </div>
 
@@ -1073,163 +1778,212 @@ export default function Checkout() {
                 </main>
 
                 {/* =================================================
-            RIGHT SUMMARY
-        ================================================= */}
+                    SUMMARY
+                ================================================= */}
 
-                <aside className="checkout-summary">
+                <aside className="payment-summary">
 
-                    <div className="summary-header">
+                    <div className="payment-summary-header">
 
-                        <h2>
-                            Ringkasan Pesanan
-                        </h2>
+                        <div>
 
-                        <span>
-                            {items.length} menu
-                        </span>
+                            <span>
+                                PESANAN
+                            </span>
+
+                            <h2>
+                                Ringkasan Pesanan
+                            </h2>
+
+                        </div>
+
+                        <ShoppingBag
+                            size={21}
+                        />
 
                     </div>
 
                     {/* =================================================
-              ITEMS
-          ================================================= */}
+                        ITEMS
+                    ================================================= */}
 
-                    <div className="checkout-items">
+                    <div className="payment-order-items">
 
-                        {items.map(
-                            (item) => {
+                        {order.items &&
+                            order.items.length >
+                            0 ? (
 
-                                const itemPrice =
-                                    Number(
-                                        item.menu.price
-                                    );
+                            order.items.map(
+                                (
+                                    item,
+                                    index
+                                ) => {
 
-                                const itemTotal =
-                                    itemPrice *
-                                    Number(
-                                        item.quantity
-                                    );
+                                    const quantity =
+                                        Number(
+                                            item.quantity ??
+                                            0
+                                        );
 
-                                return (
-                                    <div
-                                        className="checkout-item"
-                                        key={
-                                            item.menu.id
-                                        }
-                                    >
+                                    const price =
+                                        Number(
+                                            item.price ??
+                                            item.menu?.price ??
+                                            0
+                                        );
 
-                                        <div>
+                                    const itemTotal =
+                                        quantity *
+                                        price;
+
+                                    const menuName =
+                                        item.menu_name ??
+                                        item.menuName ??
+                                        item.menu?.name ??
+                                        "Menu";
+
+                                    return (
+                                        <div
+                                            className="payment-order-item"
+                                            key={
+                                                item.id ??
+                                                item.menu_id ??
+                                                index
+                                            }
+                                        >
+
+                                            <div>
+
+                                                <strong>
+                                                    {
+                                                        menuName
+                                                    }
+                                                </strong>
+
+                                                <span>
+                                                    {
+                                                        quantity
+                                                    }{" "}
+                                                    ×{" "}
+                                                    {
+                                                        formatRupiah(
+                                                            price
+                                                        )
+                                                    }
+                                                </span>
+
+                                            </div>
 
                                             <strong>
-                                                {item.menu.name}
+                                                {
+                                                    formatRupiah(
+                                                        itemTotal
+                                                    )
+                                                }
                                             </strong>
 
-                                            <span>
-                                                {item.quantity} × Rp{" "}
-                                                {itemPrice.toLocaleString(
-                                                    "id-ID"
-                                                )}
-                                            </span>
-
                                         </div>
+                                    );
+                                }
+                            )
 
-                                        <strong>
-                                            Rp{" "}
-                                            {itemTotal.toLocaleString(
-                                                "id-ID"
-                                            )}
-                                        </strong>
+                        ) : (
 
-                                    </div>
-                                );
-                            }
+                            <div className="payment-no-items">
+                                Detail menu tidak
+                                tersedia.
+                            </div>
+
                         )}
 
                     </div>
 
-                    <div className="summary-divider" />
+                    <div className="payment-summary-divider" />
 
                     {/* =================================================
-              SUBTOTAL
-          ================================================= */}
+                        METHOD
+                    ================================================= */}
 
-                    <div className="summary-row">
+                    <div className="payment-summary-method">
 
                         <span>
-                            Subtotal
+                            Metode Pembayaran
                         </span>
 
                         <strong>
-                            Rp{" "}
-                            {subtotal.toLocaleString(
-                                "id-ID"
-                            )}
+                            {
+                                paymentMethodLabel
+                            }
+                        </strong>
+
+                    </div>
+
+                    <div className="payment-summary-divider" />
+
+                    {/* =================================================
+                        TOTAL
+                    ================================================= */}
+
+                    <div className="payment-total-row">
+
+                        <span>
+                            Total Pembayaran
+                        </span>
+
+                        <strong>
+                            {
+                                formatRupiah(
+                                    totalAmount
+                                )
+                            }
                         </strong>
 
                     </div>
 
                     {/* =================================================
-              DELIVERY
-          ================================================= */}
-
-                    <div className="summary-row">
-
-                        <span>
-                            Ongkos Kirim
-                        </span>
-
-                        <strong>
-                            {deliveryFee === 0
-                                ? "Gratis"
-                                : `Rp ${deliveryFee.toLocaleString(
-                                    "id-ID"
-                                )}`}
-                        </strong>
-
-                    </div>
-
-                    <div className="summary-divider" />
-
-                    {/* =================================================
-              TOTAL
-          ================================================= */}
-
-                    <div className="summary-total">
-
-                        <span>
-                            Total Bayar
-                        </span>
-
-                        <strong>
-                            Rp{" "}
-                            {checkoutTotal.toLocaleString(
-                                "id-ID"
-                            )}
-                        </strong>
-
-                    </div>
-
-                    {/* =================================================
-              PAYMENT BUTTON
-          ================================================= */}
+                        CONFIRM
+                    ================================================= */}
 
                     <button
                         type="button"
-                        className="checkout-pay-button"
+                        className="payment-confirm-button"
+                        disabled={
+                            processing ||
+                            remainingSeconds <=
+                            0
+                        }
                         onClick={
                             handlePayment
                         }
                     >
 
-                        <span>
-                            Lanjut Bayar
-                        </span>
+                        {processing ? (
 
-                        <ArrowRight
-                            size={18}
-                        />
+                            <>
+                                <span className="payment-button-spinner" />
+
+                                Memproses...
+                            </>
+
+                        ) : (
+
+                            <>
+                                Konfirmasi Pembayaran
+
+                                <CheckCircle2
+                                    size={18}
+                                />
+                            </>
+
+                        )}
 
                     </button>
+
+                    <p className="payment-secure-text">
+                        Pembayaran kamu diproses
+                        dengan aman.
+                    </p>
+
                 </aside>
 
             </div>
@@ -1239,54 +1993,434 @@ export default function Checkout() {
 }
 
 /* =====================================================
-   PAYMENT OPTION
+   EXTRACT ORDER
 ===================================================== */
 
-function PaymentOption({
-    active,
-    icon,
-    title,
-    description,
-    onClick,
-}: PaymentOptionProps) {
+function extractOrder(
+    raw: unknown
+): Order | null {
 
-    return (
-        <button
-            type="button"
-            className={
-                active
-                    ? "payment-method active"
-                    : "payment-method"
-            }
-            onClick={
-                onClick
-            }
-        >
+    if (
+        !raw ||
+        typeof raw !== "object"
+    ) {
 
-            <div className="payment-icon">
-                {icon}
-            </div>
+        return null;
+    }
 
-            <div className="payment-content">
+    const data =
+        raw as Record<
+            string,
+            unknown
+        >;
 
-                <strong>
-                    {title}
-                </strong>
+    /*
+     * Format:
+     *
+     * {
+     *   id: "...",
+     *   payment_method: "..."
+     * }
+     */
 
-                <span>
-                    {description}
-                </span>
+    if (
+        data.id ||
+        data.order_id ||
+        data.order_number ||
+        data.payment_method ||
+        data.paymentMethod
+    ) {
 
-            </div>
+        return data as Order;
+    }
 
-            <div className="payment-radio">
+    /*
+     * Format:
+     *
+     * {
+     *   data: {...}
+     * }
+     */
 
-                {active && (
-                    <span />
-                )}
+    if (
+        data.data &&
+        typeof data.data ===
+        "object"
+    ) {
 
-            </div>
+        const nested =
+            extractOrder(
+                data.data
+            );
 
-        </button>
-    );
+        if (nested) {
+            return nested;
+        }
+    }
+
+    /*
+     * Format:
+     *
+     * {
+     *   order: {...}
+     * }
+     */
+
+    if (
+        data.order &&
+        typeof data.order ===
+        "object"
+    ) {
+
+        const nested =
+            extractOrder(
+                data.order
+            );
+
+        if (nested) {
+            return nested;
+        }
+    }
+
+    /*
+     * Format:
+     *
+     * {
+     *   result: {...}
+     * }
+     */
+
+    if (
+        data.result &&
+        typeof data.result ===
+        "object"
+    ) {
+
+        const nested =
+            extractOrder(
+                data.result
+            );
+
+        if (nested) {
+            return nested;
+        }
+    }
+
+    return null;
+}
+
+/* =====================================================
+   NORMALIZE ORDER
+===================================================== */
+
+function normalizeOrder(
+    raw: Order
+): Order {
+
+    const source =
+        raw as Order &
+        Record<
+            string,
+            unknown
+        >;
+
+    const paymentMethod =
+        String(
+            source.payment_method ??
+            source.paymentMethod ??
+            ""
+        ).trim();
+
+    const paymentStatus =
+        String(
+            source.payment_status ??
+            source.paymentStatus ??
+            "pending"
+        ).trim();
+
+    const orderStatus =
+        String(
+            source.status ??
+            source.order_status ??
+            source.orderStatus ??
+            ""
+        ).trim();
+
+    const orderId =
+        String(
+            source.id ??
+            source.order_id ??
+            ""
+        ).trim();
+
+    const orderNumber =
+        String(
+            source.order_number ??
+            source.orderNumber ??
+            ""
+        ).trim();
+
+    const createdAt =
+        String(
+            source.created_at ??
+            source.createdAt ??
+            ""
+        ).trim();
+
+    const totalRaw =
+        source.total_amount ??
+        source.totalAmount;
+
+    const totalAmount =
+        Number(
+            totalRaw ?? 0
+        );
+
+    return {
+
+        ...raw,
+
+        id:
+            orderId ||
+            undefined,
+
+        order_number:
+            orderNumber ||
+            undefined,
+
+        payment_method:
+            paymentMethod ||
+            undefined,
+
+        payment_status:
+            paymentStatus ||
+            "pending",
+
+        status:
+            orderStatus ||
+            undefined,
+
+        created_at:
+            createdAt ||
+            undefined,
+
+        total_amount:
+            Number.isFinite(
+                totalAmount
+            )
+                ? totalAmount
+                : 0,
+
+        items:
+            Array.isArray(
+                source.items
+            )
+                ? source.items
+                : [],
+    };
+}
+
+/* =====================================================
+   FORMAT RUPIAH
+===================================================== */
+
+function formatRupiah(
+    amount: number
+): string {
+
+    if (
+        !Number.isFinite(
+            amount
+        )
+    ) {
+
+        amount = 0;
+    }
+
+    return `Rp ${amount.toLocaleString(
+        "id-ID"
+    )}`;
+}
+
+/* =====================================================
+   NORMALIZE PAYMENT METHOD
+===================================================== */
+
+function normalizePaymentMethod(
+    method?: string
+): PaymentMethod | null {
+
+    if (!method) {
+        return null;
+    }
+
+    const normalized =
+        method
+            .toLowerCase()
+            .trim()
+            .replace(
+                /-/g,
+                "_"
+            );
+
+    switch (
+    normalized
+    ) {
+
+        case "qris":
+
+            return "qris";
+
+        case "bank_transfer":
+        case "bank transfer":
+        case "transfer_bank":
+        case "transfer bank":
+        case "banktransfer":
+
+            return "bank_transfer";
+
+        case "virtual_account":
+        case "virtual account":
+        case "va":
+        case "virtualaccount":
+
+            return "virtual_account";
+
+        default:
+
+            return null;
+    }
+}
+
+/* =====================================================
+   NORMALIZE PAYMENT STATUS
+===================================================== */
+
+function normalizePaymentStatus(
+    status?: string
+): PaymentStatus {
+
+    const normalized =
+        String(
+            status ??
+            "pending"
+        )
+            .toLowerCase()
+            .trim();
+
+    if (
+        normalized ===
+        "paid" ||
+        normalized ===
+        "success"
+    ) {
+
+        return "paid";
+    }
+
+    if (
+        normalized ===
+        "failed" ||
+        normalized ===
+        "failure"
+    ) {
+
+        return "failed";
+    }
+
+    if (
+        normalized ===
+        "cancelled" ||
+        normalized ===
+        "canceled"
+    ) {
+
+        return "cancelled";
+    }
+
+    if (
+        normalized ===
+        "expired"
+    ) {
+
+        return "expired";
+    }
+
+    return "pending";
+}
+
+/* =====================================================
+   PAYMENT METHOD LABEL
+===================================================== */
+
+function getPaymentMethodLabel(
+    method: PaymentMethod | null
+): string {
+
+    switch (
+    method
+    ) {
+
+        case "qris":
+
+            return "QRIS";
+
+        case "bank_transfer":
+
+            return "Transfer Bank / ATM";
+
+        case "virtual_account":
+
+            return "Virtual Account";
+
+        default:
+
+            return "Metode pembayaran";
+    }
+}
+
+/* =====================================================
+   PAYMENT ICON
+===================================================== */
+
+function getPaymentIcon(
+    method: PaymentMethod | null
+) {
+
+    switch (
+    method
+    ) {
+
+        case "qris":
+
+            return (
+                <QrCode
+                    size={23}
+                />
+            );
+
+        case "bank_transfer":
+
+            return (
+                <Building2
+                    size={23}
+                />
+            );
+
+        case "virtual_account":
+
+            return (
+                <CreditCard
+                    size={23}
+                />
+            );
+
+        default:
+
+            return (
+                <CreditCard
+                    size={23}
+                />
+            );
+    }
 }

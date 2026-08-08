@@ -205,13 +205,6 @@ func UpdateOrderStatus(c *gin.Context) {
 	// =================================================
 	// SELLER AUTHORIZATION
 	// =================================================
-	//
-	// Seller hanya boleh mengubah order miliknya.
-	//
-	// Sesuaikan nama context key dengan middleware login
-	// kamu jika berbeda.
-	//
-	// =================================================
 
 	sellerIDFromContext := strings.TrimSpace(
 		c.GetString("seller_id"),
@@ -225,7 +218,7 @@ func UpdateOrderStatus(c *gin.Context) {
 	if sellerIDFromContext != "" {
 
 		orderSellerID := strings.TrimSpace(
-			order.SellerID.String(),
+			order.SellerID,
 		)
 
 		if orderSellerID != sellerIDFromContext {

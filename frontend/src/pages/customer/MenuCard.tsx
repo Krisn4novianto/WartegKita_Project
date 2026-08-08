@@ -1,4 +1,5 @@
 import {
+    Clock3,
     Minus,
     Plus,
     ShoppingCart,
@@ -8,11 +9,14 @@ import {
     Menu,
 } from "../../types";
 
+
 interface MenuCardProps {
 
     menu: Menu;
 
     quantity: number;
+
+    storeIsOpen: boolean;
 
     onIncrease: () => void;
 
@@ -22,29 +26,57 @@ interface MenuCardProps {
 
 }
 
+
 export default function MenuCard({
     menu,
     quantity,
+    storeIsOpen,
     onIncrease,
     onDecrease,
     onAdd,
 }: MenuCardProps) {
 
-    const formatPrice =
-        (price: number) =>
-            new Intl.NumberFormat(
-                "id-ID",
-                {
-                    style: "currency",
-                    currency: "IDR",
-                    maximumFractionDigits: 0,
-                }
-            ).format(price);
+
+    const formatPrice = (
+        price: number,
+    ) =>
+        new Intl.NumberFormat(
+            "id-ID",
+            {
+                style: "currency",
+                currency: "IDR",
+                maximumFractionDigits: 0,
+            },
+        ).format(price);
+
+
+    const storeClosed =
+        !storeIsOpen;
+
+
+    const menuUnavailable =
+        !menu.available ||
+        menu.stock <= 0;
 
 
     const unavailable =
-        !menu.available ||
-        menu.stock <= 0;
+        storeClosed ||
+        menuUnavailable;
+
+
+    const showStockWarning =
+        !storeClosed &&
+        !menuUnavailable &&
+        menu.stock > 0 &&
+        menu.stock <= 5;
+
+
+    const showAddButton =
+        !storeClosed &&
+        !menuUnavailable &&
+        quantity > 0 &&
+        Boolean(onAdd);
+
 
 
     return (
@@ -58,192 +90,246 @@ export default function MenuCard({
             }
         >
 
-            {/* =================================================
-                IMAGE
-            ================================================= */}
+            {/* IMAGE */}
 
             <div className="menu-card-image">
 
-                {menu.image ? (
+                {
+                    menu.image ? (
 
-                    <img
-                        src={menu.image}
-                        alt={menu.name}
-                        loading="lazy"
-                    />
+                        <img
+                            src={menu.image}
+                            alt={menu.name}
+                            loading="lazy"
+                        />
 
-                ) : (
+                    ) : (
 
-                    <div className="menu-card-image-placeholder">
-                        <span>🍛</span>
-                    </div>
+                        <div className="menu-card-image-placeholder">
 
-                )}
+                            <span>
+                                🍛
+                            </span>
+
+                        </div>
+
+                    )
+                }
+
+                {
+                    storeClosed && (
+
+                        <div className="menu-closed-overlay">
+
+                            <Clock3
+                                size={18}
+                                strokeWidth={2.5}
+                            />
+
+                            <span>
+                                Warteg sedang tutup
+                            </span>
+
+                        </div>
+
+                    )
+                }
 
 
-                {unavailable && (
+                {
+                    !storeClosed && menuUnavailable && (
 
-                    <div className="menu-unavailable-badge">
-                        Habis
-                    </div>
+                        <div className="menu-unavailable-badge">
 
-                )}
+                            Habis
+
+                        </div>
+
+                    )
+                }
+
 
             </div>
 
 
-            {/* =================================================
-                CONTENT
-            ================================================= */}
+
+            {/* CONTENT */}
 
             <div className="menu-card-content">
 
-                {/* CATEGORY */}
 
-                {menu.category && (
+                {
+                    menu.category && (
 
-                    <span className="menu-card-category">
-                        {menu.category}
-                    </span>
+                        <span className="menu-card-category">
+                            {menu.category}
+                        </span>
 
-                )}
+                    )
+                }
 
 
-                {/* NAME */}
 
                 <h3 className="menu-card-name">
                     {menu.name}
                 </h3>
 
 
-                {/* DESCRIPTION */}
 
-                {menu.description && (
+                {
+                    menu.description && (
 
-                    <p className="menu-card-description">
-                        {menu.description}
-                    </p>
+                        <p className="menu-card-description">
+                            {menu.description}
+                        </p>
 
-                )}
+                    )
+                }
 
 
-                {/* =================================================
-                    PRICE + QUANTITY
-                ================================================= */}
+
+                {/* PRICE + QUANTITY */}
 
                 <div className="menu-card-bottom">
 
+
                     <div className="menu-card-price">
-                        {formatPrice(menu.price)}
+
+                        {formatPrice(
+                            menu.price,
+                        )}
+
                     </div>
 
 
-                    {!unavailable ? (
 
-                        <div
-                            className={
-                                `menu-quantity ${quantity > 0
-                                    ? "has-quantity"
-                                    : ""
-                                }`
-                            }
-                        >
+                    {
+                        storeClosed ? (
 
-                            <button
-                                type="button"
-                                className="quantity-button quantity-minus"
-                                onClick={onDecrease}
-                                disabled={quantity <= 0}
-                                aria-label={`Kurangi ${menu.name}`}
-                            >
+                            <span className="menu-stock-empty">
 
-                                <Minus
-                                    size={16}
-                                    strokeWidth={2.5}
+                                <Clock3
+                                    size={14}
                                 />
 
-                            </button>
+                                Tutup sementara
 
-
-                            <span className="quantity-value">
-                                {quantity}
                             </span>
 
 
-                            <button
-                                type="button"
-                                className="quantity-button quantity-plus"
-                                onClick={onIncrease}
-                                disabled={
-                                    quantity >= menu.stock
+                        ) : menuUnavailable ? (
+
+                            <span className="menu-stock-empty">
+                                Tidak tersedia
+                            </span>
+
+
+                        ) : (
+
+                            <div
+                                className={
+                                    `menu-quantity ${quantity > 0
+                                        ? "has-quantity"
+                                        : ""
+                                    }`
                                 }
-                                aria-label={`Tambah ${menu.name}`}
                             >
 
-                                <Plus
-                                    size={16}
-                                    strokeWidth={2.5}
-                                />
+                                <button
+                                    type="button"
+                                    className="quantity-button"
+                                    onClick={onDecrease}
+                                    disabled={
+                                        quantity <= 0
+                                    }
+                                >
 
-                            </button>
+                                    <Minus
+                                        size={16}
+                                        strokeWidth={2.5}
+                                    />
 
-                        </div>
+                                </button>
 
-                    ) : (
 
-                        <span className="menu-stock-empty">
-                            Tidak tersedia
-                        </span>
 
-                    )}
+                                <span className="quantity-value">
+
+                                    {quantity}
+
+                                </span>
+
+
+
+                                <button
+                                    type="button"
+                                    className="quantity-button"
+                                    onClick={onIncrease}
+                                    disabled={
+                                        quantity >= menu.stock
+                                    }
+                                >
+
+                                    <Plus
+                                        size={16}
+                                        strokeWidth={2.5}
+                                    />
+
+                                </button>
+
+
+                            </div>
+
+                        )
+                    }
 
                 </div>
 
 
-                {/* =================================================
-                    STOCK WARNING
-                ================================================= */}
 
-                {!unavailable &&
-                    menu.stock > 0 &&
-                    menu.stock <= 5 && (
+                {
+                    showStockWarning && (
 
                         <span className="menu-stock-warning">
+
                             Tinggal {menu.stock} porsi
+
                         </span>
 
-                    )}
+                    )
+                }
 
 
-                {/* =================================================
-                    ADD TO CART
-                ================================================= */}
 
-                {!unavailable && quantity > 0 && onAdd && (
 
-                    <button
-                        type="button"
-                        className="menu-add-cart-button"
-                        onClick={onAdd}
-                    >
+                {
+                    showAddButton && (
 
-                        <ShoppingCart
-                            size={17}
-                            strokeWidth={2.5}
-                        />
+                        <button
+                            type="button"
+                            className="menu-add-cart-button"
+                            onClick={onAdd}
+                        >
 
-                        <span>
-                            Tambah ke Keranjang
-                        </span>
+                            <ShoppingCart
+                                size={17}
+                                strokeWidth={2.5}
+                            />
 
-                    </button>
+                            <span>
+                                Tambah ke Keranjang
+                            </span>
 
-                )}
+                        </button>
+
+                    )
+                }
+
 
             </div>
+
 
         </article>
 
     );
-
 }

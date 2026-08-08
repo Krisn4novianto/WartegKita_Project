@@ -122,6 +122,10 @@ interface ApiErrorResponse {
    CONSTANT
 ===================================================== */
 
+// 🔧 FIX:
+// Durasi pembayaran tetap 15 menit.
+// Deadline dihitung dari created_at order,
+// bukan dari saat halaman Payment dibuka.
 const PAYMENT_DURATION_MS =
     15 * 60 * 1000;
 
@@ -212,29 +216,15 @@ export default function Payment() {
                 setError("");
 
                 /*
-                 * Jangan langsung menganggap
-                 * response.data adalah Order.
+                 * Backend bisa mengembalikan:
                  *
-                 * Backend / Axios interceptor
-                 * bisa mengembalikan:
+                 * 1. { ...order }
+                 * 2. { data: { ...order } }
+                 * 3. { order: { ...order } }
+                 * 4. { result: { ...order } }
                  *
-                 * {
-                 *   data: {...}
-                 * }
-                 *
-                 * atau:
-                 *
-                 * {
-                 *   order: {...}
-                 * }
-                 *
-                 * atau:
-                 *
-                 * {
-                 *   data: {
-                 *      order: {...}
-                 *   }
-                 * }
+                 * Karena itu response dinormalisasi
+                 * terlebih dahulu.
                  */
 
                 const response =
@@ -247,91 +237,30 @@ export default function Payment() {
                 );
 
                 console.log(
-                    "RAW PAYMENT RESPONSE:"
-                );
-
-                console.log(
-                    response
-                );
-
-                console.log(
-                    "RAW PAYMENT RESPONSE DATA:"
-                );
-
-                console.log(
+                    "PAYMENT - RAW RESPONSE:",
                     response?.data
                 );
 
-                const rawData =
-                    response?.data;
-
                 const orderData =
                     extractOrder(
-                        rawData
+                        response?.data
                     );
 
                 console.log(
-                    "========================================"
-                );
-
-                console.log(
-                    "NORMALIZED PAYMENT ORDER"
-                );
-
-                console.log(
-                    "ORDER:",
+                    "PAYMENT - EXTRACTED ORDER:",
                     orderData
                 );
 
-                console.log(
-                    "ORDER ID:",
-                    orderData?.id
-                );
-
-                console.log(
-                    "ORDER NUMBER:",
-                    orderData?.order_number
-                );
-
-                console.log(
-                    "PAYMENT METHOD:",
-                    orderData?.payment_method
-                );
-
-                console.log(
-                    "PAYMENT STATUS:",
-                    orderData?.payment_status
-                );
-
-                console.log(
-                    "ORDER STATUS:",
-                    orderData?.status
-                );
-
-                console.log(
-                    "CREATED AT:",
-                    orderData?.created_at
-                );
-
-                console.log(
-                    "========================================"
-                );
-
                 if (!orderData) {
+
+                    setOrder(null);
 
                     setError(
                         "Data pesanan tidak ditemukan dari server."
                     );
 
-                    setOrder(null);
-
                     return;
                 }
-
-                /*
-                 * Normalisasi semua kemungkinan
-                 * nama field backend.
-                 */
 
                 const normalizedOrder =
                     normalizeOrder(
@@ -339,18 +268,24 @@ export default function Payment() {
                     );
 
                 console.log(
-                    "FINAL NORMALIZED ORDER:",
+                    "PAYMENT - NORMALIZED ORDER:",
                     normalizedOrder
-                );
-
-                console.log(
-                    "FINAL PAYMENT METHOD:",
-                    normalizedOrder.payment_method
                 );
 
                 setOrder(
                     normalizedOrder
                 );
+
+                /*
+                 * 🔧 FIX:
+                 *
+                 * Status pembayaran selalu mengambil
+                 * nilai dari backend.
+                 *
+                 * Jadi kalau user refresh halaman dan
+                 * payment_status sudah PAID, halaman
+                 * langsung masuk ke state berhasil.
+                 */
 
                 const normalizedStatus =
                     normalizePaymentStatus(
@@ -362,7 +297,18 @@ export default function Payment() {
                 );
 
                 /*
-                 * Deadline pembayaran.
+                 * 🔧 FIX:
+                 *
+                 * Deadline pembayaran dihitung dari
+                 * created_at order.
+                 *
+                 * Jadi:
+                 *
+                 * Order dibuat 10:00
+                 * Payment dibuka 10:05
+                 *
+                 * sisa waktu = 10 menit,
+                 * bukan kembali menjadi 15 menit.
                  */
 
                 let deadline =
@@ -390,16 +336,15 @@ export default function Payment() {
                     }
                 }
 
+                /*
+                 * Kalau pembayaran sudah berhasil,
+                 * tidak perlu countdown lagi.
+                 */
+
                 if (
                     normalizedStatus ===
-                    "pending"
+                    "paid"
                 ) {
-
-                    setPaymentDeadline(
-                        deadline
-                    );
-
-                } else {
 
                     setPaymentDeadline(
                         null
@@ -407,6 +352,70 @@ export default function Payment() {
 
                     setRemainingSeconds(
                         0
+                    );
+
+                    return;
+                }
+
+                /*
+                 * Kalau status gagal / cancelled /
+                 * expired dari backend, jangan jalankan timer.
+                 */
+
+                if (
+                    normalizedStatus ===
+                    "failed" ||
+                    normalizedStatus ===
+                    "cancelled" ||
+                    normalizedStatus ===
+                    "expired"
+                ) {
+
+                    setPaymentDeadline(
+                        null
+                    );
+
+                    setRemainingSeconds(
+                        0
+                    );
+
+                    return;
+                }
+
+                setPaymentDeadline(
+                    deadline
+                );
+
+                /*
+                 * 🔧 FIX:
+                 *
+                 * Hitung sisa waktu langsung setelah
+                 * deadline diketahui.
+                 */
+
+                const difference =
+                    deadline -
+                    Date.now();
+
+                if (
+                    difference <= 0
+                ) {
+
+                    setRemainingSeconds(
+                        0
+                    );
+
+                    setPaymentStatus(
+                        "expired"
+                    );
+
+                } else {
+
+                    setRemainingSeconds(
+                        Math.ceil(
+                            difference /
+                            1000
+                        )
                     );
                 }
 
@@ -433,6 +442,32 @@ export default function Payment() {
                         ?.data;
 
                 if (
+                    status === 404
+                ) {
+
+                    setError(
+                        "Pesanan tidak ditemukan."
+                    );
+
+                    setOrder(null);
+
+                    return;
+                }
+
+                if (
+                    status === 401
+                ) {
+
+                    setError(
+                        "Sesi login kamu sudah berakhir."
+                    );
+
+                    setOrder(null);
+
+                    return;
+                }
+
+                if (
                     data?.error
                 ) {
 
@@ -449,28 +484,6 @@ export default function Payment() {
 
                     setError(
                         data.message
-                    );
-
-                    return;
-                }
-
-                if (
-                    status === 404
-                ) {
-
-                    setError(
-                        "Pesanan tidak ditemukan."
-                    );
-
-                    return;
-                }
-
-                if (
-                    status === 401
-                ) {
-
-                    setError(
-                        "Sesi login kamu sudah berakhir."
                     );
 
                     return;
@@ -521,6 +534,11 @@ export default function Payment() {
                 return 0;
             }
 
+            /*
+             * Prioritas pertama:
+             * total_amount dari backend.
+             */
+
             if (
                 typeof order.total_amount ===
                 "number" &&
@@ -532,8 +550,16 @@ export default function Payment() {
                 return order.total_amount;
             }
 
+            /*
+             * Fallback kalau backend mengirim
+             * totalAmount sebagai string.
+             */
+
             if (
-                order.total_amount
+                order.total_amount !==
+                undefined &&
+                order.total_amount !==
+                null
             ) {
 
                 const parsed =
@@ -550,6 +576,12 @@ export default function Payment() {
                     return parsed;
                 }
             }
+
+            /*
+             * Fallback terakhir:
+             *
+             * quantity × price
+             */
 
             return (
                 order.items?.reduce(
@@ -635,6 +667,19 @@ export default function Payment() {
                 const difference =
                     paymentDeadline -
                     now;
+
+                /*
+                 * 🔧 FIX:
+                 *
+                 * Timer hanya mengubah state frontend
+                 * menjadi expired.
+                 *
+                 * Tidak melakukan request ke backend
+                 * untuk mengubah status order.
+                 *
+                 * Database tetap menjadi tanggung
+                 * jawab backend.
+                 */
 
                 if (
                     difference <= 0
@@ -821,6 +866,11 @@ export default function Payment() {
                 return;
             }
 
+            /*
+             * Kalau backend sudah menyatakan PAID,
+             * jangan melakukan pembayaran ulang.
+             */
+
             if (
                 paymentStatus ===
                 "paid" ||
@@ -835,13 +885,25 @@ export default function Payment() {
                 return;
             }
 
+            /*
+             * Payment expired tidak boleh diproses.
+             */
+
             if (
                 paymentStatus ===
                 "expired"
             ) {
 
+                setError(
+                    "Waktu pembayaran 15 menit telah habis."
+                );
+
                 return;
             }
+
+            /*
+             * Jangan proses kalau timer sudah 00:00.
+             */
 
             if (
                 remainingSeconds <=
@@ -859,12 +921,20 @@ export default function Payment() {
                 return;
             }
 
+            /*
+             * Hindari double click.
+             */
+
             if (
                 processing
             ) {
 
                 return;
             }
+
+            /*
+             * Payment method wajib ada.
+             */
 
             if (
                 !paymentMethod
@@ -904,22 +974,27 @@ export default function Payment() {
                 );
 
                 console.log(
+                    "TOTAL:",
+                    totalAmount
+                );
+
+                console.log(
                     "========================================"
                 );
 
                 /*
-                 * PERHATIAN:
+                 * =================================================
+                 * 🔧 FIX UTAMA:
                  *
-                 * Dari route backend yang kamu kirim,
-                 * saat ini BELUM ADA:
+                 * Pembayaran dilakukan melalui endpoint backend:
                  *
-                 * PATCH/PUT /orders/:order_id/pay
+                 * PUT /orders/:orderId/pay
                  *
-                 * Jadi endpoint ini mungkin 404.
+                 * Backend yang menentukan apakah pembayaran
+                 * benar-benar berhasil atau tidak.
                  *
-                 * Untuk sementara kita tetap pertahankan
-                 * request ini supaya frontend siap ketika
-                 * endpoint payment backend ditambahkan.
+                 * Jangan update database langsung dari frontend.
+                 * =================================================
                  */
 
                 const response =
@@ -936,30 +1011,29 @@ export default function Payment() {
                     response?.data
                 );
 
-                setPaymentStatus(
-                    "paid"
-                );
-
-                setRemainingSeconds(
-                    0
-                );
-
-                setPaymentDeadline(
-                    null
-                );
+                /*
+                 * =================================================
+                 * 🔧 FIX:
+                 *
+                 * Jangan langsung:
+                 *
+                 * setPaymentStatus("paid")
+                 *
+                 * hanya karena request berhasil.
+                 *
+                 * Kita reload order dari backend dan membaca
+                 * payment_status yang sebenarnya.
+                 * =================================================
+                 */
 
                 await loadOrder();
-
-                setPaymentStatus(
-                    "paid"
-                );
 
             } catch (
             paymentError: unknown
             ) {
 
-                console.warn(
-                    "Payment endpoint gagal:",
+                console.error(
+                    "PAYMENT FAILED:",
                     paymentError
                 );
 
@@ -986,6 +1060,11 @@ export default function Payment() {
                     data
                 );
 
+                /*
+                 * 404:
+                 * Endpoint atau order tidak ditemukan.
+                 */
+
                 if (
                     status ===
                     404
@@ -996,11 +1075,39 @@ export default function Payment() {
                     );
 
                     setError(
-                        "Endpoint pembayaran belum tersedia di backend."
+                        data?.error ??
+                        data?.message ??
+                        "Endpoint pembayaran atau pesanan tidak ditemukan."
                     );
 
                     return;
                 }
+
+                /*
+                 * 401:
+                 * Session customer bermasalah.
+                 */
+
+                if (
+                    status ===
+                    401
+                ) {
+
+                    setError(
+                        "Sesi login kamu sudah berakhir."
+                    );
+
+                    return;
+                }
+
+                /*
+                 * 409:
+                 *
+                 * Bisa berarti order sudah dibayar,
+                 * sudah diproses, atau status berubah.
+                 *
+                 * Karena itu reload data backend.
+                 */
 
                 if (
                     status ===
@@ -1012,32 +1119,47 @@ export default function Payment() {
                     return;
                 }
 
-                setPaymentStatus(
-                    "failed"
-                );
+                /*
+                 * Error validasi / business logic backend.
+                 */
 
                 if (
                     data?.error
                 ) {
 
+                    setPaymentStatus(
+                        "failed"
+                    );
+
                     setError(
                         data.error
                     );
 
-                } else if (
+                    return;
+                }
+
+                if (
                     data?.message
                 ) {
+
+                    setPaymentStatus(
+                        "failed"
+                    );
 
                     setError(
                         data.message
                     );
 
-                } else {
-
-                    setError(
-                        "Pembayaran gagal diproses. Silakan coba lagi."
-                    );
+                    return;
                 }
+
+                setPaymentStatus(
+                    "failed"
+                );
+
+                setError(
+                    "Pembayaran gagal diproses. Silakan coba lagi."
+                );
 
             } finally {
 
@@ -1719,6 +1841,7 @@ export default function Payment() {
                                         handleRetry
                                     }
                                 />
+
                             )}
 
                         {paymentMethod ===
@@ -1729,6 +1852,7 @@ export default function Payment() {
                                         totalAmount
                                     }
                                 />
+
                             )}
 
                         {paymentMethod ===
@@ -1745,6 +1869,7 @@ export default function Payment() {
                                         copied
                                     }
                                 />
+
                             )}
 
                     </section>
@@ -1833,8 +1958,11 @@ export default function Payment() {
                                         );
 
                                     const itemTotal =
-                                        quantity *
-                                        price;
+                                        Number(
+                                            item.subtotal ??
+                                            quantity *
+                                            price
+                                        );
 
                                     const menuName =
                                         item.menu_name ??
@@ -1949,6 +2077,8 @@ export default function Payment() {
                         className="payment-confirm-button"
                         disabled={
                             processing ||
+                            paymentStatus !==
+                            "pending" ||
                             remainingSeconds <=
                             0
                         }
@@ -1996,6 +2126,13 @@ export default function Payment() {
    EXTRACT ORDER
 ===================================================== */
 
+/*
+ * 🔧 FIX:
+ *
+ * Fungsi dibuat recursive supaya frontend bisa
+ * menangani beberapa bentuk response backend.
+ */
+
 function extractOrder(
     raw: unknown
 ): Order | null {
@@ -2015,11 +2152,11 @@ function extractOrder(
         >;
 
     /*
-     * Format:
+     * Direct order:
      *
      * {
      *   id: "...",
-     *   payment_method: "..."
+     *   payment_method: "qris"
      * }
      */
 
@@ -2035,7 +2172,7 @@ function extractOrder(
     }
 
     /*
-     * Format:
+     * Nested:
      *
      * {
      *   data: {...}
@@ -2059,7 +2196,7 @@ function extractOrder(
     }
 
     /*
-     * Format:
+     * Nested:
      *
      * {
      *   order: {...}
@@ -2083,7 +2220,7 @@ function extractOrder(
     }
 
     /*
-     * Format:
+     * Nested:
      *
      * {
      *   result: {...}
@@ -2123,6 +2260,13 @@ function normalizeOrder(
             string,
             unknown
         >;
+
+    /*
+     * 🔧 FIX:
+     *
+     * Backend bisa menggunakan snake_case
+     * atau camelCase.
+     */
 
     const paymentMethod =
         String(
@@ -2307,6 +2451,14 @@ function normalizePaymentStatus(
         )
             .toLowerCase()
             .trim();
+
+    /*
+     * 🔧 FIX:
+     *
+     * "success" disamakan menjadi "paid"
+     * supaya state frontend tidak bercabang
+     * untuk dua status yang sebenarnya sama.
+     */
 
     if (
         normalized ===

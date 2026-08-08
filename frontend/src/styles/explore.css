@@ -3,21 +3,16 @@
    EXPLORE PAGE
    GoFood-inspired • Modern • Compact • Responsive
 
-   COLOR SYSTEM
+   IMPORTANT
    -----------------------------------------------------
-   Primary Green      : #16A34A
-   Dark Green         : #15803D
-   Soft Green         : #F0FDF4
-   Light Green        : #DCFCE7
+   Card warteg di halaman Explore menggunakan class:
+   .explore-store-card
 
-   Accent Orange      : #F97316
-   Soft Orange        : #FFF7ED
+   TIDAK menggunakan:
+   .menu-card
+   .store-card
 
-   Background         : #F8FAFC
-   White              : #FFFFFF
-   Text               : #111827
-   Muted              : #64748B
-   Border             : #E5E7EB
+   MenuCard.tsx tetap khusus halaman Store Detail.
 ===================================================== */
 
 
@@ -57,6 +52,7 @@
 
     width: 100%;
     min-height: 100vh;
+    min-height: 100dvh;
 
     padding-bottom: 80px;
 
@@ -78,7 +74,8 @@
 
 .explore-page>* {
 
-    width: min(1180px,
+    width:
+        min(1180px,
             calc(100% - 40px));
 
     margin-left: auto;
@@ -108,7 +105,9 @@
 }
 
 
-/* subtle decorative background */
+/* =====================================================
+   HEADER DECORATION
+===================================================== */
 
 .explore-header::before {
 
@@ -173,7 +172,10 @@
 
     max-width: 650px;
 
-    font-size: clamp(36px,
+    color: var(--text);
+
+    font-size:
+        clamp(36px,
             5vw,
             56px);
 
@@ -182,8 +184,6 @@
     letter-spacing: -0.045em;
 
     font-weight: 850;
-
-    color: var(--text);
 }
 
 
@@ -247,9 +247,9 @@
 
 .explore-trust svg {
 
-    color: var(--green);
-
     flex-shrink: 0;
+
+    color: var(--green);
 }
 
 
@@ -276,7 +276,7 @@
     display: grid;
 
     grid-template-columns:
-        44px 1fr auto;
+        44px minmax(0, 1fr) auto;
 
     align-items: center;
 
@@ -310,7 +310,8 @@
     border-color:
         rgba(22, 163, 74, 0.35);
 
-    transform: translateY(-2px);
+    transform:
+        translateY(-2px);
 
     box-shadow:
         0 12px 28px rgba(15, 23, 42, 0.10);
@@ -364,6 +365,8 @@
 
     white-space: nowrap;
 
+    color: var(--text);
+
     font-size: 14px;
 
     font-weight: 800;
@@ -371,6 +374,8 @@
 
 
 .location-selector-button>svg {
+
+    flex-shrink: 0;
 
     color: var(--muted);
 }
@@ -389,6 +394,8 @@
     left: 0;
     right: 0;
 
+    z-index: 100;
+
     padding: 7px;
 
     border: 1px solid var(--border);
@@ -402,8 +409,6 @@
 
     animation:
         dropdownIn .16s ease;
-
-    z-index: 100;
 }
 
 
@@ -415,7 +420,6 @@
 
         transform:
             translateY(-5px);
-
     }
 
     to {
@@ -424,9 +428,7 @@
 
         transform:
             translateY(0);
-
     }
-
 }
 
 
@@ -472,6 +474,8 @@
 
 .location-menu svg {
 
+    flex-shrink: 0;
+
     color: var(--green);
 }
 
@@ -488,7 +492,8 @@
 
     display: grid;
 
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns:
+        minmax(0, 1fr) auto;
 
     gap: 10px;
 
@@ -584,6 +589,10 @@
     color: var(--muted);
 
     cursor: pointer;
+
+    transition:
+        background .16s ease,
+        color .16s ease;
 }
 
 
@@ -596,7 +605,7 @@
 
 
 /* =====================================================
-   BUTTON
+   GENERAL BUTTON
 ===================================================== */
 
 .explore-page .button {
@@ -640,7 +649,8 @@
 
     background: var(--green-dark);
 
-    transform: translateY(-1px);
+    transform:
+        translateY(-1px);
 
     box-shadow:
         0 7px 16px rgba(22, 163, 74, .22);
@@ -772,7 +782,7 @@
 
     outline: 0;
 
-    background: white;
+    background: var(--white);
 
     color: var(--text);
 
@@ -836,6 +846,9 @@
     font-weight: 750;
 
     cursor: pointer;
+
+    transition:
+        background .16s ease;
 }
 
 
@@ -944,7 +957,8 @@
 
 .explore-category-card:hover {
 
-    transform: translateY(-2px);
+    transform:
+        translateY(-2px);
 
     border-color:
         rgba(22, 163, 74, .28);
@@ -986,7 +1000,7 @@
 
 .explore-category-card.active .explore-category-emoji {
 
-    background: white;
+    background: var(--white);
 }
 
 
@@ -1118,6 +1132,8 @@
 
     margin: 0;
 
+    color: var(--text);
+
     font-size: 24px;
 
     line-height: 1.2;
@@ -1160,12 +1176,6 @@
    STORE GRID
 ===================================================== */
 
-/*
-   IMPORTANT:
-   Jangan paksa tinggi card dari Explore.
-   StoreCard menentukan tinggi berdasarkan konten.
-*/
-
 .explore-grid {
 
     display: grid;
@@ -1177,6 +1187,427 @@
 
     align-items: start;
 }
+
+
+/* =====================================================
+   =====================================================
+   EXPLORE STORE CARD
+   KHUSUS HALAMAN EXPLORE
+   =====================================================
+   ===================================================== */
+
+.explore-store-card {
+
+    position: relative;
+
+    display: flex;
+
+    flex-direction: column;
+
+    width: 100%;
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    border: 1px solid var(--border);
+
+    border-radius: 18px;
+
+    background: var(--white);
+
+    color: var(--text);
+
+    text-decoration: none;
+
+    box-shadow: var(--shadow-sm);
+
+    transition:
+        transform .22s ease,
+        box-shadow .22s ease,
+        border-color .22s ease;
+}
+
+
+.explore-store-card:hover {
+
+    transform:
+        translateY(-4px);
+
+    border-color:
+        rgba(22, 163, 74, 0.22);
+
+    box-shadow:
+        0 12px 28px rgba(15, 23, 42, 0.10);
+}
+
+
+/* =====================================================
+   STORE IMAGE
+===================================================== */
+
+.explore-store-card-image {
+
+    position: relative;
+
+    width: 100%;
+
+    aspect-ratio: 1.35 / 1;
+
+    overflow: hidden;
+
+    background: #F1F5F9;
+}
+
+
+.explore-store-card-image img {
+
+    width: 100%;
+    height: 100%;
+
+    display: block;
+
+    object-fit: cover;
+
+    transition:
+        transform .35s ease;
+}
+
+
+.explore-store-card:hover .explore-store-card-image img {
+
+    transform:
+        scale(1.035);
+}
+
+
+/* =====================================================
+   STORE IMAGE PLACEHOLDER
+===================================================== */
+
+.explore-store-card-placeholder {
+
+    width: 100%;
+    height: 100%;
+
+    display: grid;
+
+    place-items: center;
+
+    background:
+        linear-gradient(135deg,
+            #F0FDF4,
+            #DCFCE7);
+}
+
+
+.explore-store-card-placeholder span {
+
+    font-size: 42px;
+
+    filter:
+        drop-shadow(0 4px 8px rgba(15, 23, 42, .08));
+}
+
+
+/* =====================================================
+   STORE STATUS
+===================================================== */
+
+.explore-store-status {
+
+    position: absolute;
+
+    top: 10px;
+    left: 10px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    min-height: 27px;
+
+    padding: 5px 9px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255, 255, 255, .94);
+
+    backdrop-filter:
+        blur(8px);
+
+    -webkit-backdrop-filter:
+        blur(8px);
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    box-shadow:
+        0 3px 10px rgba(15, 23, 42, .10);
+}
+
+
+.explore-store-status.is-open {
+
+    color: var(--green-dark);
+}
+
+
+.explore-store-status.is-closed {
+
+    color: var(--muted);
+}
+
+
+.explore-store-status-dot {
+
+    width: 6px;
+    height: 6px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background: currentColor;
+}
+
+
+/* =====================================================
+   STORE CONTENT
+===================================================== */
+
+.explore-store-card-content {
+
+    display: flex;
+
+    flex-direction: column;
+
+    min-width: 0;
+
+    padding: 13px 14px 14px;
+}
+
+
+/* =====================================================
+   STORE NAME
+===================================================== */
+
+.explore-store-card-name {
+
+    margin: 0;
+
+    overflow: hidden;
+
+    color: var(--text);
+
+    font-size: 15px;
+
+    line-height: 1.3;
+
+    font-weight: 800;
+
+    letter-spacing: -.015em;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   STORE RATING
+===================================================== */
+
+.explore-store-card-rating {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    margin-top: 7px;
+
+    color: var(--orange);
+
+    font-size: 11px;
+
+    line-height: 1;
+}
+
+
+.explore-store-card-rating svg {
+
+    flex-shrink: 0;
+}
+
+
+.explore-store-card-rating strong {
+
+    color: var(--text-soft);
+
+    font-size: 11px;
+
+    font-weight: 800;
+}
+
+
+.explore-store-card-rating span {
+
+    color: #94A3B8;
+
+    font-weight: 500;
+}
+
+
+/* =====================================================
+   STORE LOCATION
+===================================================== */
+
+.explore-store-card-location {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+    min-width: 0;
+
+    margin-top: 8px;
+
+    color: var(--muted);
+
+    font-size: 10px;
+
+    line-height: 1.4;
+}
+
+
+.explore-store-card-location svg {
+
+    flex-shrink: 0;
+
+    color: var(--green);
+}
+
+
+.explore-store-card-location span {
+
+    min-width: 0;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   STORE FOOTER
+===================================================== */
+
+.explore-store-card-footer {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+    margin-top: 11px;
+
+    padding-top: 10px;
+
+    border-top:
+        1px solid #F1F5F9;
+}
+
+
+/* =====================================================
+   STORE TYPE
+===================================================== */
+
+.explore-store-card-type {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    min-height: 23px;
+
+    max-width: 55%;
+
+    padding: 4px 8px;
+
+    border-radius: 999px;
+
+    background: var(--green-soft);
+
+    color: var(--green-dark);
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+}
+
+
+/* =====================================================
+   STORE OPEN
+===================================================== */
+
+.explore-store-card-open {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 4px;
+
+    color: var(--green);
+
+    font-size: 9px;
+
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+
+.explore-store-card-open svg {
+
+    flex-shrink: 0;
+}
+
+
+/* =====================================================
+   STORE CLOSED
+===================================================== */
+
+.explore-store-card-closed {
+
+    color: #94A3B8;
+
+    font-size: 9px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
 
 /* =====================================================
    EMPTY STATE
@@ -1213,6 +1644,8 @@
 .explore-page .empty-state h3 {
 
     margin: 13px 0 5px;
+
+    color: var(--text);
 
     font-size: 18px;
 }
@@ -1257,9 +1690,9 @@
 
     .explore-page>* {
 
-        width: min(100% - 32px,
+        width:
+            min(calc(100% - 32px),
                 1000px);
-
     }
 
 
@@ -1286,7 +1719,6 @@
         grid-template-columns:
             repeat(3, minmax(0, 1fr));
     }
-
 }
 
 
@@ -1341,8 +1773,7 @@
 
     .explore-benefit-grid {
 
-        grid-template-columns:
-            1fr;
+        grid-template-columns: 1fr;
 
         gap: 9px;
 
@@ -1358,6 +1789,27 @@
         gap: 14px;
     }
 
+
+    /* ---------------------------------------------
+       EXPLORE STORE CARD — TABLET
+    --------------------------------------------- */
+
+    .explore-store-card {
+
+        border-radius: 15px;
+    }
+
+
+    .explore-store-card-content {
+
+        padding: 11px 11px 12px;
+    }
+
+
+    .explore-store-card-name {
+
+        font-size: 13px;
+    }
 }
 
 
@@ -1371,9 +1823,18 @@
 
         width:
             calc(100% - 24px);
-
     }
 
+
+    .explore-page {
+
+        padding-bottom: 50px;
+    }
+
+
+    /* ---------------------------------------------
+       HEADER
+    --------------------------------------------- */
 
     .explore-header {
 
@@ -1401,6 +1862,10 @@
     }
 
 
+    /* ---------------------------------------------
+       TRUST
+    --------------------------------------------- */
+
     .explore-trust {
 
         gap: 6px;
@@ -1419,6 +1884,10 @@
     }
 
 
+    /* ---------------------------------------------
+       LOCATION
+    --------------------------------------------- */
+
     .location-selector-button {
 
         min-height: 68px;
@@ -1426,6 +1895,10 @@
         border-radius: 14px;
     }
 
+
+    /* ---------------------------------------------
+       SEARCH
+    --------------------------------------------- */
 
     .explore-search-wrapper {
 
@@ -1446,6 +1919,10 @@
         border-radius: 13px;
     }
 
+
+    /* ---------------------------------------------
+       FILTER
+    --------------------------------------------- */
 
     .filter-button {
 
@@ -1481,6 +1958,10 @@
     }
 
 
+    /* ---------------------------------------------
+       CATEGORY
+    --------------------------------------------- */
+
     .explore-category-section {
 
         margin-bottom: 24px;
@@ -1492,11 +1973,6 @@
         font-size: 19px;
     }
 
-
-    /*
-       Mobile category dibuat horizontal-scroll
-       seperti aplikasi food delivery.
-    */
 
     .explore-category-list {
 
@@ -1513,6 +1989,8 @@
         padding-right: 12px;
 
         scrollbar-width: none;
+
+        -ms-overflow-style: none;
     }
 
 
@@ -1524,7 +2002,8 @@
 
     .explore-category-card {
 
-        flex: 0 0 82px;
+        flex:
+            0 0 82px;
 
         min-height: 82px;
 
@@ -1551,6 +2030,10 @@
     }
 
 
+    /* ---------------------------------------------
+       BENEFIT
+    --------------------------------------------- */
+
     .explore-benefit-card {
 
         min-height: 68px;
@@ -1569,6 +2052,10 @@
         padding: 8px;
     }
 
+
+    /* ---------------------------------------------
+       RESULT HEADER
+    --------------------------------------------- */
 
     .explore-result-header {
 
@@ -1596,10 +2083,9 @@
     }
 
 
-    /*
-       2 kolom seperti food delivery.
-       Tidak boleh 1 kolom panjang.
-    */
+    /* ---------------------------------------------
+       STORE GRID
+    --------------------------------------------- */
 
     .explore-grid {
 
@@ -1610,38 +2096,117 @@
     }
 
 
-    .explore-grid .store-card {
+    /* ---------------------------------------------
+       EXPLORE STORE CARD — MOBILE
+       KHUSUS EXPLORE
+    --------------------------------------------- */
+
+    .explore-grid .explore-store-card {
 
         border-radius: 13px;
+
+        box-shadow:
+            0 2px 7px rgba(15, 23, 42, .05);
     }
 
 
-    .explore-grid .store-card img,
-    .explore-grid .store-card-image {
+    .explore-grid .explore-store-card-image {
 
         aspect-ratio: 1.25 / 1;
     }
 
 
-    .explore-grid .store-card-content {
+    .explore-grid .explore-store-card-content {
 
-        padding: 10px 10px 12px;
+        padding: 9px 9px 10px;
     }
 
 
-    .explore-grid .store-card h3 {
+    .explore-store-status {
+
+        top: 7px;
+
+        left: 7px;
+
+        min-height: 23px;
+
+        padding: 4px 7px;
+
+        font-size: 8px;
+    }
+
+
+    .explore-store-status-dot {
+
+        width: 5px;
+        height: 5px;
+    }
+
+
+    .explore-store-card-name {
 
         font-size: 12px;
     }
 
 
-    .explore-grid .store-card p {
+    .explore-store-card-rating {
 
-        font-size: 10px;
+        margin-top: 6px;
 
-        line-height: 1.4;
+        font-size: 9px;
     }
 
+
+    .explore-store-card-rating strong {
+
+        font-size: 9px;
+    }
+
+
+    .explore-store-card-rating span {
+
+        font-size: 8px;
+    }
+
+
+    .explore-store-card-location {
+
+        margin-top: 6px;
+
+        font-size: 8px;
+    }
+
+
+    .explore-store-card-footer {
+
+        margin-top: 8px;
+
+        padding-top: 8px;
+    }
+
+
+    .explore-store-card-type {
+
+        min-height: 20px;
+
+        max-width: 55%;
+
+        padding: 3px 6px;
+
+        font-size: 8px;
+    }
+
+
+    .explore-store-card-open,
+    .explore-store-card-closed {
+
+        font-size: 8px;
+    }
+
+
+    /* ---------------------------------------------
+       EMPTY
+    --------------------------------------------- */
 
     .explore-page .empty-state {
 
@@ -1651,7 +2216,6 @@
 
         border-radius: 14px;
     }
-
 }
 
 
@@ -1660,6 +2224,13 @@
 ===================================================== */
 
 @media (max-width: 380px) {
+
+    .explore-page>* {
+
+        width:
+            calc(100% - 20px);
+    }
+
 
     .explore-header h1 {
 
@@ -1673,17 +2244,69 @@
     }
 
 
-    .explore-grid .store-card-content {
-
-        padding: 9px;
-    }
-
-
     .explore-category-card {
 
         flex-basis: 76px;
     }
 
+
+    .explore-store-card-content {
+
+        padding: 8px;
+    }
+
+
+    .explore-store-card-name {
+
+        font-size: 11px;
+    }
+
+
+    .explore-store-card-location {
+
+        font-size: 7.5px;
+    }
+
+
+    .explore-store-card-rating {
+
+        font-size: 8px;
+    }
+
+
+    .explore-store-card-rating strong {
+
+        font-size: 8px;
+    }
+
+
+    .explore-store-card-rating span {
+
+        font-size: 7px;
+    }
+
+
+    .explore-store-card-footer {
+
+        gap: 5px;
+    }
+
+
+    .explore-store-card-type {
+
+        font-size: 7px;
+
+        padding-left: 5px;
+
+        padding-right: 5px;
+    }
+
+
+    .explore-store-card-open,
+    .explore-store-card-closed {
+
+        font-size: 7px;
+    }
 }
 
 
@@ -1693,11 +2316,17 @@
 
 @media (hover: none) {
 
-    .explore-grid .store-card:hover {
+    .explore-store-card:hover {
 
         transform: none;
 
         box-shadow: var(--shadow-sm);
+    }
+
+
+    .explore-store-card:hover .explore-store-card-image img {
+
+        transform: none;
     }
 
 
@@ -1716,6 +2345,11 @@
         box-shadow: var(--shadow-md);
     }
 
+
+    .filter-button:hover {
+
+        transform: none;
+    }
 }
 
 
@@ -1728,7 +2362,8 @@
 .explore-page input:focus-visible,
 .explore-page select:focus-visible {
 
-    outline: 3px solid rgba(22, 163, 74, .22);
+    outline:
+        3px solid rgba(22, 163, 74, .22);
 
     outline-offset: 2px;
 }
@@ -1752,5 +2387,4 @@
 
         transition-duration: .01ms !important;
     }
-
 }

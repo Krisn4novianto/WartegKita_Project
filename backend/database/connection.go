@@ -217,14 +217,12 @@ func Connect() {
 	// -------------------------------------------------
 
 	if err := DB.AutoMigrate(
-		&models.User{},
-		&models.SellerProfile{},
-		&models.MenuCategory{},
-		&models.PasswordResetOTP{},
+		&models.OrderItem{},
+		&models.BubbleChat{},
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate level-0 gagal:",
+			"❌ AutoMigrate level-3 gagal:",
 			err,
 		)
 	}
@@ -266,7 +264,7 @@ func Connect() {
 
 	if err := DB.AutoMigrate(
 		&models.OrderItem{},
-		&models.ChatMessage{},
+		&models.BubbleChat{},
 	); err != nil {
 
 		log.Fatal(

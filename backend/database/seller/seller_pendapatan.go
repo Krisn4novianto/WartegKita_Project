@@ -1,4 +1,4 @@
-package sellerdb
+package seller
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
-	"WartegKita/backend/models"
+	"github.com/krisn4novianto/wartegkita/backend/models"
 )
 
 /*

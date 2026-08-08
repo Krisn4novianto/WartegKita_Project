@@ -97,7 +97,7 @@ export default function Navbar() {
 
           {/* CHAT */}
 
-          <NavLink
+          {/* <NavLink
             to="/chat"
           >
 
@@ -105,7 +105,7 @@ export default function Navbar() {
 
             Chat
 
-          </NavLink>
+          </NavLink> */}
 
 
 

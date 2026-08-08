@@ -18,6 +18,10 @@ type ChatRoom struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+func (ChatRoom) TableName() string {
+	return "chat_rooms"
+}
+
 type BubbleChat struct {
 	ID uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 
@@ -32,4 +36,8 @@ type BubbleChat struct {
 	CreatedAt time.Time `json:"created_at"`
 
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (BubbleChat) TableName() string {
+	return "chat_messages"
 }
