@@ -1,0 +1,943 @@
+/* =====================================================
+   CAMPAIGN DETAIL
+===================================================== */
+
+.campaign-detail-container {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 32px 32px 70px;
+    box-sizing: border-box;
+}
+
+.campaign-detail-container * {
+    box-sizing: border-box;
+}
+
+/* =====================================================
+   BACK
+===================================================== */
+
+.campaign-back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    border: 0;
+    background: transparent;
+
+    padding: 0;
+    margin-bottom: 24px;
+
+    color: #475569;
+
+    font-size: 14px;
+    font-weight: 750;
+
+    cursor: pointer;
+
+    transition:
+        color .2s ease,
+        transform .2s ease;
+}
+
+.campaign-back-button:hover {
+    color: #16a34a;
+    transform: translateX(-2px);
+}
+
+/* =====================================================
+   LOADING
+===================================================== */
+
+.campaign-loading {
+    min-height: 460px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+
+    color: #0f172a;
+}
+
+.campaign-loading strong {
+    margin-top: 8px;
+    font-size: 16px;
+}
+
+.campaign-loading span {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.campaign-spinner {
+    animation: campaign-spin .9s linear infinite;
+}
+
+@keyframes campaign-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+.campaign-error-box {
+    padding: 50px 30px;
+
+    text-align: center;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+}
+
+.campaign-error-box>svg {
+    color: #16a34a;
+}
+
+.campaign-error-box h2 {
+    margin: 18px 0 8px;
+
+    color: #0f172a;
+
+    font-size: 23px;
+    font-weight: 800;
+}
+
+.campaign-error-box p {
+    margin: 0 auto 24px;
+
+    max-width: 520px;
+
+    color: #64748b;
+
+    line-height: 1.6;
+}
+
+.campaign-error-box button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    border: 0;
+    border-radius: 12px;
+
+    padding: 12px 20px;
+
+    background: #16a34a;
+    color: #ffffff;
+
+    font-weight: 750;
+
+    cursor: pointer;
+}
+
+/* =====================================================
+   HERO
+===================================================== */
+
+.campaign-detail-hero {
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 38px 42px;
+
+    border-radius: 26px;
+
+    background:
+        linear-gradient(135deg,
+            #064e2b 0%,
+            #075c32 45%,
+            #16a34a 100%);
+
+    color: #ffffff;
+
+    box-shadow:
+        0 20px 55px rgba(22, 163, 74, .16);
+}
+
+.campaign-hero-glow {
+    position: absolute;
+
+    width: 300px;
+    height: 300px;
+
+    right: -120px;
+    top: -130px;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 255, 255, .07);
+}
+
+.campaign-hero-content {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 30px;
+}
+
+.campaign-hero-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 7px 11px;
+
+    border-radius: 999px;
+
+    background: rgba(255, 255, 255, .12);
+
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .06em;
+}
+
+.campaign-detail-hero h1 {
+    margin: 18px 0 10px;
+
+    color: #ffffff;
+
+    font-size: 36px;
+    line-height: 1.12;
+    font-weight: 850;
+
+    letter-spacing: -.035em;
+}
+
+.campaign-detail-hero p {
+    max-width: 700px;
+
+    margin: 0;
+
+    color: rgba(255, 255, 255, .84);
+
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+.campaign-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+
+    gap: 10px;
+
+    margin-top: 22px;
+}
+
+.campaign-hero-meta>div {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 9px 13px;
+
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, .11);
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.campaign-hero-icon {
+    width: 78px;
+    height: 78px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 22px;
+
+    background: rgba(255, 255, 255, .11);
+}
+
+/* =====================================================
+   SECTION
+===================================================== */
+
+.campaign-section {
+    margin-top: 18px;
+
+    padding: 28px 30px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 22px;
+}
+
+.campaign-section-heading {
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 20px;
+}
+
+.campaign-section-icon {
+    width: 43px;
+    height: 43px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 13px;
+
+    background: #ecfdf5;
+
+    color: #16a34a;
+}
+
+.campaign-section-heading span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: #16a34a;
+
+    font-size: 10px;
+    font-weight: 850;
+
+    letter-spacing: .09em;
+}
+
+.campaign-section-heading h2 {
+    margin: 0;
+
+    color: #0f172a;
+
+    font-size: 20px;
+    font-weight: 800;
+}
+
+.campaign-description {
+    margin: 0;
+
+    color: #475569;
+
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+/* =====================================================
+   GENERAL BENEFITS
+===================================================== */
+
+.campaign-general-benefits {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+.campaign-general-benefits>div {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    padding: 15px;
+
+    border-radius: 14px;
+
+    background: #f8fafc;
+
+    color: #475569;
+
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.campaign-general-benefits svg {
+    flex-shrink: 0;
+
+    margin-top: 1px;
+
+    color: #16a34a;
+}
+
+/* =====================================================
+   PACKAGE SECTION
+===================================================== */
+
+.campaign-package-section {
+    margin-top: 18px;
+}
+
+.package-heading {
+    align-items: flex-end;
+
+    margin-bottom: 18px;
+}
+
+.package-heading h2 {
+    font-size: 25px;
+}
+
+.package-heading p {
+    margin: 7px 0 0;
+
+    color: #64748b;
+
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+/* =====================================================
+   PACKAGE LOADING
+===================================================== */
+
+.campaign-package-loading {
+    min-height: 180px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 10px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+
+    color: #64748b;
+
+    font-size: 14px;
+}
+
+/* =====================================================
+   PACKAGE EMPTY
+===================================================== */
+
+.campaign-package-empty {
+    min-height: 210px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+
+    text-align: center;
+}
+
+.campaign-package-empty svg {
+    color: #16a34a;
+}
+
+.campaign-package-empty strong {
+    margin-top: 12px;
+
+    color: #0f172a;
+
+    font-size: 15px;
+}
+
+.campaign-package-empty span {
+    margin-top: 5px;
+
+    color: #64748b;
+
+    font-size: 13px;
+}
+
+/* =====================================================
+   PACKAGE GRID
+===================================================== */
+
+.campaign-package-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+    gap: 18px;
+}
+
+/* =====================================================
+   PACKAGE CARD
+===================================================== */
+
+.campaign-package-card {
+    position: relative;
+
+    padding: 25px;
+
+    background: #ffffff;
+
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+
+    box-shadow:
+        0 5px 20px rgba(15, 23, 42, .025);
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease,
+        transform .2s ease;
+}
+
+.campaign-package-card:hover {
+    transform: translateY(-2px);
+
+    border-color: #86efac;
+
+    box-shadow:
+        0 12px 30px rgba(15, 23, 42, .07);
+}
+
+.campaign-package-card.selected {
+    border: 2px solid #16a34a;
+
+    box-shadow:
+        0 12px 32px rgba(22, 163, 74, .10);
+}
+
+.package-popular {
+    position: absolute;
+
+    top: 18px;
+    right: 18px;
+
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+
+    padding: 6px 9px;
+
+    border-radius: 999px;
+
+    background: #ecfdf5;
+    color: #15803d;
+
+    font-size: 10px;
+    font-weight: 850;
+}
+
+.package-icon {
+    width: 45px;
+    height: 45px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 13px;
+
+    background: #ecfdf5;
+
+    color: #16a34a;
+}
+
+.campaign-package-card h3 {
+    margin: 17px 0 5px;
+
+    color: #0f172a;
+
+    font-size: 19px;
+    font-weight: 800;
+}
+
+.package-price {
+    color: #16a34a;
+
+    font-size: 24px;
+    font-weight: 850;
+
+    letter-spacing: -.025em;
+}
+
+.package-duration {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    margin-top: 8px;
+
+    color: #64748b;
+
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.package-description {
+    min-height: 43px;
+
+    margin: 14px 0 18px;
+
+    color: #64748b;
+
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+/* =====================================================
+   BENEFITS
+===================================================== */
+
+.package-benefits {
+    display: grid;
+
+    gap: 10px;
+
+    padding-top: 17px;
+
+    border-top: 1px solid #f1f5f9;
+}
+
+.package-benefit {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 8px;
+
+    color: #475569;
+
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.package-benefit svg {
+    flex-shrink: 0;
+
+    margin-top: 1px;
+
+    color: #16a34a;
+}
+
+/* =====================================================
+   SELECT PACKAGE
+===================================================== */
+
+.package-select-button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    margin-top: 22px;
+
+    padding: 12px 16px;
+
+    border: 1px solid #16a34a;
+    border-radius: 12px;
+
+    background: #ffffff;
+
+    color: #15803d;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        background .2s ease,
+        color .2s ease,
+        border-color .2s ease;
+}
+
+.package-select-button:hover:not(:disabled) {
+    background: #f0fdf4;
+}
+
+.package-select-button.selected {
+    background: #16a34a;
+
+    color: #ffffff;
+}
+
+.package-select-button:disabled {
+    opacity: .65;
+
+    cursor: not-allowed;
+}
+
+/* =====================================================
+   SELECTED PACKAGE
+===================================================== */
+
+.selected-package-box {
+    margin-top: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding: 20px 24px;
+
+    background: #f0fdf4;
+
+    border: 1px solid #bbf7d0;
+    border-radius: 18px;
+}
+
+.selected-package-box>div:first-child {
+    display: flex;
+    flex-direction: column;
+}
+
+.selected-package-box span {
+    color: #15803d;
+
+    font-size: 10px;
+    font-weight: 850;
+
+    letter-spacing: .08em;
+}
+
+.selected-package-box strong {
+    margin-top: 5px;
+
+    color: #166534;
+
+    font-size: 16px;
+}
+
+.selected-package-box small {
+    margin-top: 3px;
+
+    color: #64748b;
+
+    font-size: 12px;
+}
+
+.selected-package-price {
+    color: #16a34a;
+
+    font-size: 21px;
+    font-weight: 850;
+
+    white-space: nowrap;
+}
+
+/* =====================================================
+   ALREADY JOINED
+===================================================== */
+
+.already-joined-box {
+    margin-top: 18px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 19px 22px;
+
+    border: 1px solid #bbf7d0;
+    border-radius: 17px;
+
+    background: #ecfdf5;
+
+    color: #166534;
+}
+
+.already-joined-box svg {
+    flex-shrink: 0;
+
+    color: #16a34a;
+}
+
+.already-joined-box strong {
+    display: block;
+
+    font-size: 14px;
+}
+
+.already-joined-box span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #15803d;
+
+    font-size: 12px;
+}
+
+/* =====================================================
+   ACTION
+===================================================== */
+
+.campaign-detail-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 15px;
+
+    margin-top: 26px;
+}
+
+.campaign-secondary-button,
+.campaign-primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    min-height: 46px;
+
+    padding: 12px 20px;
+
+    border-radius: 12px;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s ease,
+        box-shadow .2s ease;
+}
+
+.campaign-secondary-button {
+    border: 1px solid #d1d5db;
+
+    background: #ffffff;
+
+    color: #475569;
+}
+
+.campaign-secondary-button:hover {
+    border-color: #cbd5e1;
+
+    background: #f8fafc;
+}
+
+.campaign-primary-button {
+    min-width: 170px;
+
+    border: 0;
+
+    background: #16a34a;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 8px 20px rgba(22, 163, 74, .16);
+}
+
+.campaign-primary-button:hover:not(:disabled) {
+    background: #15803d;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 12px 25px rgba(22, 163, 74, .20);
+}
+
+.campaign-primary-button:disabled {
+    opacity: .5;
+
+    cursor: not-allowed;
+
+    box-shadow: none;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 900px) {
+
+    .campaign-general-benefits {
+        grid-template-columns: 1fr;
+    }
+
+    .campaign-package-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .campaign-hero-content {
+        flex-direction: column;
+    }
+
+    .campaign-hero-icon {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+
+    .campaign-detail-container {
+        padding: 22px 16px 50px;
+    }
+
+    .campaign-detail-hero {
+        padding: 28px 24px;
+        border-radius: 21px;
+    }
+
+    .campaign-detail-hero h1 {
+        font-size: 28px;
+    }
+
+    .campaign-section {
+        padding: 22px 20px;
+    }
+
+    .campaign-hero-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .selected-package-box {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .campaign-detail-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+
+    .campaign-secondary-button,
+    .campaign-primary-button {
+        width: 100%;
+    }
+}

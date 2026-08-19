@@ -54,4 +54,3 @@ func UpdateCategory(id string, category MenuCategory) error {
 func DeleteCategory(id string) error {
 	return database.DB.Model(&MenuCategory{}).Where("id = ?", id).Update("is_active", false).Error
 }
-

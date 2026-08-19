@@ -3,6 +3,7 @@ import axios from "axios";
 const api = axios.create({
   baseURL: "http://localhost:8080/api/v1",
   timeout: 10000,
+
   headers: {
     Accept: "application/json",
   },
@@ -14,7 +15,8 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("token");
+    const token =
+      localStorage.getItem("token");
 
     const isLoginRequest =
       config.url === "/auth/login" ||
@@ -24,10 +26,21 @@ api.interceptors.request.use(
       config.url === "/auth/forgot-password" ||
       config.url?.endsWith("/auth/forgot-password");
 
-    if (!isLoginRequest && !isForgotPassword && token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+    if (
+      !isLoginRequest &&
+      !isForgotPassword &&
+      token
+    ) {
+      config.headers =
+        config.headers || {};
+
+      config.headers.Authorization =
+        `Bearer ${token}`;
     }
+
+    // =================================================
+    // FORMDATA
+    // =================================================
 
     if (
       typeof FormData !== "undefined" &&
@@ -39,9 +52,27 @@ api.interceptors.request.use(
       }
     }
 
+    // =================================================
+    // DEBUG
+    // =================================================
+
+    console.log(
+      "➡️ API REQUEST:",
+      config.method?.toUpperCase(),
+      `${config.baseURL ?? ""}${config.url ?? ""}`,
+    );
+
     return config;
   },
-  (error) => Promise.reject(error)
+
+  (error) => {
+    console.error(
+      "❌ API REQUEST ERROR:",
+      error,
+    );
+
+    return Promise.reject(error);
+  },
 );
 
 // =====================================================
@@ -49,15 +80,47 @@ api.interceptors.request.use(
 // =====================================================
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+
+    console.log(
+      "✅ API RESPONSE:",
+      response.status,
+      response.config.url,
+      response.data,
+    );
+
+    return response;
+  },
 
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem("token");
+
+    console.error(
+      "❌ API RESPONSE ERROR:",
+      {
+        status:
+          error?.response?.status,
+
+        url:
+          error?.config?.url,
+
+        data:
+          error?.response?.data,
+
+        message:
+          error?.message,
+      },
+    );
+
+    if (
+      error.response?.status === 401
+    ) {
+      localStorage.removeItem(
+        "token",
+      );
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;

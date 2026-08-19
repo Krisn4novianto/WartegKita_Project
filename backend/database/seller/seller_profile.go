@@ -2,10 +2,10 @@ package seller
 
 import (
 	"errors"
-	"log"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
@@ -13,209 +13,168 @@ import (
 )
 
 // =====================================================
-// TYPE ALIAS
+// SELLER PROFILE REPOSITORY
+// =====================================================
+//
+// File ini KHUSUS repository seller profile.
+//
+// TIDAK BOLEH berisi:
+// - DB
+// - Connect()
+// - migration
+// - AutoMigrate()
+// - repair database
+// - foreign key
+// - seed
+//
+// Database connection berada di:
+// database/connection.go
 // =====================================================
 
 type SellerProfile = models.SellerProfile
-type CustomerSeller = models.CustomerSeller
 
 // =====================================================
-// CONSTANT
+// GET PROFILE
 // =====================================================
 
-const jakartaTimezone = "Asia/Jakarta"
-
-// =====================================================
-// CREATE / MIGRATE SELLER PROFILE TABLE
-// =====================================================
-
-func CreateSellerProfileTable() {
-
-	if database.DB == nil {
-		log.Println("❌ Database belum terhubung")
-		return
-	}
-
-	if err := database.DB.AutoMigrate(
-		&models.SellerProfile{},
-	); err != nil {
-
-		log.Println(
-			"❌ Gagal migrate tabel seller_profiles:",
-			err,
-		)
-
-		return
-	}
-
-	log.Println(
-		"✅ Tabel seller_profiles berhasil dibuat / dimigrasikan",
-	)
-}
-
-// =====================================================
-// GET SELLER PROFILE
-// =====================================================
-
-func GetProfile(
-	sellerID string,
-) (SellerProfile, error) {
-
-	var profile SellerProfile
-
-	if database.DB == nil {
-		return profile, errors.New(
-			"database belum terhubung",
-		)
-	}
-
+func GetProfile(sellerID string) (SellerProfile, error) {
 	sellerID = strings.TrimSpace(sellerID)
 
 	if sellerID == "" {
-		return profile, errors.New(
-			"seller ID tidak boleh kosong",
-		)
+		return SellerProfile{}, errors.New("seller_id tidak boleh kosong")
 	}
 
+	var profile SellerProfile
+
 	err := database.DB.
-		Where(
-			"seller_id = ?",
-			sellerID,
-		).
+		Where("seller_id = ?", sellerID).
 		First(&profile).
 		Error
 
 	if err != nil {
-		return profile, err
+		return SellerProfile{}, err
 	}
-
-	profile.UserID = strings.TrimSpace(profile.UserID)
-
-	profile.JamBuka =
-		normalizeOperationalTime(profile.JamBuka)
-
-	profile.JamTutup =
-		normalizeOperationalTime(profile.JamTutup)
 
 	return profile, nil
 }
 
 // =====================================================
-// SAVE / UPDATE SELLER PROFILE
+// GET PROFILE BY ID
+// =====================================================
+
+func GetProfileByID(id string) (SellerProfile, error) {
+	id = strings.TrimSpace(id)
+
+	if id == "" {
+		return SellerProfile{}, errors.New("id profile tidak boleh kosong")
+	}
+
+	var profile SellerProfile
+
+	err := database.DB.
+		Where("id = ?", id).
+		First(&profile).
+		Error
+
+	if err != nil {
+		return SellerProfile{}, err
+	}
+
+	return profile, nil
+}
+
+// =====================================================
+// SAVE PROFILE
+// =====================================================
+//
+// SIGNATURE:
+//
+// SaveProfile(sellerID, profile)
+//
+// TIDAK menggunakan userID.
+//
 // =====================================================
 
 func SaveProfile(
 	sellerID string,
-	userID string,
-	data SellerProfile,
+	profile SellerProfile,
 ) error {
 
-	if database.DB == nil {
-		return errors.New(
-			"database belum terhubung",
-		)
-	}
-
 	sellerID = strings.TrimSpace(sellerID)
-	userID = strings.TrimSpace(userID)
 
 	if sellerID == "" {
-		return errors.New(
-			"seller ID tidak boleh kosong",
-		)
+		return errors.New("seller_id tidak boleh kosong")
 	}
 
-	if userID == "" {
-		return errors.New(
-			"user ID tidak boleh kosong",
-		)
-	}
+	// -------------------------------------------------
+	// Seller ID harus berasal dari parameter.
+	// -------------------------------------------------
+
+	profile.SellerID = sellerID
+
+	// -------------------------------------------------
+	// Normalize string
+	// -------------------------------------------------
+
+	profile.NamaWarteg = strings.TrimSpace(profile.NamaWarteg)
+	profile.NamaPemilik = strings.TrimSpace(profile.NamaPemilik)
+	profile.NomorHP = strings.TrimSpace(profile.NomorHP)
+	profile.Alamat = strings.TrimSpace(profile.Alamat)
+	profile.Deskripsi = strings.TrimSpace(profile.Deskripsi)
+
+	profile.JamBuka = strings.TrimSpace(profile.JamBuka)
+	profile.JamTutup = strings.TrimSpace(profile.JamTutup)
+
+	profile.Image = strings.TrimSpace(profile.Image)
+
+	profile.Bank = strings.TrimSpace(profile.Bank)
+	profile.NomorRekening = strings.TrimSpace(profile.NomorRekening)
+	profile.NamaRekening = strings.TrimSpace(profile.NamaRekening)
 
 	// =================================================
-	// FORCE OWNERSHIP
-	// =================================================
-
-	data.SellerID = sellerID
-	data.UserID = userID
-
-	// =================================================
-	// NORMALIZE BASIC DATA
-	// =================================================
-
-	data.NamaWarteg = strings.TrimSpace(data.NamaWarteg)
-	data.NamaPemilik = strings.TrimSpace(data.NamaPemilik)
-	data.NomorHP = strings.TrimSpace(data.NomorHP)
-	data.Alamat = strings.TrimSpace(data.Alamat)
-	data.Deskripsi = strings.TrimSpace(data.Deskripsi)
-
-	// =================================================
-	// NORMALIZE JAM
-	// =================================================
-
-	data.JamBuka =
-		normalizeOperationalTime(data.JamBuka)
-
-	data.JamTutup =
-		normalizeOperationalTime(data.JamTutup)
-
-	// =================================================
-	// NORMALIZE BANK
-	// =================================================
-
-	data.Bank = strings.TrimSpace(data.Bank)
-	data.NomorRekening = strings.TrimSpace(data.NomorRekening)
-	data.NamaRekening = strings.TrimSpace(data.NamaRekening)
-
-	// =================================================
-	// CEK EXISTING
+	// CARI PROFILE EXISTING
 	// =================================================
 
 	var existing SellerProfile
 
 	err := database.DB.
-		Where(
-			"seller_id = ?",
-			sellerID,
-		).
+		Where("seller_id = ?", sellerID).
 		First(&existing).
 		Error
 
 	// =================================================
-	// UPDATE
+	// PROFILE SUDAH ADA
 	// =================================================
 
 	if err == nil {
 
-		updateData := map[string]interface{}{
-
-			"user_id": userID,
-
-			"nama_warteg":  data.NamaWarteg,
-			"nama_pemilik": data.NamaPemilik,
-			"nomor_hp":     data.NomorHP,
-			"alamat":       data.Alamat,
-			"deskripsi":    data.Deskripsi,
-
-			"jam_buka":  data.JamBuka,
-			"jam_tutup": data.JamTutup,
-
-			"latitude":  data.Latitude,
-			"longitude": data.Longitude,
-
-			"bank":              data.Bank,
-			"nomor_rekening":    data.NomorRekening,
-			"rekening_verified": data.RekeningVerified,
-			"nama_rekening":     data.NamaRekening,
+		updates := map[string]interface{}{
+			"nama_warteg":       profile.NamaWarteg,
+			"nama_pemilik":      profile.NamaPemilik,
+			"nomor_hp":          profile.NomorHP,
+			"alamat":            profile.Alamat,
+			"deskripsi":         profile.Deskripsi,
+			"jam_buka":          profile.JamBuka,
+			"jam_tutup":         profile.JamTutup,
+			"latitude":          profile.Latitude,
+			"longitude":         profile.Longitude,
+			"image":             profile.Image,
+			"bank":              profile.Bank,
+			"nomor_rekening":    profile.NomorRekening,
+			"nama_rekening":     profile.NamaRekening,
+			"rekening_verified": profile.RekeningVerified,
+			"updated_at":        time.Now(),
 		}
 
 		return database.DB.
-			Model(&existing).
-			Updates(updateData).
+			Model(&SellerProfile{}).
+			Where("seller_id = ?", sellerID).
+			Updates(updates).
 			Error
 	}
 
 	// =================================================
-	// DATABASE ERROR
+	// ERROR SELAIN RECORD NOT FOUND
 	// =================================================
 
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -223,331 +182,135 @@ func SaveProfile(
 	}
 
 	// =================================================
-	// CREATE
+	// PROFILE BELUM ADA → CREATE
 	// =================================================
 
-	data.SellerID = sellerID
-	data.UserID = userID
+	if strings.TrimSpace(profile.ID) == "" {
+		profile.ID = newSellerProfileUUID()
+	}
+
+	now := time.Now()
+
+	if profile.CreatedAt.IsZero() {
+		profile.CreatedAt = now
+	}
+
+	profile.UpdatedAt = now
 
 	return database.DB.
-		Create(&data).
+		Create(&profile).
 		Error
 }
 
 // =====================================================
-// NORMALIZE OPERATIONAL TIME
+// UPDATE PROFILE
 // =====================================================
 
-func normalizeOperationalTime(
-	value string,
-) string {
-
-	value = strings.TrimSpace(value)
-
-	if value == "" {
-		return ""
-	}
-
-	location, err := time.LoadLocation(
-		jakartaTimezone,
-	)
-
-	if err != nil {
-		return value
-	}
-
-	parsed, err := parseOperationalTime(
-		value,
-		location,
-	)
-
-	if err != nil {
-		return value
-	}
-
-	return parsed.Format("15:04")
-}
-
-// =====================================================
-// PARSE OPERATIONAL TIME
-// =====================================================
-
-func parseOperationalTime(
-	value string,
-	location *time.Location,
-) (time.Time, error) {
-
-	value = strings.TrimSpace(value)
-
-	if value == "" {
-		return time.Time{}, errors.New(
-			"jam kosong",
-		)
-	}
-
-	formats := []string{
-		"15:04",
-		"15:04:05",
-	}
-
-	for _, format := range formats {
-
-		parsed, err := time.ParseInLocation(
-			format,
-			value,
-			location,
-		)
-
-		if err == nil {
-			return parsed, nil
-		}
-	}
-
-	return time.Time{}, errors.New(
-		"format jam tidak valid",
-	)
-}
-
-// =====================================================
-// CALCULATE SELLER OPEN STATUS
-// =====================================================
-
-func CalculateIsOpen(
-	openingTime string,
-	closingTime string,
-) bool {
-
-	openingTime = strings.TrimSpace(openingTime)
-	closingTime = strings.TrimSpace(closingTime)
-
-	if openingTime == "" ||
-		closingTime == "" {
-		return false
-	}
-
-	location, err := time.LoadLocation(
-		jakartaTimezone,
-	)
-
-	if err != nil {
-		return false
-	}
-
-	now := time.Now().In(location)
-
-	open, err := parseOperationalTime(
-		openingTime,
-		location,
-	)
-
-	if err != nil {
-		return false
-	}
-
-	closeTime, err := parseOperationalTime(
-		closingTime,
-		location,
-	)
-
-	if err != nil {
-		return false
-	}
-
-	currentMinutes :=
-		now.Hour()*60 +
-			now.Minute()
-
-	openingMinutes :=
-		open.Hour()*60 +
-			open.Minute()
-
-	closingMinutes :=
-		closeTime.Hour()*60 +
-			closeTime.Minute()
-
-	if openingMinutes == closingMinutes {
-		return false
-	}
-
-	if openingMinutes < closingMinutes {
-
-		return currentMinutes >= openingMinutes &&
-			currentMinutes < closingMinutes
-	}
-
-	return currentMinutes >= openingMinutes ||
-		currentMinutes < closingMinutes
-}
-
-// =====================================================
-// ENSURE SELLER PROFILE
-// =====================================================
-
-func EnsureProfile(
+func UpdateProfile(
 	sellerID string,
-	userID string,
-	sellerName string,
-) (SellerProfile, error) {
+	profile SellerProfile,
+) error {
+	return SaveProfile(sellerID, profile)
+}
 
-	if database.DB == nil {
-		return SellerProfile{}, errors.New(
-			"database belum terhubung",
-		)
-	}
+// =====================================================
+// DELETE PROFILE
+// =====================================================
 
+func DeleteProfile(sellerID string) error {
 	sellerID = strings.TrimSpace(sellerID)
-	userID = strings.TrimSpace(userID)
-	sellerName = strings.TrimSpace(sellerName)
 
 	if sellerID == "" {
-		return SellerProfile{}, errors.New(
-			"seller ID tidak boleh kosong",
-		)
+		return errors.New("seller_id tidak boleh kosong")
 	}
 
-	if userID == "" {
-		return SellerProfile{}, errors.New(
-			"user ID tidak boleh kosong",
-		)
-	}
-
-	profile, err := GetProfile(sellerID)
-
-	if err == nil {
-
-		// =================================================
-		// REPAIR OWNERSHIP
-		// =================================================
-
-		if strings.TrimSpace(profile.UserID) != userID {
-
-			if err := database.DB.
-				Model(&SellerProfile{}).
-				Where(
-					"seller_id = ?",
-					sellerID,
-				).
-				Update(
-					"user_id",
-					userID,
-				).
-				Error; err != nil {
-
-				return SellerProfile{}, err
-			}
-
-			profile.UserID = userID
-		}
-
-		return profile, nil
-	}
-
-	if !errors.Is(
-		err,
-		gorm.ErrRecordNotFound,
-	) {
-		return SellerProfile{}, err
-	}
-
-	profile = SellerProfile{
-
-		SellerID: sellerID,
-		UserID:   userID,
-
-		NamaWarteg:  sellerName,
-		NamaPemilik: sellerName,
-
-		NomorHP:   "",
-		Alamat:    "",
-		Deskripsi: "",
-
-		JamBuka:  "",
-		JamTutup: "",
-
-		Latitude:  0,
-		Longitude: 0,
-
-		Bank:             "",
-		NomorRekening:    "",
-		RekeningVerified: false,
-		NamaRekening:     "",
-	}
-
-	if err := SaveProfile(
-		sellerID,
-		userID,
-		profile,
-	); err != nil {
-		return SellerProfile{}, err
-	}
-
-	return GetProfile(sellerID)
+	return database.DB.
+		Where("seller_id = ?", sellerID).
+		Delete(&SellerProfile{}).
+		Error
 }
 
 // =====================================================
-// GET ALL SELLER PROFILES
+// CHECK PROFILE EXISTS
 // =====================================================
 
-func GetAllProfiles() (
-	[]CustomerSeller,
-	error,
-) {
+func ProfileExists(sellerID string) bool {
+	sellerID = strings.TrimSpace(sellerID)
 
-	if database.DB == nil {
-		return nil, errors.New(
-			"database belum terhubung",
-		)
+	if sellerID == "" {
+		return false
 	}
 
-	var profiles []SellerProfile
+	var count int64
 
 	err := database.DB.
-		Order("nama_warteg ASC").
-		Find(&profiles).
+		Model(&SellerProfile{}).
+		Where("seller_id = ?", sellerID).
+		Count(&count).
 		Error
 
 	if err != nil {
-		return nil, err
+		return false
 	}
 
-	sellers := make(
-		[]CustomerSeller,
-		0,
-		len(profiles),
-	)
+	return count > 0
+}
 
-	for _, p := range profiles {
+// =====================================================
+// CREATE PROFILE
+// =====================================================
 
-		openingTime :=
-			normalizeOperationalTime(p.JamBuka)
+func CreateProfile(profile SellerProfile) error {
 
-		closingTime :=
-			normalizeOperationalTime(p.JamTutup)
+	profile.SellerID = strings.TrimSpace(profile.SellerID)
 
-		isOpen := CalculateIsOpen(
-			openingTime,
-			closingTime,
-		)
-
-		sellers = append(
-			sellers,
-			CustomerSeller{
-
-				ID: p.SellerID,
-
-				StoreName:   p.NamaWarteg,
-				Description: p.Deskripsi,
-				Address:     p.Alamat,
-				Owner:       p.NamaPemilik,
-				Phone:       p.NomorHP,
-
-				OpeningTime: openingTime,
-				ClosingTime: closingTime,
-
-				IsOpen: isOpen,
-			},
-		)
+	if profile.SellerID == "" {
+		return errors.New("seller_id tidak boleh kosong")
 	}
 
-	return sellers, nil
+	profile.NamaWarteg = strings.TrimSpace(profile.NamaWarteg)
+	profile.NamaPemilik = strings.TrimSpace(profile.NamaPemilik)
+	profile.NomorHP = strings.TrimSpace(profile.NomorHP)
+	profile.Alamat = strings.TrimSpace(profile.Alamat)
+	profile.Deskripsi = strings.TrimSpace(profile.Deskripsi)
+
+	profile.JamBuka = strings.TrimSpace(profile.JamBuka)
+	profile.JamTutup = strings.TrimSpace(profile.JamTutup)
+
+	profile.Image = strings.TrimSpace(profile.Image)
+
+	profile.Bank = strings.TrimSpace(profile.Bank)
+	profile.NomorRekening = strings.TrimSpace(profile.NomorRekening)
+	profile.NamaRekening = strings.TrimSpace(profile.NamaRekening)
+
+	if strings.TrimSpace(profile.ID) == "" {
+		profile.ID = newSellerProfileUUID()
+	}
+
+	now := time.Now()
+
+	if profile.CreatedAt.IsZero() {
+		profile.CreatedAt = now
+	}
+
+	profile.UpdatedAt = now
+
+	return database.DB.
+		Create(&profile).
+		Error
+}
+
+// =====================================================
+// UUID GENERATOR
+// =====================================================
+
+func newSellerProfileUUID() string {
+
+	id, err := uuid.NewV7()
+
+	if err == nil {
+		return id.String()
+	}
+
+	return uuid.New().String()
 }

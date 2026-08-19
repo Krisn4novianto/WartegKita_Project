@@ -1,8 +1,8 @@
 import {
     ArrowLeft,
     Edit3,
-    MoreVertical,
     Send,
+    ShieldAlert,
     Store,
     Trash2,
     User,
@@ -10,7 +10,6 @@ import {
 
 import {
     useEffect,
-    useMemo,
     useRef,
     useState,
 } from "react";
@@ -22,64 +21,71 @@ import {
 
 import api from "../../services/api";
 
+import {
+    containsBlockedContent,
+    CHAT_MODERATION_WARNING,
+} from "../../utils/chatModeration";
+
 import "../../styles/chat.css";
 
 
-/* =====================================================
+/* =========================================================
    TYPES
-===================================================== */
+========================================================= */
 
 type Seller = {
     id: string;
 
     store_name?: string;
-
     nama_warteg?: string;
 
     deskripsi?: string;
 
     image?: string;
-
     image_url?: string;
+
+    /* Operating hours */
+    jam_buka?: string;
+    jam_tutup?: string;
+
+    opening_time?: string;
+    closing_time?: string;
+
+    /* Backend store status */
+    is_open?: boolean;
+    status?: string;
 };
 
 
 type ChatRoom = {
     id: string;
-
     buyer_id: string;
-
     seller_id: string;
 };
 
 
 type Message = {
     id: string;
-
     chat_room_id: string;
 
     sender_id: string;
 
-    sender_role:
-    | "buyer"
-    | "seller";
+    sender_role: "buyer" | "seller";
 
     message: string;
 
     created_at?: string;
-
     updated_at?: string;
 };
 
 
-/* =====================================================
-   HELPERS
-===================================================== */
+/* =========================================================
+   SELLER HELPERS
+========================================================= */
 
 const getSellerName = (
     seller?: Seller | null,
-) => {
-
+): string => {
     return (
         seller?.nama_warteg ||
         seller?.store_name ||
@@ -88,10 +94,24 @@ const getSellerName = (
 };
 
 
+const getSellerImage = (
+    seller?: Seller | null,
+): string => {
+    return (
+        seller?.image_url ||
+        seller?.image ||
+        ""
+    );
+};
+
+
+/* =========================================================
+   API RESPONSE HELPER
+========================================================= */
+
 const getResponseData = (
     response: any,
 ) => {
-
     return (
         response?.data?.data ??
         response?.data ??
@@ -100,9 +120,262 @@ const getResponseData = (
 };
 
 
-/* =====================================================
+/* =========================================================
+   TIME HELPERS
+========================================================= */
+
+const parseTimeToMinutes = (
+    value?: string,
+): number | null => {
+    if (!value) {
+        return null;
+    }
+
+
+    const normalized =
+        String(value).trim();
+
+
+    const match =
+        normalized.match(
+            /^(\d{1,2}):(\d{2})/,
+        );
+
+
+    if (!match) {
+        return null;
+    }
+
+
+    const hour =
+        Number(match[1]);
+
+
+    const minute =
+        Number(match[2]);
+
+
+    if (
+        hour < 0 ||
+        hour > 23 ||
+        minute < 0 ||
+        minute > 59
+    ) {
+        return null;
+    }
+
+
+    return (
+        hour * 60 +
+        minute
+    );
+};
+
+
+/* =========================================================
+   STORE OPEN STATUS
+========================================================= */
+
+const isSellerOpen = (
+    seller?: Seller | null,
+): boolean => {
+
+    if (!seller) {
+        return false;
+    }
+
+
+    /* -----------------------------------------------------
+       1. BACKEND BOOLEAN
+    ----------------------------------------------------- */
+
+    if (
+        typeof seller.is_open ===
+        "boolean"
+    ) {
+        return seller.is_open;
+    }
+
+
+    /* -----------------------------------------------------
+       2. BACKEND STATUS
+    ----------------------------------------------------- */
+
+    if (seller.status) {
+
+        const status =
+            seller.status
+                .toLowerCase()
+                .trim();
+
+
+        if (
+            [
+                "closed",
+                "close",
+                "tutup",
+                "inactive",
+                "offline",
+            ].includes(status)
+        ) {
+            return false;
+        }
+
+
+        if (
+            [
+                "open",
+                "opened",
+                "buka",
+                "active",
+                "online",
+            ].includes(status)
+        ) {
+            return true;
+        }
+    }
+
+
+    /* -----------------------------------------------------
+       3. OPERATING HOURS
+    ----------------------------------------------------- */
+
+    const openingTime =
+        seller.jam_buka ||
+        seller.opening_time;
+
+
+    const closingTime =
+        seller.jam_tutup ||
+        seller.closing_time;
+
+
+    /*
+     * Kalau backend tidak mengirim jam,
+     * jangan blokir chat.
+     */
+
+    if (
+        !openingTime ||
+        !closingTime
+    ) {
+        return true;
+    }
+
+
+    const openingMinutes =
+        parseTimeToMinutes(
+            openingTime,
+        );
+
+
+    const closingMinutes =
+        parseTimeToMinutes(
+            closingTime,
+        );
+
+
+    /*
+     * Format jam invalid.
+     */
+
+    if (
+        openingMinutes === null ||
+        closingMinutes === null
+    ) {
+        return true;
+    }
+
+
+    /* -----------------------------------------------------
+       CURRENT TIME - ASIA/JAKARTA
+    ----------------------------------------------------- */
+
+    const now =
+        new Date();
+
+
+    const jakartaTime =
+        new Intl.DateTimeFormat(
+            "en-US",
+            {
+                timeZone:
+                    "Asia/Jakarta",
+
+                hour:
+                    "2-digit",
+
+                minute:
+                    "2-digit",
+
+                hour12:
+                    false,
+            },
+        ).format(now);
+
+
+    const currentMinutes =
+        parseTimeToMinutes(
+            jakartaTime,
+        );
+
+
+    if (
+        currentMinutes === null
+    ) {
+        return true;
+    }
+
+
+    /* -----------------------------------------------------
+       NORMAL SCHEDULE
+       Example: 08:00 - 22:00
+    ----------------------------------------------------- */
+
+    if (
+        openingMinutes <
+        closingMinutes
+    ) {
+        return (
+            currentMinutes >=
+            openingMinutes &&
+            currentMinutes <
+            closingMinutes
+        );
+    }
+
+
+    /* -----------------------------------------------------
+       OVERNIGHT SCHEDULE
+       Example: 18:00 - 02:00
+    ----------------------------------------------------- */
+
+    if (
+        openingMinutes >
+        closingMinutes
+    ) {
+        return (
+            currentMinutes >=
+            openingMinutes ||
+            currentMinutes <
+            closingMinutes
+        );
+    }
+
+
+    /*
+     * Opening == closing
+     *
+     * Anggap 24 jam.
+     */
+
+    return true;
+};
+
+
+/* =========================================================
    COMPONENT
-===================================================== */
+========================================================= */
 
 export default function Chat() {
 
@@ -112,9 +385,12 @@ export default function Chat() {
 
     const [
         searchParams,
-    ] =
-        useSearchParams();
+    ] = useSearchParams();
 
+
+    /* =====================================================
+       REQUESTED SELLER
+    ===================================================== */
 
     const requestedSellerID =
         searchParams.get(
@@ -122,18 +398,9 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       SELLERS
-    ================================================= */
-
-    const [
-        sellers,
-        setSellers,
-    ] =
-        useState<Seller[]>(
-            [],
-        );
-
+    /* =====================================================
+       SELLER STATE
+    ===================================================== */
 
     const [
         activeSeller,
@@ -144,9 +411,9 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       ROOM
-    ================================================= */
+    /* =====================================================
+       ROOM STATE
+    ===================================================== */
 
     const [
         room,
@@ -157,9 +424,9 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       MESSAGES
-    ================================================= */
+    /* =====================================================
+       MESSAGE STATE
+    ===================================================== */
 
     const [
         messages,
@@ -170,9 +437,9 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       INPUT
-    ================================================= */
+    /* =====================================================
+       INPUT STATE
+    ===================================================== */
 
     const [
         text,
@@ -181,9 +448,9 @@ export default function Chat() {
         useState("");
 
 
-    /* =================================================
-       EDIT
-    ================================================= */
+    /* =====================================================
+       EDIT STATE
+    ===================================================== */
 
     const [
         editingMessageID,
@@ -194,9 +461,9 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       MENU
-    ================================================= */
+    /* =====================================================
+       MESSAGE MENU STATE
+    ===================================================== */
 
     const [
         selectedMessageID,
@@ -207,13 +474,26 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       LOADING
-    ================================================= */
+    /* =====================================================
+       WARNING STATE
+    ===================================================== */
 
     const [
-        loadingSellers,
-        setLoadingSellers,
+        chatWarning,
+        setChatWarning,
+    ] =
+        useState<string | null>(
+            null,
+        );
+
+
+    /* =====================================================
+       LOADING STATE
+    ===================================================== */
+
+    const [
+        loadingSeller,
+        setLoadingSeller,
     ] =
         useState(true);
 
@@ -225,9 +505,9 @@ export default function Chat() {
         useState(false);
 
 
-    /* =================================================
+    /* =====================================================
        REFS
-    ================================================= */
+    ===================================================== */
 
     const messageEndRef =
         useRef<HTMLDivElement>(
@@ -235,9 +515,41 @@ export default function Chat() {
         );
 
 
-    /* =================================================
-       LOAD SELLERS
-    ================================================= */
+    const inputRef =
+        useRef<HTMLInputElement>(
+            null,
+        );
+
+
+    /* =====================================================
+       STORE STATUS
+    ===================================================== */
+
+    const sellerIsOpen =
+        isSellerOpen(
+            activeSeller,
+        );
+
+
+    /* =====================================================
+       DERIVED SELLER DATA
+    ===================================================== */
+
+    const sellerName =
+        getSellerName(
+            activeSeller,
+        );
+
+
+    const sellerImage =
+        getSellerImage(
+            activeSeller,
+        );
+
+
+    /* =====================================================
+       LOAD SELLER
+    ===================================================== */
 
     useEffect(() => {
 
@@ -245,12 +557,23 @@ export default function Chat() {
             false;
 
 
-        const loadSellers =
+        const loadSeller =
             async () => {
+
+                if (
+                    !requestedSellerID
+                ) {
+                    setLoadingSeller(
+                        false,
+                    );
+
+                    return;
+                }
+
 
                 try {
 
-                    setLoadingSellers(
+                    setLoadingSeller(
                         true,
                     );
 
@@ -282,99 +605,70 @@ export default function Chat() {
                             : [];
 
 
-                    const normalized:
-                        Seller[] =
+                    const seller =
                         sellerArray
                             .map(
                                 (
-                                    seller: any,
-                                ) => ({
-
+                                    item: any,
+                                ): Seller => ({
                                     id:
                                         String(
-                                            seller?.id ??
-                                            seller?.seller_id ??
+                                            item?.id ??
+                                            item?.seller_id ??
                                             "",
                                         ),
 
                                     store_name:
-                                        seller?.store_name,
+                                        item?.store_name,
 
                                     nama_warteg:
-                                        seller?.nama_warteg,
+                                        item?.nama_warteg,
 
                                     deskripsi:
-                                        seller?.deskripsi ??
-                                        seller?.description,
+                                        item?.deskripsi ??
+                                        item?.description,
 
                                     image:
-                                        seller?.image,
+                                        item?.image,
 
                                     image_url:
-                                        seller?.image_url,
+                                        item?.image_url,
 
+                                    jam_buka:
+                                        item?.jam_buka,
+
+                                    jam_tutup:
+                                        item?.jam_tutup,
+
+                                    opening_time:
+                                        item?.opening_time,
+
+                                    closing_time:
+                                        item?.closing_time,
+
+                                    is_open:
+                                        typeof item?.is_open ===
+                                            "boolean"
+                                            ? item.is_open
+                                            : undefined,
+
+                                    status:
+                                        item?.status,
                                 }),
                             )
-                            .filter(
+                            .find(
                                 (
-                                    seller,
+                                    item: Seller,
                                 ) =>
-                                    Boolean(
-                                        seller.id,
-                                    ),
-                            );
-
-
-                    setSellers(
-                        normalized,
-                    );
-
-
-                    /*
-                        Kalau URL mengandung seller_id,
-                        otomatis pilih seller tersebut.
-                    */
-
-                    if (
-                        requestedSellerID
-                    ) {
-
-                        const requestedSeller =
-                            normalized.find(
-                                (
-                                    seller,
-                                ) =>
-                                    seller.id ===
+                                    item.id ===
                                     requestedSellerID,
                             );
 
 
-                        if (
-                            requestedSeller
-                        ) {
-
-                            setActiveSeller(
-                                requestedSeller,
-                            );
-
-                            return;
-                        }
-                    }
-
-
-                    /*
-                        Kalau tidak ada seller
-                        yang diminta, pilih pertama.
-                    */
-
-                    if (
-                        normalized.length > 0
-                    ) {
-
-                        setActiveSeller(
-                            normalized[0],
-                        );
-                    }
+                    setActiveSeller(
+                        seller ||
+                        null,
+                    );
 
                 } catch (
                 error
@@ -385,13 +679,17 @@ export default function Chat() {
                         error,
                     );
 
+
+                    setActiveSeller(
+                        null,
+                    );
+
                 } finally {
 
                     if (
                         !cancelled
                     ) {
-
-                        setLoadingSellers(
+                        setLoadingSeller(
                             false,
                         );
                     }
@@ -399,11 +697,10 @@ export default function Chat() {
             };
 
 
-        loadSellers();
+        loadSeller();
 
 
         return () => {
-
             cancelled =
                 true;
         };
@@ -413,19 +710,40 @@ export default function Chat() {
     ]);
 
 
-    /* =================================================
-       CREATE / GET ROOM
-    ================================================= */
+    /* =====================================================
+       CREATE / GET CHAT ROOM
+    ===================================================== */
 
     useEffect(() => {
+
+        /*
+         * Belum ada seller.
+         */
 
         if (
             !activeSeller?.id
         ) {
 
             setRoom(null);
-
             setMessages([]);
+
+            return;
+        }
+
+
+        /*
+         * WARTEG TUTUP
+         *
+         * Jangan membuat chat room.
+         */
+
+        if (
+            !sellerIsOpen
+        ) {
+
+            setRoom(null);
+            setMessages([]);
+            setLoadingMessages(false);
 
             return;
         }
@@ -473,10 +791,8 @@ export default function Chat() {
 
 
                     if (
-                        !data ||
-                        !data.id
+                        !data?.id
                     ) {
-
                         throw new Error(
                             "Chat room tidak valid.",
                         );
@@ -496,12 +812,14 @@ export default function Chat() {
                         error,
                     );
 
+
+                    setRoom(null);
+
                 } finally {
 
                     if (
                         !cancelled
                     ) {
-
                         setLoadingMessages(
                             false,
                         );
@@ -514,19 +832,19 @@ export default function Chat() {
 
 
         return () => {
-
             cancelled =
                 true;
         };
 
     }, [
-        activeSeller,
+        activeSeller?.id,
+        sellerIsOpen,
     ]);
 
 
-    /* =================================================
+    /* =====================================================
        LOAD MESSAGES
-    ================================================= */
+    ===================================================== */
 
     const loadMessages =
         async () => {
@@ -575,7 +893,8 @@ export default function Chat() {
     useEffect(() => {
 
         if (
-            !room?.id
+            !room?.id ||
+            !sellerIsOpen
         ) {
             return;
         }
@@ -585,18 +904,20 @@ export default function Chat() {
 
     }, [
         room?.id,
+        sellerIsOpen,
     ]);
 
 
-    /* =================================================
+    /* =====================================================
        AUTO SCROLL
-    ================================================= */
+    ===================================================== */
 
     useEffect(() => {
 
         messageEndRef.current?.scrollIntoView(
             {
-                behavior: "smooth",
+                behavior:
+                    "smooth",
             },
         );
 
@@ -605,59 +926,31 @@ export default function Chat() {
     ]);
 
 
-    /* =================================================
-       SELLER SORTING
-    ================================================= */
+    /* =====================================================
+       CLEAR WARNING
+    ===================================================== */
 
-    const sortedSellers =
-        useMemo(
-            () => {
+    useEffect(() => {
 
-                if (
-                    !requestedSellerID
-                ) {
+        if (
+            !text.trim() &&
+            chatWarning
+        ) {
 
-                    return sellers;
-                }
+            setChatWarning(
+                null,
+            );
+        }
 
-
-                return [
-                    ...sellers,
-                ].sort(
-                    (
-                        first,
-                        second,
-                    ) => {
-
-                        if (
-                            first.id ===
-                            requestedSellerID
-                        ) {
-                            return -1;
-                        }
-
-                        if (
-                            second.id ===
-                            requestedSellerID
-                        ) {
-                            return 1;
-                        }
-
-                        return 0;
-                    },
-                );
-
-            },
-            [
-                sellers,
-                requestedSellerID,
-            ],
-        );
+    }, [
+        text,
+        chatWarning,
+    ]);
 
 
-    /* =================================================
-       SEND / UPDATE MESSAGE
-    ================================================= */
+    /* =====================================================
+       SUBMIT MESSAGE
+    ===================================================== */
 
     const submitMessage =
         async () => {
@@ -666,25 +959,46 @@ export default function Chat() {
                 text.trim();
 
 
+            /*
+             * Jangan kirim:
+             *
+             * - kosong
+             * - tidak ada room
+             * - warteg tutup
+             */
+
             if (
-                !message
+                !message ||
+                !room?.id ||
+                !sellerIsOpen
             ) {
                 return;
             }
 
 
+            /* -------------------------------------------------
+               MODERATION
+            ------------------------------------------------- */
+
             if (
-                !room?.id
+                containsBlockedContent(
+                    message,
+                )
             ) {
+
+                setChatWarning(
+                    CHAT_MODERATION_WARNING,
+                );
+
                 return;
             }
 
 
             try {
 
-                /*
-                    EDIT
-                */
+                /* ---------------------------------------------
+                   EDIT MESSAGE
+                --------------------------------------------- */
 
                 if (
                     editingMessageID
@@ -697,6 +1011,7 @@ export default function Chat() {
                         },
                     );
 
+
                     setEditingMessageID(
                         null,
                     );
@@ -707,15 +1022,20 @@ export default function Chat() {
                         null,
                     );
 
+                    setChatWarning(
+                        null,
+                    );
+
+
                     await loadMessages();
 
                     return;
                 }
 
 
-                /*
-                    SEND
-                */
+                /* ---------------------------------------------
+                   SEND MESSAGE
+                --------------------------------------------- */
 
                 await api.post(
                     "/chat/messages",
@@ -730,23 +1050,39 @@ export default function Chat() {
 
                 setText("");
 
+                setChatWarning(
+                    null,
+                );
+
+
                 await loadMessages();
 
             } catch (
-            error
+            error: any
             ) {
 
                 console.error(
                     "Gagal mengirim pesan:",
                     error,
                 );
+
+
+                const backendMessage =
+                    error?.response?.data?.message ||
+                    error?.response?.data?.error;
+
+
+                setChatWarning(
+                    backendMessage ||
+                    "Pesan gagal dikirim. Silakan coba lagi.",
+                );
             }
         };
 
 
-    /* =================================================
-       EDIT MESSAGE
-    ================================================= */
+    /* =====================================================
+       START EDIT
+    ===================================================== */
 
     const startEdit =
         (
@@ -757,7 +1093,6 @@ export default function Chat() {
                 message.sender_role !==
                 "buyer"
             ) {
-
                 return;
             }
 
@@ -766,21 +1101,30 @@ export default function Chat() {
                 message.message,
             );
 
-
             setEditingMessageID(
                 message.id,
             );
 
-
             setSelectedMessageID(
                 null,
             );
+
+            setChatWarning(
+                null,
+            );
+
+
+            setTimeout(() => {
+
+                inputRef.current?.focus();
+
+            }, 50);
         };
 
 
-    /* =================================================
+    /* =====================================================
        DELETE MESSAGE
-    ================================================= */
+    ===================================================== */
 
     const deleteMessage =
         async (
@@ -837,9 +1181,9 @@ export default function Chat() {
         };
 
 
-    /* =================================================
+    /* =====================================================
        CANCEL EDIT
-    ================================================= */
+    ===================================================== */
 
     const cancelEdit =
         () => {
@@ -849,33 +1193,60 @@ export default function Chat() {
             );
 
             setText("");
+
+            setChatWarning(
+                null,
+            );
         };
 
 
-    /* =================================================
-       LOADING
-    ================================================= */
+    /* =====================================================
+       HEADER BACK
+       Kembali ke halaman sebelumnya.
+    ===================================================== */
+
+    const handleBack =
+        () => {
+            navigate(-1);
+        };
+
+
+    /* =====================================================
+       GO TO EXPLORE
+       Khusus closed store.
+    ===================================================== */
+
+    const handleExplore =
+        () => {
+
+            /*
+             * Ganti route ini kalau route Explore
+             * di project kamu menggunakan path berbeda.
+             */
+
+            navigate(
+                "/explore",
+            );
+        };
+
+
+    /* =====================================================
+       LOADING SELLER
+    ===================================================== */
 
     if (
-        loadingSellers
+        loadingSeller
     ) {
 
         return (
+            <div className="chat-page">
 
-            <div
-                className="chat-page"
-            >
+                <div className="chat-loading">
 
-                <div
-                    className="chat-loading"
-                >
-
-                    <div
-                        className="chat-loading-spinner"
-                    />
+                    <div className="chat-loading-spinner" />
 
                     <p>
-                        Memuat chat...
+                        Membuka chat...
                     </p>
 
                 </div>
@@ -885,220 +1256,210 @@ export default function Chat() {
     }
 
 
-    /* =================================================
-       RENDER
-    ================================================= */
+    /* =====================================================
+       SELLER NOT FOUND
+    ===================================================== */
 
-    return (
+    if (
+        !requestedSellerID ||
+        !activeSeller
+    ) {
 
-        <div
-            className="chat-page"
-        >
+        return (
+            <div className="chat-page">
 
-            <div
-                className="chat-container"
-            >
+                <div className="chat-error-page">
 
-                {/* =================================================
-                    SIDEBAR
-                ================================================= */}
+                    <div className="chat-error-icon">
 
-                <aside
-                    className="chat-sidebar"
-                >
+                        <Store
+                            size={28}
+                        />
 
-                    <div
-                        className="chat-sidebar-header"
+                    </div>
+
+
+                    <h2>
+                        Warteg tidak ditemukan
+                    </h2>
+
+
+                    <p>
+                        Percakapan tidak dapat
+                        dibuka karena data warteg
+                        tidak tersedia.
+                    </p>
+
+
+                    <button
+                        type="button"
+                        onClick={
+                            handleBack
+                        }
                     >
 
-                        <button
-                            type="button"
-                            className="chat-back-button"
+                        <ArrowLeft
+                            size={17}
+                        />
+
+                        Kembali
+
+                    </button>
+
+                </div>
+
+            </div>
+        );
+    }
+
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
+
+    return (
+        <div className="chat-page">
+
+            <div className="chat-container">
+
+                {/* =================================================
+                    HEADER
+                ================================================= */}
+
+                <header className="chat-room-header">
+
+                    <button
+                        type="button"
+                        className="chat-back-button"
+                        onClick={
+                            handleBack
+                        }
+                        aria-label="Kembali"
+                    >
+
+                        <ArrowLeft
+                            size={20}
+                        />
+
+                    </button>
+
+
+                    <div className="chat-room-avatar">
+
+                        {sellerImage ? (
+
+                            <img
+                                src={
+                                    sellerImage
+                                }
+                                alt={
+                                    sellerName
+                                }
+                            />
+
+                        ) : (
+
+                            <Store
+                                size={21}
+                            />
+
+                        )}
+
+                    </div>
+
+
+                    <div className="chat-room-title">
+
+                        <strong>
+                            {sellerName}
+                        </strong>
+
+
+                        <span
+                            className={
+                                sellerIsOpen
+                                    ? "chat-status-open"
+                                    : "chat-status-closed"
+                            }
+                        >
+
+                            <span className="chat-status-dot" />
+
+                            {sellerIsOpen
+                                ? "Sedang buka"
+                                : "Sedang tutup"}
+
+                        </span>
+
+                    </div>
+
+                </header>
+
+
+                {/* =================================================
+                    OPEN STORE
+                ================================================= */}
+
+                {sellerIsOpen ? (
+
+                    <>
+
+                        {/* =================================================
+                            SAFETY NOTICE
+                        ================================================= */}
+
+                        <div className="chat-safety-notice">
+
+                            <div className="chat-safety-icon">
+
+                                <ShieldAlert
+                                    size={18}
+                                />
+
+                            </div>
+
+
+                            <div className="chat-safety-content">
+
+                                <strong>
+                                    Jaga komunikasi tetap sopan
+                                </strong>
+
+
+                                <p>
+                                    Jangan kirim kata kasar,
+                                    pornografi, pelecehan,
+                                    ancaman, atau konten yang
+                                    melanggar aturan WartegKita.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        {/* =================================================
+                            MESSAGE AREA
+                        ================================================= */}
+
+                        <div
+                            className="message-area"
                             onClick={() =>
-                                navigate(
-                                    "/explore",
+                                setSelectedMessageID(
+                                    null,
                                 )
                             }
                         >
 
-                            <ArrowLeft
-                                size={19}
-                            />
+                            {/* -------------------------------------------------
+                                LOADING
+                            ------------------------------------------------- */}
 
-                        </button>
+                            {loadingMessages ? (
 
+                                <div className="chat-message-loading">
 
-                        <div>
-
-                            <span>
-                                WARTEGKITA
-                            </span>
-
-                            <h2>
-                                Chat Warteg
-                            </h2>
-
-                        </div>
-
-                    </div>
-
-
-                    <div
-                        className="chat-sidebar-list"
-                    >
-
-                        {
-                            sortedSellers.length ===
-                                0 ? (
-
-                                <div
-                                    className="chat-no-seller"
-                                >
-
-                                    <Store
-                                        size={28}
-                                    />
-
-                                    <p>
-                                        Belum ada warteg.
-                                    </p>
-
-                                </div>
-
-                            ) : (
-
-                                sortedSellers.map(
-                                    (
-                                        seller,
-                                    ) => (
-
-                                        <button
-                                            key={
-                                                seller.id
-                                            }
-                                            type="button"
-                                            className={
-                                                activeSeller?.id ===
-                                                    seller.id
-                                                    ? "chat-store active"
-                                                    : "chat-store"
-                                            }
-                                            onClick={() =>
-                                                setActiveSeller(
-                                                    seller,
-                                                )
-                                            }
-                                        >
-
-                                            <div
-                                                className="chat-store-avatar"
-                                            >
-
-                                                <Store
-                                                    size={20}
-                                                />
-
-                                            </div>
-
-
-                                            <div
-                                                className="chat-store-info"
-                                            >
-
-                                                <strong>
-                                                    {
-                                                        getSellerName(
-                                                            seller,
-                                                        )
-                                                    }
-                                                </strong>
-
-                                                <span>
-                                                    Chat dengan penjual
-                                                </span>
-
-                                            </div>
-
-                                        </button>
-
-                                    ),
-                                )
-
-                            )
-                        }
-
-                    </div>
-
-                </aside>
-
-
-                {/* =================================================
-                    CHAT ROOM
-                ================================================= */}
-
-                <section
-                    className="chat-room"
-                >
-
-                    {/* HEADER */}
-
-                    <header
-                        className="chat-room-header"
-                    >
-
-                        <div
-                            className="chat-room-avatar"
-                        >
-
-                            <Store
-                                size={22}
-                            />
-
-                        </div>
-
-
-                        <div
-                            className="chat-room-title"
-                        >
-
-                            <strong>
-                                {
-                                    getSellerName(
-                                        activeSeller,
-                                    )
-                                }
-                            </strong>
-
-                            <span>
-                                Chat Penjual
-                            </span>
-
-                        </div>
-
-                    </header>
-
-
-                    {/* MESSAGE AREA */}
-
-                    <div
-                        className="message-area"
-                        onClick={() =>
-                            setSelectedMessageID(
-                                null,
-                            )
-                        }
-                    >
-
-                        {
-                            loadingMessages ? (
-
-                                <div
-                                    className="chat-message-loading"
-                                >
-
-                                    <div
-                                        className="chat-loading-spinner"
-                                    />
+                                    <div className="chat-loading-spinner" />
 
                                     <span>
                                         Membuka percakapan...
@@ -1106,39 +1467,61 @@ export default function Chat() {
 
                                 </div>
 
-                            ) : messages.length ===
-                                0 ? (
+                            ) : messages.length === 0 ? (
 
-                                <div
-                                    className="chat-empty"
-                                >
+                                /* -------------------------------------------------
+                                   EMPTY CHAT
+                                ------------------------------------------------- */
 
-                                    <div
-                                        className="chat-empty-icon"
-                                    >
+                                <div className="chat-empty">
 
-                                        <Store
-                                            size={30}
-                                        />
+                                    <div className="chat-empty-icon">
+
+                                        {sellerImage ? (
+
+                                            <img
+                                                src={
+                                                    sellerImage
+                                                }
+                                                alt=""
+                                            />
+
+                                        ) : (
+
+                                            <Store
+                                                size={30}
+                                            />
+
+                                        )}
 
                                     </div>
+
 
                                     <h3>
                                         Mulai percakapan
                                     </h3>
 
+
                                     <p>
-                                        Kirim pesan kepada{" "}
-                                        {
-                                            getSellerName(
-                                                activeSeller,
-                                            )
-                                        }.
+                                        Tanyakan menu,
+                                        ketersediaan, atau
+                                        informasi pesanan
+                                        kepada{" "}
+
+                                        <strong>
+                                            {sellerName}
+                                        </strong>
+
+                                        .
                                     </p>
 
                                 </div>
 
                             ) : (
+
+                                /* -------------------------------------------------
+                                   MESSAGE LIST
+                                ------------------------------------------------- */
 
                                 messages.map(
                                     (
@@ -1175,6 +1558,7 @@ export default function Chat() {
 
                                                         event.stopPropagation();
 
+
                                                         setSelectedMessageID(
                                                             (
                                                                 current,
@@ -1188,30 +1572,34 @@ export default function Chat() {
                                                     }}
                                                 >
 
-                                                    <div
-                                                        className="message-avatar"
-                                                    >
+                                                    {/* ---------------------------------------------
+                                                        AVATAR
+                                                    --------------------------------------------- */}
 
-                                                        {
-                                                            isBuyer
-                                                                ? (
-                                                                    <User
-                                                                        size={14}
-                                                                    />
-                                                                )
-                                                                : (
-                                                                    <Store
-                                                                        size={14}
-                                                                    />
-                                                                )
-                                                        }
+                                                    <div className="message-avatar">
+
+                                                        {isBuyer ? (
+
+                                                            <User
+                                                                size={14}
+                                                            />
+
+                                                        ) : (
+
+                                                            <Store
+                                                                size={14}
+                                                            />
+
+                                                        )}
 
                                                     </div>
 
 
-                                                    <div
-                                                        className="message-content"
-                                                    >
+                                                    {/* ---------------------------------------------
+                                                        CONTENT
+                                                    --------------------------------------------- */}
+
+                                                    <div className="message-content">
 
                                                         <span>
                                                             {
@@ -1220,22 +1608,23 @@ export default function Chat() {
                                                         </span>
 
 
-                                                        {
-                                                            editingMessageID ===
+                                                        {editingMessageID ===
                                                             message.id && (
 
                                                                 <small>
                                                                     Sedang diedit
                                                                 </small>
 
-                                                            )
-                                                        }
+                                                            )}
 
                                                     </div>
 
 
-                                                    {
-                                                        selectedMessageID ===
+                                                    {/* ---------------------------------------------
+                                                        MENU
+                                                    --------------------------------------------- */}
+
+                                                    {selectedMessageID ===
                                                         message.id && (
 
                                                             <div
@@ -1247,58 +1636,53 @@ export default function Chat() {
                                                                 }
                                                             >
 
-                                                                {
-                                                                    isBuyer && (
+                                                                {isBuyer && (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={() =>
-                                                                                startEdit(
-                                                                                    message,
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() =>
+                                                                            startEdit(
+                                                                                message,
+                                                                            )
+                                                                        }
+                                                                    >
 
-                                                                            <Edit3
-                                                                                size={14}
-                                                                            />
+                                                                        <Edit3
+                                                                            size={14}
+                                                                        />
 
-                                                                            Edit
+                                                                        Edit
 
-                                                                        </button>
+                                                                    </button>
 
-                                                                    )
-                                                                }
+                                                                )}
 
 
-                                                                {
-                                                                    isBuyer && (
+                                                                {isBuyer && (
 
-                                                                        <button
-                                                                            type="button"
-                                                                            className="danger"
-                                                                            onClick={() =>
-                                                                                deleteMessage(
-                                                                                    message.id,
-                                                                                )
-                                                                            }
-                                                                        >
+                                                                    <button
+                                                                        type="button"
+                                                                        className="danger"
+                                                                        onClick={() =>
+                                                                            deleteMessage(
+                                                                                message.id,
+                                                                            )
+                                                                        }
+                                                                    >
 
-                                                                            <Trash2
-                                                                                size={14}
-                                                                            />
+                                                                        <Trash2
+                                                                            size={14}
+                                                                        />
 
-                                                                            Hapus
+                                                                        Hapus
 
-                                                                        </button>
+                                                                    </button>
 
-                                                                    )
-                                                                }
+                                                                )}
 
                                                             </div>
 
-                                                        )
-                                                    }
+                                                        )}
 
                                                 </div>
 
@@ -1306,36 +1690,77 @@ export default function Chat() {
                                         );
                                     },
                                 )
+                            )}
 
-                            )
-                        }
 
+                            <div
+                                ref={
+                                    messageEndRef
+                                }
+                            />
+
+                        </div>
+
+
+                        {/* =================================================
+                            WARNING
+                        ================================================= */}
+
+                        {chatWarning && (
+
+                            <div
+                                className="chat-warning"
+                                role="alert"
+                            >
+
+                                <ShieldAlert
+                                    size={17}
+                                />
+
+
+                                <span>
+                                    {
+                                        chatWarning
+                                    }
+                                </span>
+
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setChatWarning(
+                                            null,
+                                        )
+                                    }
+                                    aria-label="Tutup"
+                                >
+                                    ×
+                                </button>
+
+                            </div>
+
+                        )}
+
+
+                        {/* =================================================
+                            INPUT
+                        ================================================= */}
 
                         <div
-                            ref={
-                                messageEndRef
+                            className={
+                                editingMessageID
+                                    ? "chat-input-wrapper editing"
+                                    : "chat-input-wrapper"
                             }
-                        />
+                        >
 
-                    </div>
+                            {/* -------------------------------------------------
+                                EDITING BAR
+                            ------------------------------------------------- */}
 
+                            {editingMessageID && (
 
-                    {/* INPUT */}
-
-                    <div
-                        className={
-                            editingMessageID
-                                ? "chat-input-wrapper editing"
-                                : "chat-input-wrapper"
-                        }
-                    >
-
-                        {
-                            editingMessageID && (
-
-                                <div
-                                    className="editing-bar"
-                                >
+                                <div className="editing-bar">
 
                                     <div>
 
@@ -1361,85 +1786,241 @@ export default function Chat() {
 
                                 </div>
 
-                            )
-                        }
+                            )}
 
 
-                        <div
-                            className="chat-input"
-                        >
+                            {/* -------------------------------------------------
+                                INPUT BOX
+                            ------------------------------------------------- */}
 
-                            <input
-                                type="text"
-                                value={
-                                    text
-                                }
-                                onChange={(
-                                    event,
-                                ) =>
-                                    setText(
-                                        event.target.value,
-                                    )
-                                }
-                                onKeyDown={(
-                                    event,
-                                ) => {
+                            <div className="chat-input">
 
-                                    if (
-                                        event.key ===
-                                        "Enter"
-                                    ) {
-
-                                        event.preventDefault();
-
-                                        submitMessage();
+                                <input
+                                    ref={
+                                        inputRef
                                     }
-                                }}
-                                placeholder={
-                                    editingMessageID
-                                        ? "Edit pesan..."
-                                        : "Tulis pesan ke penjual..."
-                                }
-                            />
+                                    type="text"
+                                    value={
+                                        text
+                                    }
+                                    maxLength={
+                                        500
+                                    }
+                                    autoComplete="off"
+                                    onChange={(
+                                        event,
+                                    ) => {
 
+                                        setText(
+                                            event.target.value,
+                                        );
+
+
+                                        if (
+                                            chatWarning
+                                        ) {
+
+                                            setChatWarning(
+                                                null,
+                                            );
+                                        }
+
+                                    }}
+                                    onKeyDown={(
+                                        event,
+                                    ) => {
+
+                                        if (
+                                            event.key ===
+                                            "Enter"
+                                        ) {
+
+                                            event.preventDefault();
+
+                                            submitMessage();
+
+                                        }
+
+                                    }}
+                                    placeholder={
+                                        editingMessageID
+                                            ? "Edit pesan..."
+                                            : "Tulis pesan ke penjual..."
+                                    }
+                                />
+
+
+                                <button
+                                    type="button"
+                                    onClick={
+                                        submitMessage
+                                    }
+                                    disabled={
+                                        !text.trim() ||
+                                        !room
+                                    }
+                                    aria-label={
+                                        editingMessageID
+                                            ? "Simpan perubahan"
+                                            : "Kirim pesan"
+                                    }
+                                >
+
+                                    {editingMessageID ? (
+
+                                        <Edit3
+                                            size={18}
+                                        />
+
+                                    ) : (
+
+                                        <Send
+                                            size={18}
+                                        />
+
+                                    )}
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </>
+
+                ) : (
+
+                    /* =================================================
+                       CLOSED STORE STATE
+                    ================================================= */
+
+                    <main className="chat-closed-state">
+
+                        <div className="chat-closed-card">
+
+                            {/* ---------------------------------------------
+                                STORE ILLUSTRATION
+                            --------------------------------------------- */}
+
+                            <div className="chat-closed-icon">
+
+                                <Store
+                                    size={42}
+                                    strokeWidth={1.8}
+                                />
+
+                            </div>
+
+
+                            {/* ---------------------------------------------
+                                BADGE
+                            --------------------------------------------- */}
+
+                            <span className="chat-closed-badge">
+                                WARTEG SEDANG TUTUP
+                            </span>
+
+
+                            {/* ---------------------------------------------
+                                TITLE
+                            --------------------------------------------- */}
+
+                            <h1>
+                                Waduh, wartegnya lagi tutup 😴
+                            </h1>
+
+
+                            {/* ---------------------------------------------
+                                DESCRIPTION
+                            --------------------------------------------- */}
+
+                            <p className="chat-closed-description">
+
+                                Jangan khawatir, besok lagi yaa!
+                                <br />
+
+                                Kamu bisa ngobrol dengan{" "}
+
+                                <strong>
+                                    {sellerName}
+                                </strong>
+
+                                {" "}saat wartegnya buka lagi.
+
+                            </p>
+
+
+                            {/* ---------------------------------------------
+                                STORE INFO
+                            --------------------------------------------- */}
+
+                            <div className="chat-closed-store">
+
+                                <div className="chat-closed-store-icon">
+
+                                    {sellerImage ? (
+
+                                        <img
+                                            src={
+                                                sellerImage
+                                            }
+                                            alt={
+                                                sellerName
+                                            }
+                                        />
+
+                                    ) : (
+
+                                        <Store
+                                            size={20}
+                                        />
+
+                                    )}
+
+                                </div>
+
+
+                                <div className="chat-closed-store-info">
+
+                                    <strong>
+                                        {sellerName}
+                                    </strong>
+
+
+                                    <span>
+                                        Chat tersedia saat warteg buka
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* ---------------------------------------------
+                                EXPLORE CTA
+                            --------------------------------------------- */}
 
                             <button
                                 type="button"
+                                className="chat-explore-button"
                                 onClick={
-                                    submitMessage
-                                }
-                                disabled={
-                                    !text.trim() ||
-                                    !room
-                                }
-                                aria-label={
-                                    editingMessageID
-                                        ? "Simpan perubahan"
-                                        : "Kirim pesan"
+                                    handleExplore
                                 }
                             >
 
-                                {
-                                    editingMessageID
-                                        ? (
-                                            <Edit3
-                                                size={19}
-                                            />
-                                        )
-                                        : (
-                                            <Send
-                                                size={19}
-                                            />
-                                        )
-                                }
+                                <Store
+                                    size={17}
+                                />
+
+                                Yuk cari warteg lain
 
                             </button>
 
                         </div>
 
-                    </div>
+                    </main>
 
-                </section>
+                )}
 
             </div>
 

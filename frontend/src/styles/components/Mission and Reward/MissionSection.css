@@ -1,0 +1,247 @@
+.loyalty-section {
+    width: 100%;
+    margin-top: 24px;
+}
+
+.loyalty-subheading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 18px;
+}
+
+.section-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #16a34a;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.loyalty-subheading h3 {
+    margin: 6px 0 5px;
+    color: #111827;
+    font-size: 24px;
+    line-height: 1.2;
+    font-weight: 800;
+}
+
+.loyalty-subheading p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.mission-counter {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border: 1px solid #dcfce7;
+    border-radius: 999px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.mission-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.mission-card {
+    position: relative;
+    overflow: hidden;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(17, 24, 39, .05);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+
+.mission-card:hover {
+    transform: translateY(-2px);
+    border-color: #bbf7d0;
+    box-shadow: 0 14px 30px rgba(17, 24, 39, .08);
+}
+
+.mission-card.completed {
+    border-color: #bbf7d0;
+    background: linear-gradient(180deg, #f7fff9 0%, #fff 100%);
+}
+
+.mission-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.mission-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border-radius: 13px;
+    background: #ecfdf3;
+    color: #16a34a;
+}
+
+.mission-reward {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #f97316;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mission-card h4 {
+    margin: 0 0 7px;
+    color: #111827;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.mission-card p {
+    min-height: 44px;
+    margin: 0 0 18px;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.mission-progress-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mission-progress-info strong {
+    color: #15803d;
+}
+
+.mission-progress-track {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border-radius: 999px;
+    background: #f3f4f6;
+}
+
+.mission-progress-fill {
+    height: 100%;
+    min-width: 2px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+    transition: width .35s ease;
+}
+
+.mission-completed,
+.mission-in-progress {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 32px;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mission-in-progress {
+    color: #6b7280;
+}
+
+.mission-start-button,
+.mission-retry-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 40px;
+    margin-top: 12px;
+    border: 0;
+    border-radius: 11px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+
+.mission-start-button:hover,
+.mission-retry-button:hover {
+    background: #15803d;
+    transform: translateY(-1px);
+}
+
+.loyalty-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 180px;
+    padding: 28px;
+    border: 1px dashed #d1d5db;
+    border-radius: 18px;
+    background: #fafafa;
+    color: #6b7280;
+    text-align: center;
+}
+
+.loyalty-empty-state>svg {
+    margin-bottom: 10px;
+    color: #16a34a;
+}
+
+.loyalty-empty-state strong {
+    margin-bottom: 5px;
+    color: #111827;
+    font-size: 15px;
+}
+
+.loyalty-empty-state p {
+    max-width: 430px;
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.mission-retry-button {
+    width: auto;
+    padding: 0 18px;
+}
+
+@media (max-width: 1024px) {
+    .mission-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 680px) {
+    .loyalty-subheading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .mission-grid {
+        grid-template-columns: 1fr;
+    }
+}

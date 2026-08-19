@@ -18,3 +18,7 @@ Daftar Akun Seller
 5.  Password : B3rk@hCuanB0s
     Email : berkahnusantara@gmail.com
     Hash : $2a$10$IHQjC67DjoX1AAvgoxvsUOzmGTqo8Tc0vFzftyneIvMHLK2Ulx546
+
+6.  Password : Mamp@n9Prapat
+    Email : bahararjuna@gmail.com
+    Hash : $2a$10$IHQjC67DjoX1AAvgoxvsUOzmGTqo8Tc0vFzftyneIvMHLK2Ulx546

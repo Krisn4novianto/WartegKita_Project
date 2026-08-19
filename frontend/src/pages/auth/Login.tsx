@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import {
+  useEffect,
+  useState,
+} from "react";
+
+import {
+  Link,
+  useNavigate,
+} from "react-router-dom";
 
 import {
   Mail,
@@ -11,33 +18,82 @@ import {
 } from "lucide-react";
 
 import api from "../../services/api";
+
 import "../../styles/auth.css";
-import WartegKitaLogo from "../../assets/images/WartegKita.png";
+
+import WartegKitaLogo
+  from "../../assets/images/WartegKita.png";
+
+
+// =====================================================
+// USER TYPE
+// =====================================================
+
+type User = {
+  id: string;
+  name?: string;
+  email?: string;
+  role: "customer" | "seller";
+};
+
+
+// =====================================================
+// LOGIN
+// =====================================================
 
 export default function Login() {
+
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(false);
+  // =====================================================
+  // FORM
+  // =====================================================
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+
+  // =====================================================
+  // UI
+  // =====================================================
+
+  const [showPassword, setShowPassword] =
+    useState(false);
+
+  const [remember, setRemember] =
+    useState(false);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
 
   // =====================================================
   // LOAD REMEMBER EMAIL
   // =====================================================
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberEmail");
+
+    const savedEmail =
+      localStorage.getItem(
+        "rememberEmail"
+      );
 
     if (savedEmail) {
+
       setEmail(savedEmail);
+
       setRemember(true);
     }
+
   }, []);
+
 
   // =====================================================
   // LOGIN
@@ -46,45 +102,99 @@ export default function Login() {
   async function handleLogin(
     e: React.FormEvent<HTMLFormElement>
   ) {
+
     e.preventDefault();
 
     setError("");
+
 
     // ===================================================
     // VALIDATION
     // ===================================================
 
-    if (!email.trim()) {
-      setError("Email wajib diisi.");
+    const normalizedEmail =
+      email.trim().toLowerCase();
+
+
+    if (!normalizedEmail) {
+
+      setError(
+        "Email wajib diisi."
+      );
+
       return;
     }
 
-    if (!password.trim()) {
-      setError("Password wajib diisi.");
+
+    if (!password) {
+
+      setError(
+        "Password wajib diisi."
+      );
+
       return;
     }
+
+
+    // ===================================================
+    // EMAIL VALIDATION
+    // ===================================================
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+
+    if (
+      !emailRegex.test(
+        normalizedEmail
+      )
+    ) {
+
+      setError(
+        "Format email tidak valid."
+      );
+
+      return;
+    }
+
 
     try {
+
       setLoading(true);
 
-      // =================================================
-      // REQUEST LOGIN
-      // =================================================
-
-      const response = await api.post("/auth/login", {
-        email: email.trim(),
-        password,
-      });
-
-      const data = response.data;
 
       // =================================================
-      // AMBIL USER
+      // CLEAR ERROR
+      // =================================================
+
+      setError("");
+
+
+      // =================================================
+      // LOGIN REQUEST
+      // =================================================
+
+      const response =
+        await api.post(
+          "/auth/login",
+          {
+            email:
+              normalizedEmail,
+
+            password,
+          }
+        );
+
+
+      // =================================================
+      // BACKEND RESPONSE
+      // =================================================
       //
-      // Backend yang diharapkan:
+      // Backend:
       //
       // {
-      //   message: "...",
+      //   success: true,
+      //   message: "Login berhasil",
       //   token: "...",
       //   data: {
       //     id,
@@ -93,43 +203,207 @@ export default function Login() {
       //     role
       //   }
       // }
+      //
       // =================================================
 
-      const token = data?.token;
-      const user = data?.user;
+      const responseData =
+        response?.data;
+
+
+      console.log(
+        "LOGIN RESPONSE:",
+        responseData
+      );
+
 
       // =================================================
-      // VALIDASI RESPONSE
+      // TOKEN
       // =================================================
 
-      if (!token) {
-        setError("Token login tidak ditemukan.");
+      const token =
+        responseData?.token;
+
+
+      if (
+        !token ||
+        typeof token !== "string"
+      ) {
+
+        setError(
+          "Token login tidak ditemukan dari server."
+        );
+
         return;
       }
 
-      if (!user) {
-        setError("Data user tidak ditemukan.");
+
+      // =================================================
+      // USER
+      // =================================================
+      //
+      // PRIORITAS:
+      //
+      // data
+      // user
+      //
+      // Supaya kompatibel dengan response
+      // backend lama maupun baru.
+      //
+      // =================================================
+
+      const rawUser =
+        responseData?.data ??
+        responseData?.user ??
+        null;
+
+
+      if (!rawUser) {
+
+        console.error(
+          "USER DATA TIDAK DITEMUKAN:",
+          responseData
+        );
+
+        setError(
+          "Data user tidak ditemukan."
+        );
+
         return;
       }
 
-      if (!user.id) {
-        setError("ID user tidak ditemukan.");
+
+      // =================================================
+      // NORMALIZE USER
+      // =================================================
+
+      const userId =
+        rawUser?.id ??
+        rawUser?.user_id ??
+        rawUser?.userId ??
+        "";
+
+
+      const userRole =
+        String(
+          rawUser?.role ??
+          ""
+        )
+          .trim()
+          .toLowerCase();
+
+
+      const userName =
+        rawUser?.name ??
+        rawUser?.nama ??
+        "";
+
+
+      const userEmail =
+        rawUser?.email ??
+        normalizedEmail;
+
+
+      // =================================================
+      // VALIDATE USER ID
+      // =================================================
+
+      if (!userId) {
+
+        console.error(
+          "ID USER TIDAK DITEMUKAN:",
+          rawUser
+        );
+
+        setError(
+          "ID user tidak ditemukan."
+        );
+
         return;
       }
 
-      if (!user.role) {
-        setError("Role user tidak ditemukan.");
+
+      // =================================================
+      // VALIDATE ROLE
+      // =================================================
+
+      if (
+        userRole !== "customer" &&
+        userRole !== "seller"
+      ) {
+
+        console.error(
+          "ROLE USER TIDAK VALID:",
+          rawUser
+        );
+
+        setError(
+          "Role user tidak valid."
+        );
+
         return;
       }
 
-      // =================================================
-      // SIMPAN TOKEN
-      // =================================================
-
-      localStorage.setItem("token", token);
 
       // =================================================
-      // SIMPAN USER
+      // FINAL USER OBJECT
+      // =================================================
+
+      const user: User = {
+
+        id:
+          String(userId),
+
+        name:
+          String(userName),
+
+        email:
+          String(userEmail),
+
+        role:
+          userRole as
+          | "customer"
+          | "seller",
+      };
+
+
+      // =================================================
+      // CLEAR OLD AUTH DATA
+      // =================================================
+      //
+      // Penting supaya akun seller/customer sebelumnya
+      // tidak ikut terbawa.
+      //
+      // =================================================
+
+      localStorage.removeItem(
+        "token"
+      );
+
+      localStorage.removeItem(
+        "user"
+      );
+
+      localStorage.removeItem(
+        "user_id"
+      );
+
+      localStorage.removeItem(
+        "seller_id"
+      );
+
+
+      // =================================================
+      // SAVE TOKEN
+      // =================================================
+
+      localStorage.setItem(
+        "token",
+        token
+      );
+
+
+      // =================================================
+      // SAVE USER
       // =================================================
 
       localStorage.setItem(
@@ -137,72 +411,250 @@ export default function Login() {
         JSON.stringify(user)
       );
 
+
+      // =================================================
+      // SAVE USER ID
+      // =================================================
+
+      localStorage.setItem(
+        "user_id",
+        String(user.id)
+      );
+
+
+      // =================================================
+      // SELLER ID
+      // =================================================
+      //
+      // Pada sistem WartegKita:
+      //
+      // seller_id = user.id
+      //
+      // ketika account role = seller.
+      //
+      // =================================================
+
+      if (
+        user.role ===
+        "seller"
+      ) {
+
+        localStorage.setItem(
+          "seller_id",
+          String(user.id)
+        );
+      }
+
+
       // =================================================
       // REMEMBER EMAIL
       // =================================================
 
       if (remember) {
+
         localStorage.setItem(
           "rememberEmail",
-          email.trim()
+          normalizedEmail
         );
+
       } else {
-        localStorage.removeItem("rememberEmail");
+
+        localStorage.removeItem(
+          "rememberEmail"
+        );
       }
 
+
       // =================================================
-      // REDIRECT BERDASARKAN ROLE
+      // DEBUG
       // =================================================
 
-      if (user.role === "seller") {
+      console.log(
+        "LOGIN SUCCESS"
+      );
+
+      console.log(
+        "User:",
+        user
+      );
+
+      console.log(
+        "Role:",
+        user.role
+      );
+
+      console.log(
+        "User ID:",
+        user.id
+      );
+
+
+      // =================================================
+      // REDIRECT SELLER
+      // =================================================
+
+      if (
+        user.role ===
+        "seller"
+      ) {
+
         navigate(
           `/seller/${user.id}/dashboard`,
           {
             replace: true,
           }
         );
-      } else {
-        navigate("/", {
-          replace: true,
-        });
+
+        return;
       }
 
-    } catch (err: any) {
-      console.error("LOGIN ERROR:", err);
+
+      // =================================================
+      // REDIRECT CUSTOMER
+      // =================================================
+
+      navigate(
+        "/",
+        {
+          replace: true,
+        }
+      );
+
+    } catch (
+    err: any
+    ) {
+
+      console.error(
+        "LOGIN ERROR:",
+        err
+      );
+
+
+      // =================================================
+      // BACKEND ERROR
+      // =================================================
 
       const backendError =
-        err?.response?.data?.error ||
-        err?.response?.data?.message;
+        err?.response?.data?.error ??
+        err?.response?.data?.message ??
+        err?.message ??
+        "";
 
-      if (backendError) {
-        setError(backendError);
-      } else if (err?.response?.status === 401) {
-        setError("Email atau password salah.");
-      } else if (err?.response?.status === 404) {
-        setError("Endpoint login tidak ditemukan.");
-      } else if (err?.response?.status >= 500) {
+
+      // =================================================
+      // 400
+      // =================================================
+
+      if (
+        err?.response?.status ===
+        400
+      ) {
+
         setError(
-          "Terjadi kesalahan pada server. Silakan coba lagi."
+          backendError ||
+          "Data login tidak valid."
         );
-      } else {
-        setError(
-          "Tidak dapat terhubung ke server."
-        );
+
+        return;
       }
 
+
+      // =================================================
+      // 401
+      // =================================================
+
+      if (
+        err?.response?.status ===
+        401
+      ) {
+
+        setError(
+          backendError ||
+          "Email atau password salah."
+        );
+
+        return;
+      }
+
+
+      // =================================================
+      // 404
+      // =================================================
+
+      if (
+        err?.response?.status ===
+        404
+      ) {
+
+        setError(
+          backendError ||
+          "Endpoint login tidak ditemukan."
+        );
+
+        return;
+      }
+
+
+      // =================================================
+      // 500
+      // =================================================
+
+      if (
+        err?.response?.status &&
+        err.response.status >= 500
+      ) {
+
+        setError(
+          backendError ||
+          "Terjadi kesalahan pada server. Silakan coba lagi."
+        );
+
+        return;
+      }
+
+
+      // =================================================
+      // NETWORK ERROR
+      // =================================================
+
+      if (
+        !err?.response
+      ) {
+
+        setError(
+          "Tidak dapat terhubung ke server. Pastikan backend WartegKita sedang berjalan."
+        );
+
+        return;
+      }
+
+
+      // =================================================
+      // FALLBACK
+      // =================================================
+
+      setError(
+        backendError ||
+        "Login gagal. Silakan coba lagi."
+      );
+
     } finally {
+
       setLoading(false);
     }
   }
+
 
   // =====================================================
   // RENDER
   // =====================================================
 
   return (
+
     <div className="login-page">
 
       <div className="login-wrapper">
+
 
         {/* =================================================
             LEFT SIDE
@@ -210,20 +662,29 @@ export default function Login() {
 
         <section className="login-left">
 
+
+          {/* =================================================
+              LOGO
+          ================================================= */}
+
           <div className="logo-box">
 
             <div className="logo-circle">
 
               <img
-                src={WartegKitaLogo}
+                src={
+                  WartegKitaLogo
+                }
                 alt="WartegKita"
               />
 
             </div>
 
+
             <h1>
               WartegKita
             </h1>
+
 
             <p>
               Digitalisasi Warteg Indonesia
@@ -231,23 +692,41 @@ export default function Login() {
 
           </div>
 
+
+          {/* =================================================
+              FEATURES
+          ================================================= */}
+
           <div className="feature-card">
+
             🍛 Pesan makanan lebih cepat
+
           </div>
 
+
           <div className="feature-card">
+
             🏪 Mendukung UMKM Lokal
+
           </div>
 
+
           <div className="feature-card">
+
             💳 Pembayaran QRIS
+
           </div>
 
+
           <div className="feature-card">
+
             📦 Pesanan realtime
+
           </div>
+
 
         </section>
+
 
         {/* =================================================
             RIGHT SIDE
@@ -257,40 +736,67 @@ export default function Login() {
 
           <div className="login-card">
 
+
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <span className="welcome">
+
               Selamat Datang 👋
+
             </span>
 
+
             <h2>
+
               Masuk ke WartegKita
+
             </h2>
 
+
             <p className="subtitle">
+
               Masuk sebagai pelanggan atau pemilik warteg.
+
             </p>
+
 
             {/* =================================================
                 FORM
             ================================================= */}
 
-            <form onSubmit={handleLogin}>
+            <form
+              onSubmit={
+                handleLogin
+              }
+            >
 
-              {/* EMAIL */}
+
+              {/* =================================================
+                  EMAIL
+              ================================================= */}
 
               <label>
                 Email
               </label>
 
+
               <div className="input">
 
-                <Mail size={20} />
+                <Mail
+                  size={20}
+                />
+
 
                 <input
                   type="email"
                   placeholder="contoh@email.com"
                   value={email}
                   onChange={(e) =>
-                    setEmail(e.target.value)
+                    setEmail(
+                      e.target.value
+                    )
                   }
                   autoComplete="email"
                   disabled={loading}
@@ -298,15 +804,22 @@ export default function Login() {
 
               </div>
 
-              {/* PASSWORD */}
+
+              {/* =================================================
+                  PASSWORD
+              ================================================= */}
 
               <label>
                 Password
               </label>
 
+
               <div className="input">
 
-                <Lock size={20} />
+                <Lock
+                  size={20}
+                />
+
 
                 <input
                   type={
@@ -317,11 +830,14 @@ export default function Login() {
                   placeholder="Masukkan password"
                   value={password}
                   onChange={(e) =>
-                    setPassword(e.target.value)
+                    setPassword(
+                      e.target.value
+                    )
                   }
                   autoComplete="current-password"
                   disabled={loading}
                 />
+
 
                 <button
                   type="button"
@@ -338,16 +854,31 @@ export default function Login() {
                       : "Tampilkan password"
                   }
                 >
-                  {showPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
+
+                  {
+                    showPassword ? (
+
+                      <EyeOff
+                        size={18}
+                      />
+
+                    ) : (
+
+                      <Eye
+                        size={18}
+                      />
+
+                    )
+                  }
+
                 </button>
 
               </div>
 
-              {/* REMEMBER + FORGOT */}
+
+              {/* =================================================
+                  REMEMBER + FORGOT
+              ================================================= */}
 
               <div className="remember-row">
 
@@ -368,30 +899,45 @@ export default function Login() {
 
                 </label>
 
+
                 <Link
                   to="/forgot-password"
                   className="forgot-password"
                 >
+
                   Lupa Password?
+
                 </Link>
 
               </div>
 
-              {/* ERROR */}
 
-              {error && (
-                <div className="error">
+              {/* =================================================
+                  ERROR
+              ================================================= */}
 
-                  <CircleAlert size={18} />
+              {
+                error && (
 
-                  <span>
-                    {error}
-                  </span>
+                  <div className="error">
 
-                </div>
-              )}
+                    <CircleAlert
+                      size={18}
+                    />
 
-              {/* LOGIN BUTTON */}
+                    <span>
+                      {error}
+                    </span>
+
+                  </div>
+
+                )
+              }
+
+
+              {/* =================================================
+                  LOGIN BUTTON
+              ================================================= */}
 
               <button
                 type="submit"
@@ -399,29 +945,48 @@ export default function Login() {
                 className="login-btn"
               >
 
-                {loading ? (
-                  <>
-                    <div className="loader" />
-                    Sedang masuk...
-                  </>
-                ) : (
-                  <>
-                    MASUK KE WARTEGKITA
-                    <ArrowRight size={18} />
-                  </>
-                )}
+                {
+                  loading ? (
+
+                    <>
+
+                      <div className="loader" />
+
+                      Sedang masuk...
+
+                    </>
+
+                  ) : (
+
+                    <>
+
+                      MASUK KE WARTEGKITA
+
+                      <ArrowRight
+                        size={18}
+                      />
+
+                    </>
+
+                  )
+                }
 
               </button>
 
+
             </form>
+
 
             {/* =================================================
                 DIVIDER
             ================================================= */}
 
             <div className="divider">
+
               <span />
+
             </div>
+
 
             {/* =================================================
                 REGISTER
@@ -430,18 +995,25 @@ export default function Login() {
             <div className="register">
 
               <span>
+
                 Belum punya akun?
+
               </span>
 
+
               <Link to="/register">
+
                 DAFTAR GRATIS
+
               </Link>
 
             </div>
 
+
           </div>
 
         </section>
+
 
       </div>
 
