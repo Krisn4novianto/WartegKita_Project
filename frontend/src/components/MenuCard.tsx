@@ -1,7 +1,13 @@
 import { Menu } from "../types";
 import { useCartStore } from "../store/cartStore";
 
-export default function MenuCard({ menu }: { menu: Menu }) {
+export default function MenuCard({
+  menu,
+  onAddToCart,
+}: {
+  menu: Menu;
+  onAddToCart?: () => void;
+}) {
   const addItem = useCartStore((state) => state.addItem);
 
   return (
@@ -11,7 +17,18 @@ export default function MenuCard({ menu }: { menu: Menu }) {
         <p>{menu.description}</p>
         <strong>Rp{menu.price.toLocaleString("id-ID")}</strong>
       </div>
-      <button className="button" onClick={() => addItem(menu)}>+</button>
+      <button
+        className="button"
+        onClick={() => {
+          if (onAddToCart) {
+            onAddToCart();
+          } else {
+            addItem(menu);
+          }
+        }}
+      >
+        +
+      </button>
     </div>
   );
 }

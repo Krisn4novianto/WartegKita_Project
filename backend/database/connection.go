@@ -95,13 +95,13 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuat folder upload KTP:",
+			"Gagal membuat folder upload KTP:",
 			err,
 		)
 	}
 
 	fmt.Printf(
-		"✅ Folder upload KTP siap: %s\n",
+		"Folder upload KTP siap: %s\n",
 		sellerKTPUploadDir,
 	)
 
@@ -125,7 +125,7 @@ func Connect() {
 	if err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuka koneksi PostgreSQL:",
+			"Gagal membuka koneksi PostgreSQL:",
 			err,
 		)
 	}
@@ -139,7 +139,7 @@ func Connect() {
 		adminDB.Close()
 
 		log.Fatal(
-			"❌ Gagal koneksi PostgreSQL:",
+			"Gagal koneksi PostgreSQL:",
 			err,
 		)
 	}
@@ -166,7 +166,7 @@ func Connect() {
 		adminDB.Close()
 
 		log.Fatal(
-			"❌ Gagal mengecek database:",
+			"Gagal mengecek database:",
 			err,
 		)
 	}
@@ -182,7 +182,7 @@ func Connect() {
 			adminDB.Close()
 
 			log.Fatal(
-				"❌ Nama database tidak valid:",
+				"Nama database tidak valid:",
 				dbName,
 			)
 		}
@@ -199,14 +199,14 @@ func Connect() {
 			adminDB.Close()
 
 			log.Fatalf(
-				"❌ Gagal membuat database %s: %v",
+				"Gagal membuat database %s: %v",
 				dbName,
 				err,
 			)
 		}
 
 		fmt.Printf(
-			"✅ Database %s berhasil dibuat\n",
+			"Database %s berhasil dibuat\n",
 			dbName,
 		)
 	}
@@ -240,13 +240,13 @@ func Connect() {
 	if err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuka database aplikasi dengan GORM:",
+			"Gagal membuka database aplikasi dengan GORM:",
 			err,
 		)
 	}
 
 	fmt.Printf(
-		"✅ GORM PostgreSQL Connected -> %s\n",
+		"GORM PostgreSQL Connected -> %s\n",
 		dbName,
 	)
 
@@ -271,7 +271,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate seller_profiles gagal:",
+			"AutoMigrate seller_profiles gagal:",
 			err,
 		)
 	}
@@ -285,7 +285,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate seller_verifications gagal:",
+			"AutoMigrate seller_verifications gagal:",
 			err,
 		)
 	}
@@ -301,7 +301,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate level-1 gagal:",
+			"AutoMigrate level-1 gagal:",
 			err,
 		)
 	}
@@ -318,7 +318,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate level-2 gagal:",
+			"AutoMigrate level-2 gagal:",
 			err,
 		)
 	}
@@ -333,7 +333,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate order_status_histories gagal:",
+			"AutoMigrate order_status_histories gagal:",
 			err,
 		)
 	}
@@ -349,7 +349,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate level-3 gagal:",
+			"AutoMigrate level-3 gagal:",
 			err,
 		)
 	}
@@ -363,7 +363,7 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate menu_categories gagal:",
+			"AutoMigrate menu_categories gagal:",
 			err,
 		)
 	}
@@ -452,13 +452,13 @@ func Connect() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate customer loyalty gagal:",
+			"AutoMigrate customer loyalty gagal:",
 			err,
 		)
 	}
 
 	fmt.Println(
-		"✅ Customer loyalty tables siap",
+		"Customer loyalty tables siap",
 	)
 
 	// =====================================================
@@ -472,7 +472,7 @@ func Connect() {
 	// =====================================================
 
 	fmt.Println(
-		"✅ GORM AutoMigrate selesai",
+		"GORM AutoMigrate selesai",
 	)
 
 	// =====================================================
@@ -498,7 +498,7 @@ func Connect() {
 	SeedMenuCategories()
 
 	fmt.Println(
-		"✅ Database initialization selesai",
+		"Database initialization selesai",
 	)
 }
 
@@ -563,7 +563,7 @@ func tableExists(tableName string) bool {
 	if err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengecek tabel %s: %v",
+			"[WARN] Gagal mengecek tabel %s: %v",
 			tableName,
 			err,
 		)
@@ -601,7 +601,7 @@ func constraintExists(constraintName string) bool {
 	if err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengecek constraint %s: %v",
+			"[WARN] Gagal mengecek constraint %s: %v",
 			constraintName,
 			err,
 		)
@@ -644,7 +644,7 @@ func primaryKeyExists(tableName string) bool {
 	if err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengecek primary key %s: %v",
+			"[WARN] Gagal mengecek primary key %s: %v",
 			tableName,
 			err,
 		)
@@ -708,7 +708,7 @@ func repairSellerProfileTimestampColumn(
 	if err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengecek tipe %s: %v",
+			"[WARN] Gagal mengecek tipe %s: %v",
 			columnName,
 			err,
 		)
@@ -751,7 +751,7 @@ func repairSellerProfileTimestampColumn(
 		if err != nil {
 
 			log.Printf(
-				"⚠️ Gagal mengubah %s menjadi TIMESTAMPTZ: %v",
+				"[WARN] Gagal mengubah %s menjadi TIMESTAMPTZ: %v",
 				columnName,
 				err,
 			)
@@ -760,7 +760,7 @@ func repairSellerProfileTimestampColumn(
 		}
 
 		fmt.Printf(
-			"✅ Kolom %s diperbaiki menjadi TIMESTAMPTZ\n",
+			"Kolom %s diperbaiki menjadi TIMESTAMPTZ\n",
 			columnName,
 		)
 
@@ -794,7 +794,7 @@ func repairSellerProfileTimestampColumn(
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal membersihkan %s kosong: %v",
+				"[WARN] Gagal membersihkan %s kosong: %v",
 				columnName,
 				err,
 			)
@@ -820,7 +820,7 @@ func repairSellerProfileTimestampColumn(
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal mengubah %s menjadi TIMESTAMPTZ: %v",
+				"[WARN] Gagal mengubah %s menjadi TIMESTAMPTZ: %v",
 				columnName,
 				err,
 			)
@@ -829,7 +829,7 @@ func repairSellerProfileTimestampColumn(
 		}
 
 		fmt.Printf(
-			"✅ Kolom %s diperbaiki menjadi TIMESTAMPTZ\n",
+			"Kolom %s diperbaiki menjadi TIMESTAMPTZ\n",
 			columnName,
 		)
 
@@ -837,7 +837,7 @@ func repairSellerProfileTimestampColumn(
 	}
 
 	log.Printf(
-		"⚠️ Tipe kolom %s tidak dikenali: %s",
+		"[WARN] Tipe kolom %s tidak dikenali: %s",
 		columnName,
 		dataType,
 	)
@@ -896,7 +896,7 @@ func repairSellerProfileTimeColumn(
 	if err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengecek tipe %s: %v",
+			"[WARN] Gagal mengecek tipe %s: %v",
 			columnName,
 			err,
 		)
@@ -942,7 +942,7 @@ func repairSellerProfileTimeColumn(
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal membersihkan %s kosong: %v",
+				"[WARN] Gagal membersihkan %s kosong: %v",
 				columnName,
 				err,
 			)
@@ -967,7 +967,7 @@ func repairSellerProfileTimeColumn(
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal mengubah %s menjadi TIME: %v",
+				"[WARN] Gagal mengubah %s menjadi TIME: %v",
 				columnName,
 				err,
 			)
@@ -976,7 +976,7 @@ func repairSellerProfileTimeColumn(
 		}
 
 		fmt.Printf(
-			"✅ Kolom %s diperbaiki menjadi TIME\n",
+			"Kolom %s diperbaiki menjadi TIME\n",
 			columnName,
 		)
 
@@ -1005,7 +1005,7 @@ func repairSellerProfileTimeColumn(
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal mengubah %s menjadi TIME: %v",
+				"[WARN] Gagal mengubah %s menjadi TIME: %v",
 				columnName,
 				err,
 			)
@@ -1014,7 +1014,7 @@ func repairSellerProfileTimeColumn(
 		}
 
 		fmt.Printf(
-			"✅ Kolom %s diperbaiki menjadi TIME\n",
+			"Kolom %s diperbaiki menjadi TIME\n",
 			columnName,
 		)
 
@@ -1043,7 +1043,7 @@ func repairSellerProfileTimeColumn(
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal mengubah %s menjadi TIME: %v",
+				"[WARN] Gagal mengubah %s menjadi TIME: %v",
 				columnName,
 				err,
 			)
@@ -1052,7 +1052,7 @@ func repairSellerProfileTimeColumn(
 		}
 
 		fmt.Printf(
-			"✅ Kolom %s diperbaiki menjadi TIME\n",
+			"Kolom %s diperbaiki menjadi TIME\n",
 			columnName,
 		)
 
@@ -1060,7 +1060,7 @@ func repairSellerProfileTimeColumn(
 	}
 
 	log.Printf(
-		"⚠️ Tipe kolom %s tidak dikenali: %s",
+		"[WARN] Tipe kolom %s tidak dikenali: %s",
 		columnName,
 		dataType,
 	)
@@ -1075,7 +1075,7 @@ func autoMigrateCampaignWallet() {
 	if DB == nil {
 
 		log.Println(
-			"⚠️ Database belum tersedia, campaign wallet migration dilewati",
+			"[WARN] Database belum tersedia, campaign wallet migration dilewati",
 		)
 
 		return
@@ -1100,7 +1100,7 @@ func autoMigrateCampaignWallet() {
 	).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuat campaign_wallets:",
+			"Gagal membuat campaign_wallets:",
 			err,
 		)
 	}
@@ -1115,7 +1115,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal memastikan campaign_wallets.id:",
+			"Gagal memastikan campaign_wallets.id:",
 			err,
 		)
 	}
@@ -1130,7 +1130,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal memastikan campaign_wallets.seller_id:",
+			"Gagal memastikan campaign_wallets.seller_id:",
 			err,
 		)
 	}
@@ -1145,7 +1145,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal memastikan campaign_wallets.balance:",
+			"Gagal memastikan campaign_wallets.balance:",
 			err,
 		)
 	}
@@ -1161,7 +1161,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal memperbaiki balance NULL: %v",
+			"[WARN] Gagal memperbaiki balance NULL: %v",
 			err,
 		)
 	}
@@ -1172,7 +1172,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengatur default balance: %v",
+			"[WARN] Gagal mengatur default balance: %v",
 			err,
 		)
 	}
@@ -1183,7 +1183,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal membuat balance NOT NULL: %v",
+			"[WARN] Gagal membuat balance NOT NULL: %v",
 			err,
 		)
 	}
@@ -1199,7 +1199,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal memastikan campaign_wallets.created_at:",
+			"Gagal memastikan campaign_wallets.created_at:",
 			err,
 		)
 	}
@@ -1211,7 +1211,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal memperbaiki created_at NULL: %v",
+			"[WARN] Gagal memperbaiki created_at NULL: %v",
 			err,
 		)
 	}
@@ -1222,7 +1222,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengatur default created_at: %v",
+			"[WARN] Gagal mengatur default created_at: %v",
 			err,
 		)
 	}
@@ -1233,7 +1233,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal membuat created_at NOT NULL:",
+			"[WARN] Gagal membuat created_at NOT NULL: %v",
 			err,
 		)
 	}
@@ -1249,7 +1249,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal memastikan campaign_wallets.updated_at:",
+			"Gagal memastikan campaign_wallets.updated_at:",
 			err,
 		)
 	}
@@ -1261,7 +1261,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal memperbaiki updated_at NULL: %v",
+			"[WARN] Gagal memperbaiki updated_at NULL: %v",
 			err,
 		)
 	}
@@ -1272,7 +1272,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengatur default updated_at: %v",
+			"[WARN] Gagal mengatur default updated_at: %v",
 			err,
 		)
 	}
@@ -1283,7 +1283,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal membuat updated_at NOT NULL:",
+			"[WARN] Gagal membuat updated_at NOT NULL: %v",
 			err,
 		)
 	}
@@ -1303,7 +1303,7 @@ func autoMigrateCampaignWallet() {
 	`).Scan(&walletRows).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Gagal mengambil wallet dengan ID NULL: %v",
+			"[WARN] Gagal mengambil wallet dengan ID NULL: %v",
 			err,
 		)
 
@@ -1325,7 +1325,7 @@ func autoMigrateCampaignWallet() {
 			).Error; err != nil {
 
 				log.Printf(
-					"⚠️ Gagal memperbaiki ID wallet seller %s: %v",
+					"[WARN] Gagal memperbaiki ID wallet seller %s: %v",
 					row.SellerID,
 					err,
 				)
@@ -1346,7 +1346,7 @@ func autoMigrateCampaignWallet() {
 	`).Scan(&nullIDCount).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal mengecek campaign_wallets.id NULL:",
+			"Gagal mengecek campaign_wallets.id NULL:",
 			err,
 		)
 	}
@@ -1354,7 +1354,7 @@ func autoMigrateCampaignWallet() {
 	if nullIDCount > 0 {
 
 		log.Fatal(
-			"❌ Masih terdapat campaign_wallets dengan id NULL",
+			"Masih terdapat campaign_wallets dengan id NULL",
 		)
 	}
 
@@ -1368,7 +1368,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuat campaign_wallets.id NOT NULL:",
+			"Gagal membuat campaign_wallets.id NOT NULL:",
 			err,
 		)
 	}
@@ -1386,13 +1386,13 @@ func autoMigrateCampaignWallet() {
 		`).Error; err != nil {
 
 			log.Fatal(
-				"❌ Gagal membuat primary key campaign_wallets:",
+				"Gagal membuat primary key campaign_wallets:",
 				err,
 			)
 		}
 
 		fmt.Println(
-			"✅ Primary key campaign_wallets berhasil dibuat",
+			"Primary key campaign_wallets berhasil dibuat",
 		)
 	}
 
@@ -1409,7 +1409,7 @@ func autoMigrateCampaignWallet() {
 	`).Scan(&nullSellerCount).Error; err != nil {
 
 		log.Fatal(
-			"❌ Gagal mengecek seller_id wallet:",
+			"Gagal mengecek seller_id wallet:",
 			err,
 		)
 	}
@@ -1417,12 +1417,12 @@ func autoMigrateCampaignWallet() {
 	if nullSellerCount > 0 {
 
 		log.Printf(
-			"⚠️ Terdapat %d campaign wallet dengan seller_id NULL",
+			"[WARN] Terdapat %d campaign wallet dengan seller_id NULL",
 			nullSellerCount,
 		)
 
 		log.Println(
-			"⚠️ seller_id NOT NULL tidak diterapkan agar database lama tidak rusak",
+			"[WARN] seller_id NOT NULL tidak diterapkan agar database lama tidak rusak",
 		)
 
 	} else {
@@ -1433,7 +1433,7 @@ func autoMigrateCampaignWallet() {
 		`).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal membuat seller_id NOT NULL: %v",
+				"[WARN] Gagal membuat seller_id NOT NULL: %v",
 				err,
 			)
 		}
@@ -1450,7 +1450,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Fatal(
-			"❌ Unique index campaign_wallets.seller_id gagal:",
+			"Unique index campaign_wallets.seller_id gagal:",
 			err,
 		)
 	}
@@ -1466,7 +1466,7 @@ func autoMigrateCampaignWallet() {
 	`).Error; err != nil {
 
 		log.Printf(
-			"⚠️ Index campaign_wallets.balance gagal: %v",
+			"[WARN] Index campaign_wallets.balance gagal: %v",
 			err,
 		)
 	}
@@ -1480,12 +1480,12 @@ func autoMigrateCampaignWallet() {
 	) {
 
 		log.Fatal(
-			"❌ campaign_wallets tidak ditemukan setelah migration",
+			"campaign_wallets tidak ditemukan setelah migration",
 		)
 	}
 
 	fmt.Println(
-		"✅ campaign_wallets berhasil dibuat/diverifikasi",
+		"campaign_wallets berhasil dibuat/diverifikasi",
 	)
 }
 
@@ -1944,7 +1944,7 @@ func repairForeignKeys() {
 		if constraintExists(stmt.name) {
 
 			fmt.Printf(
-				"✅ Foreign key sudah ada: %s\n",
+				"Foreign key sudah ada: %s\n",
 				stmt.name,
 			)
 
@@ -1969,7 +1969,7 @@ func repairForeignKeys() {
 		if !allTablesExist {
 
 			log.Printf(
-				"⚠️ FK %s dilewati karena tabel dependency belum tersedia",
+				"[WARN] FK %s dilewati karena tabel dependency belum tersedia",
 				stmt.name,
 			)
 
@@ -1985,7 +1985,7 @@ func repairForeignKeys() {
 		).Error; err != nil {
 
 			log.Printf(
-				"⚠️ Gagal membuat FK %s: %v",
+				"[WARN] Gagal membuat FK %s: %v",
 				stmt.name,
 				err,
 			)
@@ -1994,7 +1994,7 @@ func repairForeignKeys() {
 		}
 
 		fmt.Printf(
-			"✅ Foreign key created: %s\n",
+			"Foreign key created: %s\n",
 			stmt.name,
 		)
 	}
@@ -2024,7 +2024,7 @@ func SeedMenuCategories() {
 	if DB == nil {
 
 		log.Println(
-			"⚠️ Database belum tersedia, seed dilewati",
+			"[WARN] Database belum tersedia, seed dilewati",
 		)
 
 		return
@@ -2042,7 +2042,7 @@ func SeedMenuCategories() {
 		Error; err != nil {
 
 		log.Println(
-			"⚠️ Gagal mengecek menu categories:",
+			"[WARN] Gagal mengecek menu categories:",
 			err,
 		)
 
@@ -2108,7 +2108,7 @@ func SeedMenuCategories() {
 		Error; err != nil {
 
 		log.Println(
-			"⚠️ Gagal seed menu categories:",
+			"[WARN] Gagal seed menu categories:",
 			err,
 		)
 
@@ -2116,6 +2116,6 @@ func SeedMenuCategories() {
 	}
 
 	fmt.Println(
-		"✅ Default kategori menu berhasil dibuat",
+		"Default kategori menu berhasil dibuat",
 	)
 }

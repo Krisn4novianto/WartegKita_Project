@@ -2400,8 +2400,7 @@ export default function Payment() {
                                         remainingSeconds
                                     }
                                     expired={
-                                        paymentStatus ===
-                                        "expired"
+                                        remainingSeconds <= 0
                                     }
                                     onRetry={
                                         handleRetry
@@ -2415,7 +2414,7 @@ export default function Payment() {
                             "bank_transfer" && (
 
                                 <BankTransferPayment
-                                    total={
+                                    totalAmount={
                                         totalAmount
                                     }
                                 />
@@ -2427,14 +2426,8 @@ export default function Payment() {
                             "virtual_account" && (
 
                                 <VirtualAccountPayment
-                                    totalAmount={
+                                    total={
                                         totalAmount
-                                    }
-                                    onCopy={
-                                        handleCopy
-                                    }
-                                    copied={
-                                        copied
                                     }
                                 />
 

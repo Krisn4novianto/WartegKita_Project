@@ -48,7 +48,7 @@ import SellerOrders from "./pages/seller/Orders";
 ===================================================== */
 
 import Campaign from "./pages/seller/Campaign/Campaign";
-import CampaignSummary from "./pages/seller/Campaign/CampaignSummary";
+import CampaignDetail from "./pages/seller/Campaign/CampaignDetail";
 
 /* =====================================================
    NOT FOUND
@@ -437,7 +437,7 @@ export default function App() {
           path="/sellers/:seller_id/campaign/:campaign_id"
           element={
             <ProtectedRoute>
-              <CampaignSummary />
+              <CampaignDetail />
             </ProtectedRoute>
           }
         />
@@ -565,7 +565,7 @@ export default function App() {
           path="/seller/:seller_id/campaign/:campaign_id"
           element={
             <ProtectedRoute>
-              <CampaignSummary />
+              <CampaignDetail />
             </ProtectedRoute>
           }
         />

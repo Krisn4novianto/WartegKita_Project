@@ -57,7 +57,7 @@ api.interceptors.request.use(
     // =================================================
 
     console.log(
-      "➡️ API REQUEST:",
+      "[API REQUEST]",
       config.method?.toUpperCase(),
       `${config.baseURL ?? ""}${config.url ?? ""}`,
     );
@@ -67,7 +67,7 @@ api.interceptors.request.use(
 
   (error) => {
     console.error(
-      "❌ API REQUEST ERROR:",
+      "[API REQUEST ERROR]",
       error,
     );
 
@@ -83,7 +83,7 @@ api.interceptors.response.use(
   (response) => {
 
     console.log(
-      "✅ API RESPONSE:",
+      "[API RESPONSE]",
       response.status,
       response.config.url,
       response.data,
@@ -95,7 +95,7 @@ api.interceptors.response.use(
   (error) => {
 
     console.error(
-      "❌ API RESPONSE ERROR:",
+      "[API RESPONSE ERROR]",
       {
         status:
           error?.response?.status,

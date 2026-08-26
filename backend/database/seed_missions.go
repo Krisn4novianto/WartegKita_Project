@@ -28,7 +28,7 @@ func SeedMissions() {
 
 	if DB == nil {
 		log.Println(
-			"⚠️ Database belum tersedia, pengecekan missions dilewati",
+			"[WARN] Database belum tersedia, pengecekan missions dilewati",
 		)
 
 		return
@@ -46,7 +46,7 @@ func SeedMissions() {
 		Error; err != nil {
 
 		log.Println(
-			"⚠️ Gagal mengecek missions:",
+			"[WARN] Gagal mengecek missions:",
 			err,
 		)
 
@@ -60,7 +60,7 @@ func SeedMissions() {
 	if count == 0 {
 
 		log.Println(
-			"ℹ️ Belum ada mission di database",
+			"[INFO] Belum ada mission di database",
 		)
 
 		return
@@ -71,7 +71,7 @@ func SeedMissions() {
 	// =================================================
 
 	fmt.Printf(
-		"✅ Missions tersedia di database (%d data)\n",
+		"Missions tersedia di database (%d data)\n",
 		count,
 	)
 }

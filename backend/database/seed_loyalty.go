@@ -31,7 +31,7 @@ func SeedLoyaltyRewards(db *gorm.DB) error {
 
 	if db == nil {
 		log.Println(
-			"⚠️ Database belum tersedia, pengecekan rewards dilewati",
+			"[WARN] Database belum tersedia, pengecekan rewards dilewati",
 		)
 
 		return nil
@@ -57,7 +57,7 @@ func SeedLoyaltyRewards(db *gorm.DB) error {
 
 	if count == 0 {
 		log.Println(
-			"ℹ️ Belum ada reward di database",
+			"[INFO] Belum ada reward di database",
 		)
 
 		return nil
@@ -68,7 +68,7 @@ func SeedLoyaltyRewards(db *gorm.DB) error {
 	// =================================================
 
 	fmt.Printf(
-		"✅ Rewards tersedia di database (%d data)\n",
+		"Rewards tersedia di database (%d data)\n",
 		count,
 	)
 

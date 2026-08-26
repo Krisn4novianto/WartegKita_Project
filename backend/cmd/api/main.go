@@ -27,7 +27,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/krisn4novianto/wartegkita/backend/database"
-	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
 
 	_ "github.com/krisn4novianto/wartegkita/backend/docs"
 
@@ -42,7 +41,7 @@ func main() {
 
 	if err := godotenv.Load(); err != nil {
 		log.Println(
-			"⚠️ .env tidak ditemukan, menggunakan environment variable",
+			"[WARN] .env tidak ditemukan, menggunakan environment variable",
 		)
 	}
 
@@ -51,12 +50,6 @@ func main() {
 	// =====================================================
 
 	database.Connect()
-
-	// =====================================================
-	// SELLER PROFILE TABLE
-	// =====================================================
-
-	sellerdb.CreateSellerProfileTable()
 
 	// =====================================================
 	// CHAT TABLE
@@ -170,12 +163,12 @@ func main() {
 	// =====================================================
 
 	log.Println(
-		"🚀 WartegKita API running on :" + port,
+		"WartegKita API running on :" + port,
 	)
 
 	if err := router.Run(":" + port); err != nil {
 		log.Fatal(
-			"❌ Gagal menjalankan server:",
+			"Gagal menjalankan server:",
 			err,
 		)
 	}

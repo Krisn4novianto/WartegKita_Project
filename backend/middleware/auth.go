@@ -220,7 +220,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			// Tidak mengembalikan detail token ke frontend.
 
 			println(
-				"❌ JWT VALIDATION ERROR:",
+				"[ERROR] JWT VALIDATION ERROR:",
 				err.Error(),
 			)
 

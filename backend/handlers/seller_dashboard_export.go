@@ -9,7 +9,7 @@ import (
 	"github.com/xuri/excelize/v2"
 	"gorm.io/gorm"
 
-	sellerdb "WartegKita/backend/database/seller"
+	sellerdb "github.com/krisn4novianto/wartegkita/backend/database/seller"
 )
 
 type SellerDashboardExportHandler struct {
@@ -288,7 +288,7 @@ func (h *SellerDashboardExportHandler) ExportPurchases(
 			"A1:L%d",
 			len(purchases)+1,
 		),
-		[]string{},
+		[]excelize.AutoFilterOptions{},
 	)
 
 	/* =================================================

@@ -46,12 +46,19 @@ export interface UserAddress {
 export interface Seller {
   id: string | number;
   store_name: string;
+  name?: string;
   description: string;
   address: string;
+  alamat?: string;
+  city?: string;
+  city_name?: string;
   is_open: boolean;
+  isOpen?: boolean;
   rating?: number;
+  review_count?: number;
   distance_km?: number;
   image?: string;
+  image_url?: string;
 }
 
 /* =====================================================

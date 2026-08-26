@@ -1108,12 +1108,12 @@ export default function MenuPage() {
 
 
                                 <option value="Tersedia">
-                                    ✅ Tersedia
+                                    Tersedia
                                 </option>
 
 
                                 <option value="Habis">
-                                    ❌ Habis
+                                    Habis
                                 </option>
 
 
@@ -1869,12 +1869,12 @@ export default function MenuPage() {
                                             >
 
                                                 <option value="true">
-                                                    ✅ Menu tersedia
+                                                    Menu tersedia
                                                 </option>
 
 
                                                 <option value="false">
-                                                    ❌ Menu habis
+                                                    Menu habis
                                                 </option>
 
 

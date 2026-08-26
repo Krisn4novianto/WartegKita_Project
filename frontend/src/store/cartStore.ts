@@ -435,22 +435,22 @@ export const useCartStore =
         Jadi perilakunya:
 
         Pindah halaman:
-        ✅ cart tetap ada
+        - cart tetap ada
 
         React route berubah:
-        ✅ cart tetap ada
+        - cart tetap ada
 
         Checkout:
-        ✅ cart tetap ada
+        - cart tetap ada
 
         Payment:
-        ✅ cart tetap ada sampai di-clear
+        - cart tetap ada sampai di-clear
 
         Refresh/F5:
-        ❌ cart hilang
+        - cart hilang
 
         Tutup browser:
-        ❌ cart hilang
+        - cart hilang
 
         Ini memang behavior yang kita inginkan.
       */

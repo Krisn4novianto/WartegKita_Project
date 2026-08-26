@@ -155,6 +155,10 @@ interface OrderDetailModalProps {
     getPaymentLabel: (
         method: string
     ) => string;
+
+    getItemNote?: (
+        item: OrderItem
+    ) => string;
 }
 
 /* =====================================================

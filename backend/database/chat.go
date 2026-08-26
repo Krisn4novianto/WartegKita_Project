@@ -14,7 +14,7 @@ func CreateChatTables() {
 
 	if DB == nil {
 		log.Println(
-			"❌ Database belum terhubung.",
+			"[ERROR] Database belum terhubung.",
 		)
 
 		return
@@ -29,7 +29,7 @@ func CreateChatTables() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuat tabel chat_rooms:",
+			"Gagal membuat tabel chat_rooms:",
 			err,
 		)
 	}
@@ -43,12 +43,12 @@ func CreateChatTables() {
 	); err != nil {
 
 		log.Fatal(
-			"❌ Gagal membuat tabel bubble_chats:",
+			"Gagal membuat tabel bubble_chats:",
 			err,
 		)
 	}
 
 	log.Println(
-		"✅ Chat tables berhasil dibuat / diverifikasi.",
+		"Chat tables berhasil dibuat / diverifikasi.",
 	)
 }

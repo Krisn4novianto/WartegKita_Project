@@ -99,7 +99,7 @@ interface OrderItem {
   [key: string]: any;
 }
 
-interface NormalizedOrder extends Partial<Order> {
+interface NormalizedOrder extends Omit<Partial<Order>, "status" | "items"> {
   id: string;
   order_number: string;
 

@@ -25,10 +25,10 @@ import {
 
 import Swal from "sweetalert2";
 
-import SellerNavbar from "../../../components/SellerNavbar";
+import SellerNavbar from "../SellerNavbar";
 import api from "../../../services/api";
 
-import "./CampaignDetail.css";
+import "../../../styles/seller/Campaign/CampaignDetail.css";
 
 /* =====================================================
    TYPES
