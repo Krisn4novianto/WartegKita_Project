@@ -18,8 +18,19 @@ import (
 ===================================================== */
 
 type CreateOrderItemRequest struct {
-	MenuID   string `json:"menu_id" binding:"required"`
-	Quantity int    `json:"quantity" binding:"required,min=1"`
+	MenuID string `json:"menu_id" binding:"required"`
+
+	Quantity int `json:"quantity" binding:"required,min=1"`
+
+	/*
+			Catatan khusus untuk menu.
+
+		Contoh:
+		"Es teh gak pake gula!"
+		"Jangan pakai sambal"
+		"Sambal dipisah"
+	*/
+	Note string `json:"note"`
 }
 
 type CreateOrderRequest struct {
@@ -108,7 +119,10 @@ func CreateOrder(c *gin.Context) {
 	   SELLER UUID
 	================================================= */
 
-	req.SellerID = strings.TrimSpace(req.SellerID)
+	req.SellerID =
+		strings.TrimSpace(
+			req.SellerID,
+		)
 
 	if _, err := uuid.Parse(req.SellerID); err != nil {
 
@@ -127,14 +141,19 @@ func CreateOrder(c *gin.Context) {
 	   PAYMENT METHOD
 	================================================= */
 
-	paymentMethod := strings.ToLower(
-		strings.TrimSpace(req.PaymentMethod),
-	)
+	paymentMethod :=
+		strings.ToLower(
+			strings.TrimSpace(
+				req.PaymentMethod,
+			),
+		)
 
 	switch paymentMethod {
 
 	case models.PaymentMethodQRIS:
+
 	case models.PaymentMethodBankTransfer:
+
 	case models.PaymentMethodVirtualAccount:
 
 	default:
@@ -195,7 +214,10 @@ func CreateOrder(c *gin.Context) {
 	var seller models.SellerProfile
 
 	if err := tx.
-		Where("seller_id = ?", req.SellerID).
+		Where(
+			"seller_id = ?",
+			req.SellerID,
+		).
 		First(&seller).
 		Error; err != nil {
 
@@ -217,40 +239,47 @@ func CreateOrder(c *gin.Context) {
 	   CREATE ORDER ID
 	================================================= */
 
-	orderID := uuid.New().String()
+	orderID :=
+		uuid.New().String()
 
 	/* =================================================
 	   ORDER NUMBER
 	================================================= */
 
-	orderNumber := fmt.Sprintf(
-		"ORD-%s-%s",
-		time.Now().Format("20060102150405"),
-		strings.ToUpper(
-			strings.ReplaceAll(
-				orderID[:8],
-				"-",
-				"",
+	orderNumber :=
+		fmt.Sprintf(
+			"ORD-%s-%s",
+			time.Now().Format(
+				"20060102150405",
 			),
-		),
-	)
+			strings.ToUpper(
+				strings.ReplaceAll(
+					orderID[:8],
+					"-",
+					"",
+				),
+			),
+		)
 
 	/* =================================================
 	   CREATE ORDER
 	================================================= */
 
-	order := models.Order{
-		ID:            orderID,
-		OrderNumber:   orderNumber,
-		UserID:        userID,
-		SellerID:      req.SellerID,
-		Status:        models.OrderStatusWaitingConfirmation,
-		PaymentStatus: models.PaymentStatusPending,
-		PaymentMethod: paymentMethod,
-		TotalAmount:   0,
-	}
+	order :=
+		models.Order{
+			ID:            orderID,
+			OrderNumber:   orderNumber,
+			UserID:        userID,
+			SellerID:      req.SellerID,
+			Status:        models.OrderStatusWaitingConfirmation,
+			PaymentStatus: models.PaymentStatusPending,
+			PaymentMethod: paymentMethod,
+			TotalAmount:   0,
+		}
 
-	if err := tx.Create(&order).Error; err != nil {
+	if err := tx.
+		Create(&order).
+		Error; err != nil {
 
 		tx.Rollback()
 
@@ -274,7 +303,14 @@ func CreateOrder(c *gin.Context) {
 
 	for _, item := range req.Items {
 
-		menuID := strings.TrimSpace(item.MenuID)
+		/* =============================================
+		   MENU ID
+		============================================= */
+
+		menuID :=
+			strings.TrimSpace(
+				item.MenuID,
+			)
 
 		if _, err := uuid.Parse(menuID); err != nil {
 
@@ -292,6 +328,10 @@ func CreateOrder(c *gin.Context) {
 			return
 		}
 
+		/* =============================================
+		   QUANTITY
+		============================================= */
+
 		if item.Quantity <= 0 {
 
 			tx.Rollback()
@@ -301,6 +341,35 @@ func CreateOrder(c *gin.Context) {
 				gin.H{
 					"success": false,
 					"message": "Quantity menu harus lebih dari 0",
+				},
+			)
+
+			return
+		}
+
+		/* =============================================
+		   NOTE
+		============================================= */
+
+		note :=
+			strings.TrimSpace(
+				item.Note,
+			)
+
+		/*
+			Maksimal 200 karakter.
+			Sama seperti validasi di frontend.
+		*/
+		if len(note) > 200 {
+
+			tx.Rollback()
+
+			c.JSON(
+				http.StatusBadRequest,
+				gin.H{
+					"success": false,
+					"message": "Catatan menu terlalu panjang",
+					"details": "Catatan menu maksimal 200 karakter",
 				},
 			)
 
@@ -340,27 +409,65 @@ func CreateOrder(c *gin.Context) {
 		   PRICE
 		============================================= */
 
-		price := float64(menu.Price)
+		price :=
+			float64(
+				menu.Price,
+			)
 
 		itemTotal :=
-			price * float64(item.Quantity)
+			price *
+				float64(
+					item.Quantity,
+				)
 
-		totalAmount += itemTotal
+		totalAmount +=
+			itemTotal
 
 		/* =============================================
 		   ORDER ITEM
 		============================================= */
 
-		orderItem := models.OrderItem{
-			ID:       uuid.New().String(),
-			OrderID:  order.ID,
-			MenuID:   menuID,
-			MenuName: menu.Name,
-			Quantity: item.Quantity,
-			Price:    price,
-		}
+		orderItem :=
+			models.OrderItem{
+				ID: uuid.New().String(),
 
-		if err := tx.Create(&orderItem).Error; err != nil {
+				OrderID: order.ID,
+
+				MenuID: menuID,
+
+				MenuName: menu.Name,
+
+				Quantity: item.Quantity,
+
+				Price: price,
+
+				/*
+					INILAH BAGIAN PENTING.
+
+					Catatan dari customer sekarang
+					benar-benar disimpan ke order_items.note.
+				*/
+				Note: note,
+			}
+
+		/* =============================================
+		   DEBUG NOTE
+		============================================= */
+
+		fmt.Printf(
+			"[CREATE ORDER] menu=%s quantity=%d note=%q\n",
+			menu.Name,
+			item.Quantity,
+			note,
+		)
+
+		/* =============================================
+		   SAVE ORDER ITEM
+		============================================= */
+
+		if err := tx.
+			Create(&orderItem).
+			Error; err != nil {
 
 			tx.Rollback()
 
@@ -383,7 +490,10 @@ func CreateOrder(c *gin.Context) {
 
 	if err := tx.
 		Model(&order).
-		Update("total_amount", totalAmount).
+		Update(
+			"total_amount",
+			totalAmount,
+		).
 		Error; err != nil {
 
 		tx.Rollback()
@@ -404,7 +514,9 @@ func CreateOrder(c *gin.Context) {
 	   COMMIT
 	================================================= */
 
-	if err := tx.Commit().Error; err != nil {
+	if err := tx.
+		Commit().
+		Error; err != nil {
 
 		c.JSON(
 			http.StatusInternalServerError,
@@ -424,7 +536,10 @@ func CreateOrder(c *gin.Context) {
 
 	if err := database.DB.
 		Preload("Items").
-		Where("id = ?", order.ID).
+		Where(
+			"id = ?",
+			order.ID,
+		).
 		First(&order).
 		Error; err != nil {
 

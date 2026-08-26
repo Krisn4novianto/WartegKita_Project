@@ -34,6 +34,22 @@ type PayOrderRequest struct {
 //     "payment_method": "qris"
 // }
 //
+// Flow:
+//
+// CUSTOMER
+//    ↓
+// Payment.tsx
+//    ↓
+// PUT /orders/:order_id/pay
+//    ↓
+// PayOrder()
+//    ↓
+// payment_status = PAID
+//    ↓
+// order status TETAP
+//    ↓
+// Seller menerima order
+//
 // =====================================================
 
 func PayOrder(c *gin.Context) {
@@ -139,6 +155,19 @@ func PayOrder(c *gin.Context) {
 	// =================================================
 	// 5. NORMALIZE PAYMENT METHOD
 	// =================================================
+	//
+	// 🔧 DIUBAH:
+	//
+	// Payment.tsx bisa mengirim:
+	//
+	// qris
+	// bank_transfer
+	// virtual_account
+	//
+	// Backend kita normalisasi supaya format
+	// yang disimpan di database selalu konsisten.
+	//
+	// =================================================
 
 	paymentMethod := normalizePaymentMethod(
 		request.PaymentMethod,
@@ -215,6 +244,16 @@ func PayOrder(c *gin.Context) {
 	// =================================================
 	// 8. VERIFY ORDER OWNER
 	// =================================================
+	//
+	// 🔧 DIPERTAHANKAN:
+	//
+	// Customer hanya boleh membayar order miliknya.
+	//
+	// Jangan sampai customer A bisa memanggil:
+	//
+	// PUT /orders/{order-customer-B}/pay
+	//
+	// =================================================
 
 	orderUserID := strings.TrimSpace(
 		order.UserID,
@@ -252,9 +291,21 @@ func PayOrder(c *gin.Context) {
 		),
 	)
 
-	// -------------------------------------------------
-	// Already paid
-	// -------------------------------------------------
+	// =================================================
+	// 9A. ALREADY PAID
+	// =================================================
+	//
+	// 🔧 DIPERBAIKI:
+	//
+	// Kalau frontend melakukan request dua kali,
+	// jangan melakukan pembayaran ulang.
+	//
+	// HTTP 409 = Conflict.
+	//
+	// Payment.tsx kamu sudah menangani 409 dengan
+	// reload order.
+	//
+	// =================================================
 
 	if currentPaymentStatus == models.PaymentStatusPaid ||
 		currentPaymentStatus == "SUCCESS" {
@@ -270,11 +321,12 @@ func PayOrder(c *gin.Context) {
 		return
 	}
 
-	// -------------------------------------------------
-	// Failed payment
-	// -------------------------------------------------
+	// =================================================
+	// 9B. FAILED PAYMENT
+	// =================================================
 
 	if currentPaymentStatus == models.PaymentStatusFailed {
+
 		c.JSON(
 			http.StatusConflict,
 			gin.H{
@@ -286,9 +338,9 @@ func PayOrder(c *gin.Context) {
 		return
 	}
 
-	// -------------------------------------------------
-	// Cancelled payment
-	// -------------------------------------------------
+	// =================================================
+	// 9C. CANCELLED PAYMENT
+	// =================================================
 
 	if currentPaymentStatus == "CANCELLED" ||
 		currentPaymentStatus == "CANCELED" {
@@ -307,6 +359,12 @@ func PayOrder(c *gin.Context) {
 	// =================================================
 	// 10. CHECK ORDER STATUS
 	// =================================================
+	//
+	// 🔧 DIPERTAHANKAN:
+	//
+	// Order yang sudah dibatalkan tidak boleh dibayar.
+	//
+	// =================================================
 
 	currentOrderStatus := strings.ToUpper(
 		strings.TrimSpace(
@@ -314,7 +372,10 @@ func PayOrder(c *gin.Context) {
 		),
 	)
 
-	if currentOrderStatus == models.OrderStatusCancelled {
+	if currentOrderStatus == strings.ToUpper(
+		models.OrderStatusCancelled,
+	) {
+
 		c.JSON(
 			http.StatusConflict,
 			gin.H{
@@ -329,24 +390,128 @@ func PayOrder(c *gin.Context) {
 	// =================================================
 	// 11. UPDATE PAYMENT
 	// =================================================
+	//
+	// 🔧 BAGIAN PALING PENTING
+	//
+	// HANYA update:
+	//
+	// payment_method
+	// payment_status
+	//
+	// JANGAN mengubah:
+	//
+	// order.Status
+	//
+	// Karena pembayaran berhasil bukan berarti
+	// pesanan sudah selesai.
+	//
+	// Flow:
+	//
+	// payment_status = PAID
+	//
+	// order.Status = status sebelumnya
+	//
+	// Contoh:
+	//
+	// payment_status = PAID
+	// order.Status    = WAITING_CONFIRMATION
+	//
+	// Seller kemudian yang memproses order.
+	//
+	// =================================================
 
 	order.PaymentMethod = paymentMethod
 
-	// PENTING:
-	// Database harus menyimpan "PAID",
-	// bukan "paid".
+	// Database menyimpan status pembayaran
+	// dalam format constant dari models.
 	order.PaymentStatus = models.PaymentStatusPaid
 
 	// =================================================
 	// 12. SAVE
 	// =================================================
+	//
+	// 🔧 DIPERBAIKI:
+	//
+	// Kita menggunakan Updates hanya untuk field
+	// pembayaran.
+	//
+	// Ini lebih aman daripada:
+	//
+	// db.Save(&order)
+	//
+	// karena Save() menyimpan seluruh object Order.
+	//
+	// Dengan Updates(), field order lainnya tidak
+	// ikut berubah secara tidak sengaja.
+	//
+	// =================================================
 
-	if err := db.Save(&order).Error; err != nil {
+	result := db.
+		Model(&models.Order{}).
+		Where("id = ?", orderID).
+		Updates(map[string]interface{}{
+			"payment_method": paymentMethod,
+			"payment_status": models.PaymentStatusPaid,
+		})
+
+	if result.Error != nil {
+
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
 				"success": false,
 				"error":   "Gagal menyimpan pembayaran.",
+				"details": result.Error.Error(),
+			},
+		)
+		return
+	}
+
+	// =================================================
+	// 12A. VERIFY UPDATE
+	// =================================================
+	//
+	// 🔧 DITAMBAHKAN:
+	//
+	// Pastikan benar-benar ada row yang berubah.
+	//
+	// =================================================
+
+	if result.RowsAffected == 0 {
+
+		c.JSON(
+			http.StatusNotFound,
+			gin.H{
+				"success": false,
+				"error":   "Pesanan gagal diperbarui.",
+			},
+		)
+		return
+	}
+
+	// =================================================
+	// 12B. RELOAD ORDER
+	// =================================================
+	//
+	// 🔧 DITAMBAHKAN:
+	//
+	// Setelah UPDATE, ambil ulang order dari database.
+	//
+	// Jadi response ke Payment.tsx benar-benar
+	// menggunakan data terbaru.
+	//
+	// =================================================
+
+	if err := db.
+		Where("id = ?", orderID).
+		First(&order).
+		Error; err != nil {
+
+		c.JSON(
+			http.StatusInternalServerError,
+			gin.H{
+				"success": false,
+				"error":   "Pembayaran berhasil disimpan, tetapi data pesanan gagal dimuat ulang.",
 				"details": err.Error(),
 			},
 		)
@@ -355,6 +520,21 @@ func PayOrder(c *gin.Context) {
 
 	// =================================================
 	// 13. RESPONSE
+	// =================================================
+	//
+	// Response:
+	//
+	// {
+	//     "success": true,
+	//     "message": "Pembayaran berhasil diproses.",
+	//     "order": {
+	//         ...
+	//         "payment_status": "PAID"
+	//     }
+	// }
+	//
+	// Payment.tsx bisa mengambil order terbaru.
+	//
 	// =================================================
 
 	c.JSON(
@@ -369,6 +549,26 @@ func PayOrder(c *gin.Context) {
 
 // =====================================================
 // NORMALIZE PAYMENT METHOD
+// =====================================================
+//
+// Menerima:
+//
+// qris
+// QRIS
+//
+// bank_transfer
+// bank-transfer
+// bank transfer
+// transfer_bank
+// transfer bank
+// banktransfer
+//
+// virtual_account
+// virtual-account
+// virtual account
+// virtualaccount
+// va
+//
 // =====================================================
 
 func normalizePaymentMethod(
@@ -388,6 +588,7 @@ func normalizePaymentMethod(
 	switch normalized {
 
 	case models.PaymentMethodQRIS:
+
 		return models.PaymentMethodQRIS
 
 	case models.PaymentMethodBankTransfer,
@@ -406,18 +607,22 @@ func normalizePaymentMethod(
 		return models.PaymentMethodVirtualAccount
 
 	default:
+
 		return ""
 	}
 }
 
 // =====================================================
 // STRING HELPER
+// =====================================================
 //
 // Bisa menerima:
+//
 // - string
 // - uuid.UUID
-// - pointer uuid.UUID
+// - *uuid.UUID
 // - nil
+//
 // =====================================================
 
 func toString(
@@ -427,9 +632,11 @@ func toString(
 	switch v := value.(type) {
 
 	case string:
-		return v
+
+		return strings.TrimSpace(v)
 
 	case uuid.UUID:
+
 		return v.String()
 
 	case *uuid.UUID:
@@ -441,6 +648,7 @@ func toString(
 		return v.String()
 
 	default:
+
 		return ""
 	}
 }

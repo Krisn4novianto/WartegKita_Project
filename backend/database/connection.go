@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
+
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -21,13 +23,27 @@ import (
 var DB *gorm.DB
 
 // =====================================================
+// UPLOAD DIRECTORY
+// =====================================================
+//
+// Semua file upload seller disimpan di:
+//
+// backend/uploads/sellers/id_card
+//
+// Folder dibuat otomatis ketika backend start.
+// =====================================================
+
+const sellerKTPUploadDir = "uploads/sellers/id_card"
+
+// =====================================================
 // ENV HELPER
 // =====================================================
 
 func getEnv(key, fallback string) string {
+
 	value, exists := os.LookupEnv(key)
 
-	if exists && value != "" {
+	if exists && strings.TrimSpace(value) != "" {
 		return value
 	}
 
@@ -39,6 +55,10 @@ func getEnv(key, fallback string) string {
 // =====================================================
 
 func Connect() {
+
+	// =================================================
+	// DATABASE CONFIG
+	// =================================================
 
 	host := getEnv(
 		"DB_HOST",
@@ -57,12 +77,32 @@ func Connect() {
 
 	password := getEnv(
 		"DB_PASSWORD",
-		"Krisn@12345",
+		"*******",
 	)
 
 	dbName := getEnv(
 		"DB_NAME",
 		"wartegkita_db",
+	)
+
+	// =================================================
+	// PREPARE UPLOAD DIRECTORY
+	// =================================================
+
+	if err := os.MkdirAll(
+		sellerKTPUploadDir,
+		0755,
+	); err != nil {
+
+		log.Fatal(
+			"❌ Gagal membuat folder upload KTP:",
+			err,
+		)
+	}
+
+	fmt.Printf(
+		"✅ Folder upload KTP siap: %s\n",
+		sellerKTPUploadDir,
 	)
 
 	// =================================================
@@ -83,13 +123,19 @@ func Connect() {
 	)
 
 	if err != nil {
+
 		log.Fatal(
 			"❌ Gagal membuka koneksi PostgreSQL:",
 			err,
 		)
 	}
 
+	// =================================================
+	// PING POSTGRES
+	// =================================================
+
 	if err := adminDB.Ping(); err != nil {
+
 		adminDB.Close()
 
 		log.Fatal(
@@ -116,6 +162,7 @@ func Connect() {
 	).Scan(&exists)
 
 	if err != nil {
+
 		adminDB.Close()
 
 		log.Fatal(
@@ -131,6 +178,7 @@ func Connect() {
 	if !exists {
 
 		if !isSafeIdentifier(dbName) {
+
 			adminDB.Close()
 
 			log.Fatal(
@@ -141,12 +189,13 @@ func Connect() {
 
 		_, err = adminDB.Exec(
 			fmt.Sprintf(
-				"CREATE DATABASE %s",
+				`CREATE DATABASE "%s"`,
 				dbName,
 			),
 		)
 
 		if err != nil {
+
 			adminDB.Close()
 
 			log.Fatalf(
@@ -161,6 +210,10 @@ func Connect() {
 			dbName,
 		)
 	}
+
+	// =================================================
+	// CLOSE ADMIN CONNECTION
+	// =================================================
 
 	adminDB.Close()
 
@@ -180,20 +233,12 @@ func Connect() {
 	DB, err = gorm.Open(
 		postgres.Open(dsnApp),
 		&gorm.Config{
-			// =================================================
-			// PENTING
-			// =================================================
-			//
-			// Jangan biarkan GORM membuat FK berdasarkan
-			// association secara otomatis.
-			//
-			// FK kita buat secara eksplisit di bawah.
-			//
 			DisableForeignKeyConstraintWhenMigrating: true,
 		},
 	)
 
 	if err != nil {
+
 		log.Fatal(
 			"❌ Gagal membuka database aplikasi dengan GORM:",
 			err,
@@ -205,33 +250,50 @@ func Connect() {
 		dbName,
 	)
 
-	// =================================================
-	// AUTO MIGRATE
-	// =================================================
-
-	// -------------------------------------------------
-	// LEVEL 0
-	// -------------------------------------------------
+	// =====================================================
+	// REPAIR DATABASE LAMA
+	// =====================================================
 	//
-	// Table utama tanpa dependency FK.
-	// -------------------------------------------------
+	// Fungsi repair hanya bekerja jika tabel sudah ada.
+	// Jadi aman dipanggil sebelum AutoMigrate.
+	// =====================================================
+
+	repairSellerProfileTimestampColumns()
+	repairSellerProfileTimeColumns()
+
+	// =====================================================
+	// LEVEL 0
+	// SELLER PROFILE
+	// =====================================================
 
 	if err := DB.AutoMigrate(
-		&models.User{},
 		&models.SellerProfile{},
-		&models.MenuCategory{},
-		&models.PasswordResetOTP{},
 	); err != nil {
 
 		log.Fatal(
-			"❌ AutoMigrate level-0 gagal:",
+			"❌ AutoMigrate seller_profiles gagal:",
 			err,
 		)
 	}
 
-	// -------------------------------------------------
+	// =====================================================
+	// SELLER VERIFICATION
+	// =====================================================
+
+	if err := DB.AutoMigrate(
+		&models.SellerVerification{},
+	); err != nil {
+
+		log.Fatal(
+			"❌ AutoMigrate seller_verifications gagal:",
+			err,
+		)
+	}
+
+	// =====================================================
 	// LEVEL 1
-	// -------------------------------------------------
+	// USER ADDRESS + MENU
+	// =====================================================
 
 	if err := DB.AutoMigrate(
 		&models.UserAddress{},
@@ -244,9 +306,10 @@ func Connect() {
 		)
 	}
 
-	// -------------------------------------------------
+	// =====================================================
 	// LEVEL 2
-	// -------------------------------------------------
+	// ORDER + SELLER PENDAPATAN + CHAT ROOM
+	// =====================================================
 
 	if err := DB.AutoMigrate(
 		&models.Order{},
@@ -260,13 +323,29 @@ func Connect() {
 		)
 	}
 
-	// -------------------------------------------------
+	// =====================================================
+	// LEVEL 2.5
+	// ORDER STATUS HISTORY
+	// =====================================================
+
+	if err := DB.AutoMigrate(
+		&models.OrderStatusHistory{},
+	); err != nil {
+
+		log.Fatal(
+			"❌ AutoMigrate order_status_histories gagal:",
+			err,
+		)
+	}
+
+	// =====================================================
 	// LEVEL 3
-	// -------------------------------------------------
+	// ORDER ITEM + BUBBLE CHAT
+	// =====================================================
 
 	if err := DB.AutoMigrate(
 		&models.OrderItem{},
-		&models.ChatMessage{},
+		&models.BubbleChat{},
 	); err != nil {
 
 		log.Fatal(
@@ -275,27 +354,152 @@ func Connect() {
 		)
 	}
 
+	// =====================================================
+	// MENU CATEGORY
+	// =====================================================
+
+	if err := DB.AutoMigrate(
+		&models.MenuCategory{},
+	); err != nil {
+
+		log.Fatal(
+			"❌ AutoMigrate menu_categories gagal:",
+			err,
+		)
+	}
+
+	// =====================================================
+	// CUSTOMER LOYALTY
+	// =====================================================
+	//
+	// Semua data loyalty berasal dari PostgreSQL.
+	//
+	// Tabel:
+	//
+	// user_loyalty_points
+	// point_transactions
+	// missions
+	// user_missions
+	// rewards
+	// reward_redemptions
+	//
+	// Mission dan Reward:
+	// - Data master Mission dimasukkan dari PostgreSQL / DBeaver
+	// - Data master Reward dimasukkan dari PostgreSQL / DBeaver
+	// - UserMission dibuat / diperbarui oleh loyalty service
+	// - PointTransaction mencatat perubahan poin
+	//
+	// =====================================================
+
+	if err := DB.AutoMigrate(
+		// -----------------------------------------------
+		// USER LOYALTY POINT
+		// -----------------------------------------------
+		&models.UserLoyaltyPoint{},
+
+		// -----------------------------------------------
+		// POINT TRANSACTION
+		// -----------------------------------------------
+		//
+		// Digunakan untuk mencatat:
+		// + poin dari mission
+		// - poin ketika redeem reward
+		//
+		&models.PointTransaction{},
+
+		// -----------------------------------------------
+		// MISSION MASTER
+		// -----------------------------------------------
+		//
+		// Data mission utama.
+		// Bisa sudah diinsert melalui DBeaver.
+		//
+		&models.Mission{},
+
+		// -----------------------------------------------
+		// USER MISSION
+		// -----------------------------------------------
+		//
+		// Progress mission masing-masing customer.
+		//
+		// Contoh:
+		//
+		// User A
+		// Mission "Pesanan Pertama"
+		// progress = 0
+		//
+		// Setelah order COMPLETED:
+		// progress = 1
+		// completed = true
+		//
+		&models.UserMission{},
+
+		// -----------------------------------------------
+		// REWARD MASTER
+		// -----------------------------------------------
+		//
+		// Data reward utama.
+		//
+		&models.Reward{},
+
+		// -----------------------------------------------
+		// REWARD REDEMPTION
+		// -----------------------------------------------
+		//
+		// Riwayat reward yang ditukar customer.
+		//
+		&models.RewardRedemption{},
+	); err != nil {
+
+		log.Fatal(
+			"❌ AutoMigrate customer loyalty gagal:",
+			err,
+		)
+	}
+
+	fmt.Println(
+		"✅ Customer loyalty tables siap",
+	)
+
+	// =====================================================
+	// CAMPAIGN WALLET
+	// =====================================================
+
+	autoMigrateCampaignWallet()
+
+	// =====================================================
+	// AUTO MIGRATE SELESAI
+	// =====================================================
+
 	fmt.Println(
 		"✅ GORM AutoMigrate selesai",
 	)
 
-	// =================================================
-	// REPAIR EXISTING DATABASE
-	// =================================================
-
-	repairSellerProfileTimeColumns()
-
-	// =================================================
-	// REPAIR FOREIGN KEYS
-	// =================================================
+	// =====================================================
+	// REPAIR / CREATE FOREIGN KEYS
+	// =====================================================
 
 	repairForeignKeys()
 
-	// =================================================
+	// =====================================================
 	// SEED
-	// =================================================
+	// =====================================================
+	//
+	// Menu category masih menggunakan seed.
+	//
+	// Mission TIDAK lagi di-seed karena data mission
+	// sudah dimasukkan langsung ke PostgreSQL.
+	//
+	// Reward juga TIDAK di-seed karena data reward
+	// akan dimasukkan langsung ke PostgreSQL.
+	//
+	// =====================================================
 
 	SeedMenuCategories()
+
+	fmt.Println(
+		"✅ Database initialization selesai",
+	)
 }
 
 // =====================================================
@@ -333,25 +537,314 @@ func isSafeIdentifier(value string) bool {
 }
 
 // =====================================================
-// REPAIR SELLER PROFILE TIME COLUMNS
+// CHECK TABLE EXISTS
 // =====================================================
-//
-// Model:
-//
-// JamBuka  string `gorm:"type:time"`
-// JamTutup string `gorm:"type:time"`
-//
-// Database lama bisa saja mempunyai:
-//
-// jam_buka  timestamptz
-// jam_tutup timestamptz
-//
-// Kita ubah menjadi:
-//
-// jam_buka  time
-// jam_tutup time
-//
-// Tanpa DROP TABLE.
+
+func tableExists(tableName string) bool {
+
+	if DB == nil {
+		return false
+	}
+
+	var exists bool
+
+	err := DB.Raw(
+		`
+		SELECT EXISTS (
+			SELECT 1
+			FROM information_schema.tables
+			WHERE table_schema = 'public'
+			  AND table_name = ?
+		)
+		`,
+		tableName,
+	).Scan(&exists).Error
+
+	if err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengecek tabel %s: %v",
+			tableName,
+			err,
+		)
+
+		return false
+	}
+
+	return exists
+}
+
+// =====================================================
+// CHECK CONSTRAINT EXISTS
+// =====================================================
+
+func constraintExists(constraintName string) bool {
+
+	if DB == nil {
+		return false
+	}
+
+	var exists bool
+
+	err := DB.Raw(
+		`
+		SELECT EXISTS (
+			SELECT 1
+			FROM information_schema.table_constraints
+			WHERE constraint_schema = 'public'
+			  AND constraint_name = ?
+		)
+		`,
+		constraintName,
+	).Scan(&exists).Error
+
+	if err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengecek constraint %s: %v",
+			constraintName,
+			err,
+		)
+
+		return false
+	}
+
+	return exists
+}
+
+// =====================================================
+// CHECK PRIMARY KEY EXISTS
+// =====================================================
+
+func primaryKeyExists(tableName string) bool {
+
+	if DB == nil {
+		return false
+	}
+
+	var exists bool
+
+	err := DB.Raw(
+		`
+		SELECT EXISTS (
+			SELECT 1
+			FROM pg_constraint c
+			INNER JOIN pg_class t
+				ON t.oid = c.conrelid
+			INNER JOIN pg_namespace n
+				ON n.oid = t.relnamespace
+			WHERE c.contype = 'p'
+			  AND n.nspname = 'public'
+			  AND t.relname = ?
+		)
+		`,
+		tableName,
+	).Scan(&exists).Error
+
+	if err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengecek primary key %s: %v",
+			tableName,
+			err,
+		)
+
+		return false
+	}
+
+	return exists
+}
+
+// =====================================================
+// REPAIR SELLER PROFILE TIMESTAMP COLUMNS
+// =====================================================
+
+func repairSellerProfileTimestampColumns() {
+
+	if DB == nil {
+		return
+	}
+
+	if !tableExists("seller_profiles") {
+		return
+	}
+
+	repairSellerProfileTimestampColumn(
+		"created_at",
+	)
+
+	repairSellerProfileTimestampColumn(
+		"updated_at",
+	)
+}
+
+// =====================================================
+// REPAIR SINGLE TIMESTAMP COLUMN
+// =====================================================
+
+func repairSellerProfileTimestampColumn(
+	columnName string,
+) {
+
+	if columnName != "created_at" &&
+		columnName != "updated_at" {
+
+		return
+	}
+
+	var dataType string
+
+	err := DB.Raw(
+		`
+		SELECT data_type
+		FROM information_schema.columns
+		WHERE table_schema = 'public'
+		  AND table_name = 'seller_profiles'
+		  AND column_name = ?
+		`,
+		columnName,
+	).Scan(&dataType).Error
+
+	if err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengecek tipe %s: %v",
+			columnName,
+			err,
+		)
+
+		return
+	}
+
+	if dataType == "" {
+		return
+	}
+
+	// =================================================
+	// SUDAH BENAR
+	// =================================================
+
+	if dataType == "timestamp with time zone" {
+		return
+	}
+
+	// =================================================
+	// TIMESTAMP WITHOUT TIME ZONE
+	// -> TIMESTAMPTZ
+	// =================================================
+
+	if dataType == "timestamp without time zone" {
+
+		err := DB.Exec(
+			fmt.Sprintf(
+				`
+				ALTER TABLE seller_profiles
+				ALTER COLUMN %s
+				TYPE timestamptz
+				USING %s AT TIME ZONE 'Asia/Jakarta'
+				`,
+				columnName,
+				columnName,
+			),
+		).Error
+
+		if err != nil {
+
+			log.Printf(
+				"⚠️ Gagal mengubah %s menjadi TIMESTAMPTZ: %v",
+				columnName,
+				err,
+			)
+
+			return
+		}
+
+		fmt.Printf(
+			"✅ Kolom %s diperbaiki menjadi TIMESTAMPTZ\n",
+			columnName,
+		)
+
+		return
+	}
+
+	// =================================================
+	// TEXT / VARCHAR
+	// -> TIMESTAMPTZ
+	// =================================================
+
+	if dataType == "text" ||
+		dataType == "character varying" ||
+		dataType == "character" {
+
+		cleanupSQL := fmt.Sprintf(
+			`
+			UPDATE seller_profiles
+			SET %s = NULL
+			WHERE
+				%s IS NOT NULL
+				AND BTRIM(%s::text) = ''
+			`,
+			columnName,
+			columnName,
+			columnName,
+		)
+
+		if err := DB.Exec(
+			cleanupSQL,
+		).Error; err != nil {
+
+			log.Printf(
+				"⚠️ Gagal membersihkan %s kosong: %v",
+				columnName,
+				err,
+			)
+		}
+
+		alterSQL := fmt.Sprintf(
+			`
+			ALTER TABLE seller_profiles
+			ALTER COLUMN %s
+			TYPE timestamptz
+			USING
+				NULLIF(
+					BTRIM(%s::text),
+					''
+				)::timestamptz
+			`,
+			columnName,
+			columnName,
+		)
+
+		if err := DB.Exec(
+			alterSQL,
+		).Error; err != nil {
+
+			log.Printf(
+				"⚠️ Gagal mengubah %s menjadi TIMESTAMPTZ: %v",
+				columnName,
+				err,
+			)
+
+			return
+		}
+
+		fmt.Printf(
+			"✅ Kolom %s diperbaiki menjadi TIMESTAMPTZ\n",
+			columnName,
+		)
+
+		return
+	}
+
+	log.Printf(
+		"⚠️ Tipe kolom %s tidak dikenali: %s",
+		columnName,
+		dataType,
+	)
+}
+
+// =====================================================
+// REPAIR SELLER PROFILE TIME COLUMNS
 // =====================================================
 
 func repairSellerProfileTimeColumns() {
@@ -360,11 +853,34 @@ func repairSellerProfileTimeColumns() {
 		return
 	}
 
-	// =================================================
-	// JAM BUKA
-	// =================================================
+	if !tableExists("seller_profiles") {
+		return
+	}
 
-	var jamBukaType string
+	repairSellerProfileTimeColumn(
+		"jam_buka",
+	)
+
+	repairSellerProfileTimeColumn(
+		"jam_tutup",
+	)
+}
+
+// =====================================================
+// REPAIR SINGLE TIME COLUMN
+// =====================================================
+
+func repairSellerProfileTimeColumn(
+	columnName string,
+) {
+
+	if columnName != "jam_buka" &&
+		columnName != "jam_tutup" {
+
+		return
+	}
+
+	var dataType string
 
 	err := DB.Raw(
 		`
@@ -372,128 +888,609 @@ func repairSellerProfileTimeColumns() {
 		FROM information_schema.columns
 		WHERE table_schema = 'public'
 		  AND table_name = 'seller_profiles'
-		  AND column_name = 'jam_buka'
+		  AND column_name = ?
 		`,
-	).Scan(&jamBukaType).Error
+		columnName,
+	).Scan(&dataType).Error
 
 	if err != nil {
+
 		log.Printf(
-			"⚠️ Gagal mengecek tipe jam_buka: %v",
+			"⚠️ Gagal mengecek tipe %s: %v",
+			columnName,
 			err,
 		)
-	} else if jamBukaType != "" && jamBukaType != "time without time zone" {
 
-		err := DB.Exec(
+		return
+	}
+
+	if dataType == "" {
+		return
+	}
+
+	// =================================================
+	// SUDAH BENAR
+	// =================================================
+
+	if dataType == "time without time zone" {
+		return
+	}
+
+	// =================================================
+	// TEXT -> TIME
+	// =================================================
+
+	if dataType == "text" ||
+		dataType == "character varying" ||
+		dataType == "character" {
+
+		cleanupSQL := fmt.Sprintf(
 			`
-			ALTER TABLE seller_profiles
-			ALTER COLUMN jam_buka
-			TYPE time
-			USING jam_buka::time
+			UPDATE seller_profiles
+			SET %s = NULL
+			WHERE
+				%s IS NOT NULL
+				AND BTRIM(%s::text) = ''
 			`,
-		).Error
+			columnName,
+			columnName,
+			columnName,
+		)
 
-		if err != nil {
+		if err := DB.Exec(
+			cleanupSQL,
+		).Error; err != nil {
+
 			log.Printf(
-				"⚠️ Gagal mengubah jam_buka menjadi TIME: %v",
+				"⚠️ Gagal membersihkan %s kosong: %v",
+				columnName,
 				err,
 			)
-		} else {
-			fmt.Println(
-				"✅ Kolom jam_buka diperbaiki menjadi TIME",
+		}
+
+		alterSQL := fmt.Sprintf(
+			`
+			ALTER TABLE seller_profiles
+			ALTER COLUMN %s
+			TYPE time
+			USING NULLIF(
+				BTRIM(%s::text),
+				''
+			)::time
+			`,
+			columnName,
+			columnName,
+		)
+
+		if err := DB.Exec(
+			alterSQL,
+		).Error; err != nil {
+
+			log.Printf(
+				"⚠️ Gagal mengubah %s menjadi TIME: %v",
+				columnName,
+				err,
+			)
+
+			return
+		}
+
+		fmt.Printf(
+			"✅ Kolom %s diperbaiki menjadi TIME\n",
+			columnName,
+		)
+
+		return
+	}
+
+	// =================================================
+	// TIMESTAMP WITHOUT TIME ZONE -> TIME
+	// =================================================
+
+	if dataType == "timestamp without time zone" {
+
+		alterSQL := fmt.Sprintf(
+			`
+			ALTER TABLE seller_profiles
+			ALTER COLUMN %s
+			TYPE time
+			USING %s::time
+			`,
+			columnName,
+			columnName,
+		)
+
+		if err := DB.Exec(
+			alterSQL,
+		).Error; err != nil {
+
+			log.Printf(
+				"⚠️ Gagal mengubah %s menjadi TIME: %v",
+				columnName,
+				err,
+			)
+
+			return
+		}
+
+		fmt.Printf(
+			"✅ Kolom %s diperbaiki menjadi TIME\n",
+			columnName,
+		)
+
+		return
+	}
+
+	// =================================================
+	// TIMESTAMPTZ -> TIME
+	// =================================================
+
+	if dataType == "timestamp with time zone" {
+
+		alterSQL := fmt.Sprintf(
+			`
+			ALTER TABLE seller_profiles
+			ALTER COLUMN %s
+			TYPE time
+			USING (%s AT TIME ZONE 'Asia/Jakarta')::time
+			`,
+			columnName,
+			columnName,
+		)
+
+		if err := DB.Exec(
+			alterSQL,
+		).Error; err != nil {
+
+			log.Printf(
+				"⚠️ Gagal mengubah %s menjadi TIME: %v",
+				columnName,
+				err,
+			)
+
+			return
+		}
+
+		fmt.Printf(
+			"✅ Kolom %s diperbaiki menjadi TIME\n",
+			columnName,
+		)
+
+		return
+	}
+
+	log.Printf(
+		"⚠️ Tipe kolom %s tidak dikenali: %s",
+		columnName,
+		dataType,
+	)
+}
+
+// =====================================================
+// AUTO MIGRATE CAMPAIGN WALLET
+// =====================================================
+
+func autoMigrateCampaignWallet() {
+
+	if DB == nil {
+
+		log.Println(
+			"⚠️ Database belum tersedia, campaign wallet migration dilewati",
+		)
+
+		return
+	}
+
+	// =================================================
+	// CREATE TABLE
+	// =================================================
+
+	createTableSQL := `
+	CREATE TABLE IF NOT EXISTS campaign_wallets (
+		id UUID PRIMARY KEY,
+		seller_id UUID NOT NULL UNIQUE,
+		balance BIGINT NOT NULL DEFAULT 0,
+		created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+	)
+	`
+
+	if err := DB.Exec(
+		createTableSQL,
+	).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal membuat campaign_wallets:",
+			err,
+		)
+	}
+
+	// =================================================
+	// ENSURE ID COLUMN
+	// =================================================
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ADD COLUMN IF NOT EXISTS id UUID
+	`).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal memastikan campaign_wallets.id:",
+			err,
+		)
+	}
+
+	// =================================================
+	// ENSURE SELLER ID COLUMN
+	// =================================================
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ADD COLUMN IF NOT EXISTS seller_id UUID
+	`).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal memastikan campaign_wallets.seller_id:",
+			err,
+		)
+	}
+
+	// =================================================
+	// ENSURE BALANCE COLUMN
+	// =================================================
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ADD COLUMN IF NOT EXISTS balance BIGINT
+	`).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal memastikan campaign_wallets.balance:",
+			err,
+		)
+	}
+
+	// =================================================
+	// REPAIR NULL BALANCE
+	// =================================================
+
+	if err := DB.Exec(`
+		UPDATE campaign_wallets
+		SET balance = 0
+		WHERE balance IS NULL
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal memperbaiki balance NULL: %v",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN balance SET DEFAULT 0
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengatur default balance: %v",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN balance SET NOT NULL
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal membuat balance NOT NULL: %v",
+			err,
+		)
+	}
+
+	// =================================================
+	// ENSURE CREATED AT
+	// =================================================
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ADD COLUMN IF NOT EXISTS created_at
+		TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	`).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal memastikan campaign_wallets.created_at:",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		UPDATE campaign_wallets
+		SET created_at = CURRENT_TIMESTAMP
+		WHERE created_at IS NULL
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal memperbaiki created_at NULL: %v",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN created_at SET DEFAULT CURRENT_TIMESTAMP
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengatur default created_at: %v",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN created_at SET NOT NULL
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal membuat created_at NOT NULL:",
+			err,
+		)
+	}
+
+	// =================================================
+	// ENSURE UPDATED AT
+	// =================================================
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ADD COLUMN IF NOT EXISTS updated_at
+		TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	`).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal memastikan campaign_wallets.updated_at:",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		UPDATE campaign_wallets
+		SET updated_at = CURRENT_TIMESTAMP
+		WHERE updated_at IS NULL
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal memperbaiki updated_at NULL: %v",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN updated_at SET DEFAULT CURRENT_TIMESTAMP
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengatur default updated_at: %v",
+			err,
+		)
+	}
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN updated_at SET NOT NULL
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal membuat updated_at NOT NULL:",
+			err,
+		)
+	}
+
+	// =================================================
+	// REPAIR NULL ID
+	// =================================================
+
+	var walletRows []struct {
+		SellerID string
+	}
+
+	if err := DB.Raw(`
+		SELECT seller_id::text
+		FROM campaign_wallets
+		WHERE id IS NULL
+	`).Scan(&walletRows).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Gagal mengambil wallet dengan ID NULL: %v",
+			err,
+		)
+
+	} else {
+
+		for _, row := range walletRows {
+
+			id := newUUID()
+
+			if err := DB.Exec(
+				`
+				UPDATE campaign_wallets
+				SET id = ?
+				WHERE seller_id = ?
+				  AND id IS NULL
+				`,
+				id,
+				row.SellerID,
+			).Error; err != nil {
+
+				log.Printf(
+					"⚠️ Gagal memperbaiki ID wallet seller %s: %v",
+					row.SellerID,
+					err,
+				)
+			}
+		}
+	}
+
+	// =================================================
+	// VERIFY NO NULL ID
+	// =================================================
+
+	var nullIDCount int64
+
+	if err := DB.Raw(`
+		SELECT COUNT(*)
+		FROM campaign_wallets
+		WHERE id IS NULL
+	`).Scan(&nullIDCount).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal mengecek campaign_wallets.id NULL:",
+			err,
+		)
+	}
+
+	if nullIDCount > 0 {
+
+		log.Fatal(
+			"❌ Masih terdapat campaign_wallets dengan id NULL",
+		)
+	}
+
+	// =================================================
+	// ID NOT NULL
+	// =================================================
+
+	if err := DB.Exec(`
+		ALTER TABLE campaign_wallets
+		ALTER COLUMN id SET NOT NULL
+	`).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal membuat campaign_wallets.id NOT NULL:",
+			err,
+		)
+	}
+
+	// =================================================
+	// ENSURE PRIMARY KEY
+	// =================================================
+
+	if !primaryKeyExists("campaign_wallets") {
+
+		if err := DB.Exec(`
+			ALTER TABLE campaign_wallets
+			ADD CONSTRAINT pk_campaign_wallets
+			PRIMARY KEY (id)
+		`).Error; err != nil {
+
+			log.Fatal(
+				"❌ Gagal membuat primary key campaign_wallets:",
+				err,
+			)
+		}
+
+		fmt.Println(
+			"✅ Primary key campaign_wallets berhasil dibuat",
+		)
+	}
+
+	// =================================================
+	// ENSURE SELLER ID NOT NULL
+	// =================================================
+
+	var nullSellerCount int64
+
+	if err := DB.Raw(`
+		SELECT COUNT(*)
+		FROM campaign_wallets
+		WHERE seller_id IS NULL
+	`).Scan(&nullSellerCount).Error; err != nil {
+
+		log.Fatal(
+			"❌ Gagal mengecek seller_id wallet:",
+			err,
+		)
+	}
+
+	if nullSellerCount > 0 {
+
+		log.Printf(
+			"⚠️ Terdapat %d campaign wallet dengan seller_id NULL",
+			nullSellerCount,
+		)
+
+		log.Println(
+			"⚠️ seller_id NOT NULL tidak diterapkan agar database lama tidak rusak",
+		)
+
+	} else {
+
+		if err := DB.Exec(`
+			ALTER TABLE campaign_wallets
+			ALTER COLUMN seller_id SET NOT NULL
+		`).Error; err != nil {
+
+			log.Printf(
+				"⚠️ Gagal membuat seller_id NOT NULL: %v",
+				err,
 			)
 		}
 	}
 
 	// =================================================
-	// JAM TUTUP
+	// UNIQUE SELLER ID
 	// =================================================
 
-	var jamTutupType string
+	if err := DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS
+		idx_campaign_wallets_seller_id
+		ON campaign_wallets (seller_id)
+	`).Error; err != nil {
 
-	err = DB.Raw(
-		`
-		SELECT data_type
-		FROM information_schema.columns
-		WHERE table_schema = 'public'
-		  AND table_name = 'seller_profiles'
-		  AND column_name = 'jam_tutup'
-		`,
-	).Scan(&jamTutupType).Error
-
-	if err != nil {
-		log.Printf(
-			"⚠️ Gagal mengecek tipe jam_tutup: %v",
+		log.Fatal(
+			"❌ Unique index campaign_wallets.seller_id gagal:",
 			err,
 		)
-	} else if jamTutupType != "" && jamTutupType != "time without time zone" {
-
-		err := DB.Exec(
-			`
-			ALTER TABLE seller_profiles
-			ALTER COLUMN jam_tutup
-			TYPE time
-			USING jam_tutup::time
-			`,
-		).Error
-
-		if err != nil {
-			log.Printf(
-				"⚠️ Gagal mengubah jam_tutup menjadi TIME: %v",
-				err,
-			)
-		} else {
-			fmt.Println(
-				"✅ Kolom jam_tutup diperbaiki menjadi TIME",
-			)
-		}
 	}
+
+	// =================================================
+	// BALANCE INDEX
+	// =================================================
+
+	if err := DB.Exec(`
+		CREATE INDEX IF NOT EXISTS
+		idx_campaign_wallets_balance
+		ON campaign_wallets (balance)
+	`).Error; err != nil {
+
+		log.Printf(
+			"⚠️ Index campaign_wallets.balance gagal: %v",
+			err,
+		)
+	}
+
+	// =================================================
+	// VERIFY TABLE
+	// =================================================
+
+	if !tableExists(
+		"campaign_wallets",
+	) {
+
+		log.Fatal(
+			"❌ campaign_wallets tidak ditemukan setelah migration",
+		)
+	}
+
+	fmt.Println(
+		"✅ campaign_wallets berhasil dibuat/diverifikasi",
+	)
 }
 
 // =====================================================
 // REPAIR FOREIGN KEYS
-// =====================================================
-//
-// RELATIONSHIP YANG BENAR:
-//
-// users.id
-//     ↓
-// user_addresses.user_id
-//
-// seller_profiles.seller_id
-//     ↑
-// menus.seller_id
-//
-// seller_profiles.seller_id
-//     ↑
-// orders.seller_id
-//
-// seller_profiles.seller_id
-//     ↑
-// seller_pendapatans.seller_id
-//
-// seller_profiles.seller_id
-//     ↑
-// chat_rooms.seller_id
-//
-// users.id
-//     ↑
-// orders.user_id
-//
-// users.id
-//     ↑
-// chat_rooms.buyer_id
-//
-// orders.id
-//     ↑
-// order_items.order_id
-//
-// menus.id
-//     ↑
-// order_items.menu_id
-//
-// chat_rooms.id
-//     ↑
-// chat_messages.chat_room_id
 // =====================================================
 
 func repairForeignKeys() {
@@ -503,76 +1500,13 @@ func repairForeignKeys() {
 	}
 
 	// =================================================
-	// DROP FK SALAH / LAMA
-	// =================================================
-
-	dropForeignKeys := []string{
-
-		// FK yang pernah salah arah:
-		//
-		// seller_profiles.seller_id
-		//        ↓
-		// menus.seller_id
-		//
-		`ALTER TABLE IF EXISTS seller_profiles
-		 DROP CONSTRAINT IF EXISTS fk_menus_seller`,
-
-		// FK benar tetapi mungkin sudah pernah dibuat
-		// dengan definisi berbeda.
-		//
-		// Kita drop supaya bisa dibuat ulang.
-		`ALTER TABLE IF EXISTS menus
-		 DROP CONSTRAINT IF EXISTS fk_menus_seller`,
-
-		`ALTER TABLE IF EXISTS user_addresses
-		 DROP CONSTRAINT IF EXISTS fk_user_addresses_user`,
-
-		`ALTER TABLE IF EXISTS password_reset_otps
-		 DROP CONSTRAINT IF EXISTS fk_password_reset_otps_user`,
-
-		`ALTER TABLE IF EXISTS orders
-		 DROP CONSTRAINT IF EXISTS fk_orders_user`,
-
-		`ALTER TABLE IF EXISTS orders
-		 DROP CONSTRAINT IF EXISTS fk_orders_seller`,
-
-		`ALTER TABLE IF EXISTS order_items
-		 DROP CONSTRAINT IF EXISTS fk_order_items_order`,
-
-		`ALTER TABLE IF EXISTS order_items
-		 DROP CONSTRAINT IF EXISTS fk_order_items_menu`,
-
-		`ALTER TABLE IF EXISTS seller_pendapatans
-		 DROP CONSTRAINT IF EXISTS fk_seller_pendapatans_seller`,
-
-		`ALTER TABLE IF EXISTS chat_rooms
-		 DROP CONSTRAINT IF EXISTS fk_chat_rooms_buyer`,
-
-		`ALTER TABLE IF EXISTS chat_rooms
-		 DROP CONSTRAINT IF EXISTS fk_chat_rooms_seller`,
-
-		`ALTER TABLE IF EXISTS chat_messages
-		 DROP CONSTRAINT IF EXISTS fk_chat_messages_room`,
-	}
-
-	for _, statement := range dropForeignKeys {
-
-		if err := DB.Exec(statement).Error; err != nil {
-
-			log.Printf(
-				"⚠️ Gagal membersihkan FK lama: %v",
-				err,
-			)
-		}
-	}
-
-	// =================================================
-	// CREATE FK
+	// FOREIGN KEY DEFINITIONS
 	// =================================================
 
 	fkStatements := []struct {
-		name string
-		sql  string
+		name   string
+		sql    string
+		tables []string
 	}{
 
 		// =================================================
@@ -589,6 +1523,11 @@ func repairForeignKeys() {
 			REFERENCES users(id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"user_addresses",
+				"users",
+			},
 		},
 
 		// =================================================
@@ -605,6 +1544,11 @@ func repairForeignKeys() {
 			REFERENCES users(id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"password_reset_otps",
+				"users",
+			},
 		},
 
 		// =================================================
@@ -621,6 +1565,11 @@ func repairForeignKeys() {
 			REFERENCES seller_profiles(seller_id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"menus",
+				"seller_profiles",
+			},
 		},
 
 		// =================================================
@@ -637,6 +1586,11 @@ func repairForeignKeys() {
 			REFERENCES users(id)
 			ON DELETE SET NULL
 			`,
+
+			tables: []string{
+				"orders",
+				"users",
+			},
 		},
 
 		// =================================================
@@ -653,6 +1607,11 @@ func repairForeignKeys() {
 			REFERENCES seller_profiles(seller_id)
 			ON DELETE SET NULL
 			`,
+
+			tables: []string{
+				"orders",
+				"seller_profiles",
+			},
 		},
 
 		// =================================================
@@ -669,6 +1628,11 @@ func repairForeignKeys() {
 			REFERENCES orders(id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"order_items",
+				"orders",
+			},
 		},
 
 		// =================================================
@@ -685,6 +1649,11 @@ func repairForeignKeys() {
 			REFERENCES menus(id)
 			ON DELETE RESTRICT
 			`,
+
+			tables: []string{
+				"order_items",
+				"menus",
+			},
 		},
 
 		// =================================================
@@ -701,6 +1670,11 @@ func repairForeignKeys() {
 			REFERENCES seller_profiles(seller_id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"seller_pendapatans",
+				"seller_profiles",
+			},
 		},
 
 		// =================================================
@@ -717,6 +1691,11 @@ func repairForeignKeys() {
 			REFERENCES users(id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"chat_rooms",
+				"users",
+			},
 		},
 
 		// =================================================
@@ -733,32 +1712,277 @@ func repairForeignKeys() {
 			REFERENCES seller_profiles(seller_id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"chat_rooms",
+				"seller_profiles",
+			},
 		},
 
 		// =================================================
-		// CHAT MESSAGE → CHAT ROOM
+		// BUBBLE CHAT → CHAT ROOM
 		// =================================================
 
 		{
-			name: "fk_chat_messages_room",
+			name: "fk_bubble_chats_room",
 
 			sql: `
-			ALTER TABLE chat_messages
-			ADD CONSTRAINT fk_chat_messages_room
+			ALTER TABLE bubble_chats
+			ADD CONSTRAINT fk_bubble_chats_room
 			FOREIGN KEY (chat_room_id)
 			REFERENCES chat_rooms(id)
 			ON DELETE CASCADE
 			`,
+
+			tables: []string{
+				"bubble_chats",
+				"chat_rooms",
+			},
+		},
+
+		// =================================================
+		// CAMPAIGN PACKAGE → CAMPAIGN
+		// =================================================
+
+		{
+			name: "fk_campaign_packages_campaign",
+
+			sql: `
+			ALTER TABLE campaign_packages
+			ADD CONSTRAINT fk_campaign_packages_campaign
+			FOREIGN KEY (campaign_id)
+			REFERENCES campaigns(id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"campaign_packages",
+				"campaigns",
+			},
+		},
+
+		// =================================================
+		// SELLER CAMPAIGN → SELLER
+		// =================================================
+
+		{
+			name: "fk_seller_campaigns_seller",
+
+			sql: `
+			ALTER TABLE seller_campaigns
+			ADD CONSTRAINT fk_seller_campaigns_seller
+			FOREIGN KEY (seller_id)
+			REFERENCES seller_profiles(seller_id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"seller_campaigns",
+				"seller_profiles",
+			},
+		},
+
+		// =================================================
+		// SELLER CAMPAIGN → CAMPAIGN
+		// =================================================
+
+		{
+			name: "fk_seller_campaigns_campaign",
+
+			sql: `
+			ALTER TABLE seller_campaigns
+			ADD CONSTRAINT fk_seller_campaigns_campaign
+			FOREIGN KEY (campaign_id)
+			REFERENCES campaigns(id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"seller_campaigns",
+				"campaigns",
+			},
+		},
+
+		// =================================================
+		// SELLER CAMPAIGN → PACKAGE
+		// =================================================
+
+		{
+			name: "fk_seller_campaigns_package",
+
+			sql: `
+			ALTER TABLE seller_campaigns
+			ADD CONSTRAINT fk_seller_campaigns_package
+			FOREIGN KEY (package_id)
+			REFERENCES campaign_packages(id)
+			ON DELETE RESTRICT
+			`,
+
+			tables: []string{
+				"seller_campaigns",
+				"campaigns",
+				"campaign_packages",
+			},
+		},
+
+		// =================================================
+		// CAMPAIGN WALLET → SELLER
+		// =================================================
+
+		{
+			name: "fk_campaign_wallets_seller",
+
+			sql: `
+			ALTER TABLE campaign_wallets
+			ADD CONSTRAINT fk_campaign_wallets_seller
+			FOREIGN KEY (seller_id)
+			REFERENCES seller_profiles(seller_id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"campaign_wallets",
+				"seller_profiles",
+			},
+		},
+
+		// =================================================
+		// SELLER VERIFICATION → SELLER PROFILE
+		// =================================================
+
+		{
+			name: "fk_seller_verifications_seller",
+
+			sql: `
+			ALTER TABLE seller_verifications
+			ADD CONSTRAINT fk_seller_verifications_seller
+			FOREIGN KEY (seller_id)
+			REFERENCES seller_profiles(seller_id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"seller_verifications",
+				"seller_profiles",
+			},
+		},
+
+		// =================================================
+		// LOYALTY POINT → USER
+		// =================================================
+
+		{
+			name: "fk_user_loyalty_points_user",
+
+			sql: `
+			ALTER TABLE user_loyalty_points
+			ADD CONSTRAINT fk_user_loyalty_points_user
+			FOREIGN KEY (user_id)
+			REFERENCES users(id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"user_loyalty_points",
+				"users",
+			},
+		},
+
+		// =================================================
+		// REWARD REDEMPTION → USER
+		// =================================================
+
+		{
+			name: "fk_reward_redemptions_user",
+
+			sql: `
+			ALTER TABLE reward_redemptions
+			ADD CONSTRAINT fk_reward_redemptions_user
+			FOREIGN KEY (user_id)
+			REFERENCES users(id)
+			ON DELETE CASCADE
+			`,
+
+			tables: []string{
+				"reward_redemptions",
+				"users",
+			},
+		},
+
+		// =================================================
+		// REWARD REDEMPTION → REWARD
+		// =================================================
+
+		{
+			name: "fk_reward_redemptions_reward",
+
+			sql: `
+			ALTER TABLE reward_redemptions
+			ADD CONSTRAINT fk_reward_redemptions_reward
+			FOREIGN KEY (reward_id)
+			REFERENCES rewards(id)
+			ON DELETE RESTRICT
+			`,
+
+			tables: []string{
+				"reward_redemptions",
+				"rewards",
+			},
 		},
 	}
 
 	// =================================================
-	// EXECUTE FK
+	// EXECUTE FOREIGN KEYS
 	// =================================================
 
 	for _, stmt := range fkStatements {
 
-		if err := DB.Exec(stmt.sql).Error; err != nil {
+		// -------------------------------------------------
+		// FK SUDAH ADA
+		// -------------------------------------------------
+
+		if constraintExists(stmt.name) {
+
+			fmt.Printf(
+				"✅ Foreign key sudah ada: %s\n",
+				stmt.name,
+			)
+
+			continue
+		}
+
+		// -------------------------------------------------
+		// CEK SEMUA TABLE
+		// -------------------------------------------------
+
+		allTablesExist := true
+
+		for _, tableName := range stmt.tables {
+
+			if !tableExists(tableName) {
+
+				allTablesExist = false
+				break
+			}
+		}
+
+		if !allTablesExist {
+
+			log.Printf(
+				"⚠️ FK %s dilewati karena tabel dependency belum tersedia",
+				stmt.name,
+			)
+
+			continue
+		}
+
+		// -------------------------------------------------
+		// CREATE FK
+		// -------------------------------------------------
+
+		if err := DB.Exec(
+			stmt.sql,
+		).Error; err != nil {
 
 			log.Printf(
 				"⚠️ Gagal membuat FK %s: %v",
@@ -770,7 +1994,7 @@ func repairForeignKeys() {
 		}
 
 		fmt.Printf(
-			"✅ Foreign key verified/created: %s\n",
+			"✅ Foreign key created: %s\n",
 			stmt.name,
 		)
 	}
@@ -806,6 +2030,10 @@ func SeedMenuCategories() {
 		return
 	}
 
+	// =================================================
+	// CHECK EXISTING DATA
+	// =================================================
+
 	var count int64
 
 	if err := DB.
@@ -821,10 +2049,17 @@ func SeedMenuCategories() {
 		return
 	}
 
-	// Sudah ada data.
+	// =================================================
+	// SUDAH ADA
+	// =================================================
+
 	if count > 0 {
 		return
 	}
+
+	// =================================================
+	// DEFAULT CATEGORIES
+	// =================================================
 
 	categories := []models.MenuCategory{
 
@@ -863,6 +2098,10 @@ func SeedMenuCategories() {
 			IsActive: true,
 		},
 	}
+
+	// =================================================
+	// INSERT
+	// =================================================
 
 	if err := DB.
 		Create(&categories).

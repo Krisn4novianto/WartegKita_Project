@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -8,8 +10,24 @@ import (
 // =====================================================
 // SELLER PROFILE
 // =====================================================
+//
+// Tabel:
+// seller_profiles
+//
+// Menyimpan:
+// - identitas warteg
+// - identitas pemilik
+// - dokumen KTP
+// - kontak
+// - alamat
+// - jam operasional
+// - lokasi
+// - rekening
+//
+// =====================================================
 
 type SellerProfile struct {
+
 	// =================================================
 	// PRIMARY KEY
 	// =================================================
@@ -22,21 +40,48 @@ type SellerProfile struct {
 
 	SellerID string `json:"seller_id" gorm:"column:seller_id;type:uuid;uniqueIndex;not null"`
 
-	UserID string `json:"user_id" gorm:"column:user_id;type:uuid"`
+	UserID string `json:"user_id" gorm:"column:user_id;type:uuid;index"`
 
 	// =================================================
-	// PROFILE
+	// BUSINESS PROFILE
 	// =================================================
 
-	NamaWarteg string `json:"nama_warteg" gorm:"column:nama_warteg"`
+	NamaWarteg string `json:"nama_warteg" gorm:"column:nama_warteg;size:150"`
 
-	NamaPemilik string `json:"nama_pemilik" gorm:"column:nama_pemilik"`
+	NamaPemilik string `json:"nama_pemilik" gorm:"column:nama_pemilik;size:150"`
 
-	NomorHP string `json:"nomor_hp" gorm:"column:nomor_hp"`
+	NomorHP string `json:"nomor_hp" gorm:"column:nomor_hp;size:30"`
 
-	Alamat string `json:"alamat" gorm:"column:alamat"`
+	Alamat string `json:"alamat" gorm:"column:alamat;type:text"`
 
-	Deskripsi string `json:"deskripsi" gorm:"column:deskripsi"`
+	Deskripsi string `json:"deskripsi" gorm:"column:deskripsi;type:text"`
+
+	// =================================================
+	// IDENTITY / KTP
+	// =================================================
+
+	// Nomor NIK dari KTP.
+	//
+	// Jangan pernah dikirim pada endpoint
+	// public seller/customer.
+
+	KTPNumber string `json:"-" gorm:"column:ktp_number;size:20;index"`
+
+	// Path file KTP yang disimpan di server.
+	//
+	// Jangan expose sebagai image public.
+
+	KTPImage string `json:"-" gorm:"column:ktp_image;type:text"`
+
+	// Status verifikasi KTP.
+
+	KTPVerified bool `json:"ktp_verified" gorm:"column:ktp_verified;default:false"`
+
+	// pending
+	// verified
+	// rejected
+
+	VerificationStatus string `json:"verification_status" gorm:"column:verification_status;size:30;default:'pending'"`
 
 	// =================================================
 	// JAM OPERASIONAL
@@ -47,12 +92,18 @@ type SellerProfile struct {
 	JamTutup string `json:"jam_tutup" gorm:"column:jam_tutup"`
 
 	// =================================================
-	// LOKASI WARTEG
+	// LOKASI
 	// =================================================
 
 	Latitude float64 `json:"latitude" gorm:"column:latitude"`
 
 	Longitude float64 `json:"longitude" gorm:"column:longitude"`
+
+	// =================================================
+	// IMAGE
+	// =================================================
+
+	Image string `json:"image" gorm:"column:image"`
 
 	// =================================================
 	// BANK
@@ -64,33 +115,37 @@ type SellerProfile struct {
 
 	NamaRekening string `json:"nama_rekening" gorm:"column:nama_rekening"`
 
-	RekeningVerified bool `json:"rekening_verified" gorm:"column:rekening_verified"`
+	RekeningVerified bool `json:"rekening_verified" gorm:"column:rekening_verified;default:false"`
 
 	// =================================================
 	// TIMESTAMP
 	// =================================================
 
-	CreatedAt string `json:"created_at" gorm:"column:created_at"`
+	CreatedAt time.Time `json:"created_at" gorm:"column:created_at;autoCreateTime"`
 
-	UpdatedAt string `json:"updated_at" gorm:"column:updated_at"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"column:updated_at;autoUpdateTime"`
 }
 
 // =====================================================
-// GENERATE SELLER PROFILE ID
+// TABLE NAME
 // =====================================================
-//
-// PostgreSQL:
-//
-// seller_profiles.id = UUID
-//
-// Kalau ID belum diberikan ketika Create(),
-// otomatis generate UUID.
-//
+
+func (SellerProfile) TableName() string {
+	return "seller_profiles"
+}
+
+// =====================================================
+// BEFORE CREATE
+// =====================================================
 
 func (s *SellerProfile) BeforeCreate(tx *gorm.DB) error {
 
 	if s.ID == "" {
 		s.ID = uuid.New().String()
+	}
+
+	if s.VerificationStatus == "" {
+		s.VerificationStatus = "pending"
 	}
 
 	return nil
@@ -99,21 +154,11 @@ func (s *SellerProfile) BeforeCreate(tx *gorm.DB) error {
 // =====================================================
 // CUSTOMER SELLER
 // =====================================================
-//
-// Data seller yang dikirim ke customer / Explore page.
-//
 
 type CustomerSeller struct {
-
-	// =================================================
-	// IDENTIFIER
-	// =================================================
-
 	ID string `json:"id"`
 
-	// =================================================
-	// PROFILE
-	// =================================================
+	SellerID string `json:"seller_id,omitempty"`
 
 	StoreName string `json:"store_name"`
 
@@ -125,19 +170,17 @@ type CustomerSeller struct {
 
 	Phone string `json:"phone"`
 
-	// =================================================
-	// JAM OPERASIONAL
-	// =================================================
+	Image string `json:"image"`
 
 	OpeningTime string `json:"opening_time"`
 
 	ClosingTime string `json:"closing_time"`
 
-	IsOpen bool `json:"is_open"`
+	JamBuka string `json:"jam_buka,omitempty"`
 
-	// =================================================
-	// DATA DINAMIS CUSTOMER
-	// =================================================
+	JamTutup string `json:"jam_tutup,omitempty"`
+
+	IsOpen bool `json:"is_open"`
 
 	Rating float64 `json:"rating"`
 

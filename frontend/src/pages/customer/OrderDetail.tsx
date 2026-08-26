@@ -4,6 +4,7 @@ import {
   Clock3,
   Receipt,
   ShoppingBag,
+  StickyNote,
   XCircle,
 } from "lucide-react";
 
@@ -36,7 +37,10 @@ type PaymentStatus =
 
 interface OrderItem {
   id?: string;
+
   menu_id?: string;
+  menuId?: string;
+
   menu_name?: string;
   menuName?: string;
   name?: string;
@@ -56,12 +60,40 @@ interface OrderItem {
   item_total?: number;
   total?: number;
 
+  /* ===================================================
+     CATATAN PER ITEM
+  =================================================== */
+
+  note?: string;
+  notes?: string;
+
+  item_note?: string;
+  item_notes?: string;
+
+  menu_note?: string;
+  menu_notes?: string;
+
+  customer_note?: string;
+  customer_notes?: string;
+
+  catatan?: string;
+  catatan_menu?: string;
+
+  itemNote?: string;
+  menuNote?: string;
+  customerNote?: string;
+
   menu?: {
     id?: string;
     name?: string;
     menu_name?: string;
     price?: number;
     unit_price?: number;
+
+    note?: string;
+    notes?: string;
+    menu_note?: string;
+    menuNote?: string;
   };
 
   [key: string]: any;
@@ -80,6 +112,12 @@ interface NormalizedOrder extends Partial<Order> {
 
   items: OrderItem[];
 
+  /* ===================================================
+     CATATAN ORDER LEVEL
+  =================================================== */
+
+  note: string;
+
   created_at?: string;
   updated_at?: string;
 
@@ -91,9 +129,13 @@ interface NormalizedOrder extends Partial<Order> {
 ===================================================== */
 
 export default function OrderDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { id } =
+    useParams<{
+      id: string;
+    }>();
 
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
   const [order, setOrder] =
     useState<NormalizedOrder | null>(null);
@@ -114,7 +156,10 @@ export default function OrderDetail() {
     const fetchOrder = async () => {
       if (!id) {
         if (mounted) {
-          setError("Order ID tidak ditemukan.");
+          setError(
+            "Order ID tidak ditemukan."
+          );
+
           setLoading(false);
         }
 
@@ -127,13 +172,23 @@ export default function OrderDetail() {
           setError("");
         }
 
-        console.log("========================================");
-        console.log("GET ORDER DETAIL");
-        console.log("ORDER ID:", id);
-
-        const response = await api.get(
-          `/orders/${id}`
+        console.log(
+          "========================================"
         );
+
+        console.log(
+          "GET ORDER DETAIL"
+        );
+
+        console.log(
+          "ORDER ID:",
+          id
+        );
+
+        const response =
+          await api.get(
+            `/orders/${id}`
+          );
 
         console.log(
           "RAW ORDER DETAIL RESPONSE:",
@@ -145,7 +200,9 @@ export default function OrderDetail() {
         }
 
         const extracted =
-          extractOrder(response.data);
+          extractOrder(
+            response.data
+          );
 
         console.log(
           "EXTRACTED ORDER:",
@@ -161,7 +218,9 @@ export default function OrderDetail() {
         }
 
         const normalized =
-          normalizeOrder(extracted);
+          normalizeOrder(
+            extracted
+          );
 
         console.log(
           "NORMALIZED ORDER:",
@@ -198,9 +257,35 @@ export default function OrderDetail() {
           normalized.status
         );
 
-        console.log("========================================");
+        console.log(
+          "ORDER NOTE:",
+          normalized.note
+        );
 
-        setOrder(normalized);
+        /* =================================================
+           DEBUG CATATAN PER ITEM
+        ================================================= */
+
+        normalized.items.forEach(
+          (
+            item,
+            index
+          ) => {
+            console.log(
+              `ITEM ${index + 1} NOTE:`,
+              getItemNote(item)
+            );
+          }
+        );
+
+        console.log(
+          "========================================"
+        );
+
+        setOrder(
+          normalized
+        );
+
       } catch (err: any) {
         if (!mounted) {
           return;
@@ -233,6 +318,7 @@ export default function OrderDetail() {
             "Gagal mengambil detail pesanan."
           );
         }
+
       } finally {
         if (mounted) {
           setLoading(false);
@@ -256,32 +342,39 @@ export default function OrderDetail() {
   ): string => {
     return Math.round(
       Number(value) || 0
-    ).toLocaleString("id-ID");
+    ).toLocaleString(
+      "id-ID"
+    );
   };
 
   /* =====================================================
      ORDER TOTAL
   ===================================================== */
 
-  const orderTotal = useMemo(() => {
-    if (!order) {
-      return 0;
-    }
+  const orderTotal =
+    useMemo(() => {
+      if (!order) {
+        return 0;
+      }
 
-    const backendTotal =
-      Number(order.total_amount);
+      const backendTotal =
+        Number(
+          order.total_amount
+        );
 
-    if (
-      Number.isFinite(backendTotal) &&
-      backendTotal > 0
-    ) {
-      return backendTotal;
-    }
+      if (
+        Number.isFinite(
+          backendTotal
+        ) &&
+        backendTotal > 0
+      ) {
+        return backendTotal;
+      }
 
-    return calculateItemsTotal(
-      order.items
-    );
-  }, [order]);
+      return calculateItemsTotal(
+        order.items
+      );
+    }, [order]);
 
   /* =====================================================
      STATUS LABEL
@@ -291,7 +384,9 @@ export default function OrderDetail() {
     status?: string
   ): string => {
     const normalized =
-      normalizeStatus(status);
+      normalizeStatus(
+        status
+      );
 
     switch (normalized) {
       case "pending":
@@ -351,7 +446,10 @@ export default function OrderDetail() {
       String(method || "")
         .toLowerCase()
         .trim()
-        .replace(/[-\s]+/g, "_");
+        .replace(
+          /[-\s]+/g,
+          "_"
+        );
 
     switch (normalized) {
       case "qris":
@@ -390,7 +488,9 @@ export default function OrderDetail() {
     status?: string
   ): string => {
     const normalized =
-      normalizePaymentStatus(status);
+      normalizePaymentStatus(
+        status
+      );
 
     switch (normalized) {
       case "paid":
@@ -478,13 +578,17 @@ export default function OrderDetail() {
   if (loading) {
     return (
       <div className="order-detail-loading">
+
         <div className="order-detail-loading-content">
+
           <div className="order-detail-spinner" />
 
           <p>
             Memuat detail pesanan...
           </p>
+
         </div>
+
       </div>
     );
   }
@@ -493,21 +597,36 @@ export default function OrderDetail() {
      ERROR
   ===================================================== */
 
-  if (error || !order) {
+  if (
+    error ||
+    !order
+  ) {
     return (
       <div className="order-detail-page">
+
         <button
           type="button"
           className="back-order"
-          onClick={() => navigate(-1)}
+          onClick={() =>
+            navigate(-1)
+          }
         >
-          <ArrowLeft size={18} />
-          <span>Kembali</span>
+          <ArrowLeft
+            size={18}
+          />
+
+          <span>
+            Kembali
+          </span>
+
         </button>
 
         <div className="detail-card order-detail-error-card">
+
           <div className="status-icon error">
-            <XCircle size={32} />
+            <XCircle
+              size={32}
+            />
           </div>
 
           <h2>
@@ -523,12 +642,16 @@ export default function OrderDetail() {
             type="button"
             className="back-to-orders"
             onClick={() =>
-              navigate("/orders")
+              navigate(
+                "/orders"
+              )
             }
           >
             Kembali ke Pesanan
           </button>
+
         </div>
+
       </div>
     );
   }
@@ -538,7 +661,9 @@ export default function OrderDetail() {
   ===================================================== */
 
   const items =
-    Array.isArray(order.items)
+    Array.isArray(
+      order.items
+    )
       ? order.items
       : [];
 
@@ -571,6 +696,15 @@ export default function OrderDetail() {
     !isOrderCancelled;
 
   /* =====================================================
+     ORDER LEVEL NOTE
+  ===================================================== */
+
+  const orderNote =
+    String(
+      order.note || ""
+    ).trim();
+
+  /* =====================================================
      RENDER
   ===================================================== */
 
@@ -584,18 +718,29 @@ export default function OrderDetail() {
       <button
         type="button"
         className="back-order"
-        onClick={() => navigate(-1)}
+        onClick={() =>
+          navigate("/orders")
+        }
       >
-        <ArrowLeft size={18} />
-        <span>Kembali</span>
+        <ArrowLeft
+          size={18}
+        />
+
+        <span>
+          Kembali
+        </span>
+
       </button>
+
 
       {/* =================================================
           HEADER
       ================================================= */}
 
       <div className="detail-header">
+
         <div className="detail-header-content">
+
           <span className="detail-header-eyebrow">
             WARTEGKITA
           </span>
@@ -608,32 +753,46 @@ export default function OrderDetail() {
             {order.order_number ||
               `Order #${order.id}`}
           </p>
+
         </div>
 
         <div className="detail-header-icon">
-          <Receipt size={30} />
+
+          <Receipt
+            size={30}
+          />
+
         </div>
+
       </div>
+
 
       {/* =================================================
           STATUS
       ================================================= */}
 
       <div className="status-card">
+
         <div className="status-icon">
           {renderStatusIcon()}
         </div>
 
         <div className="status-content">
+
           <span>
             Status Pesanan
           </span>
 
           <h3>
-            {statusLabel(order.status)}
+            {statusLabel(
+              order.status
+            )}
           </h3>
+
         </div>
+
       </div>
+
 
       {/* =================================================
           MENU
@@ -642,8 +801,13 @@ export default function OrderDetail() {
       <div className="detail-card">
 
         <div className="card-title">
+
           <div className="card-title-icon">
-            <ShoppingBag size={19} />
+
+            <ShoppingBag
+              size={19}
+            />
+
           </div>
 
           <h3>
@@ -651,67 +815,206 @@ export default function OrderDetail() {
           </h3>
 
           <span className="item-count">
+
             {items.length} item
             {items.length !== 1
               ? "s"
               : ""}
+
           </span>
+
         </div>
 
+
         {items.length > 0 ? (
+
           <div className="menu-list">
+
             {items.map(
               (
                 item: OrderItem,
                 index: number
               ) => {
+
                 const quantity =
-                  getItemQuantity(item);
+                  getItemQuantity(
+                    item
+                  );
 
                 const price =
-                  getBaseItemPrice(item);
+                  getBaseItemPrice(
+                    item
+                  );
 
                 const subtotal =
-                  getItemSubtotal(item);
+                  getItemSubtotal(
+                    item
+                  );
 
                 const menuName =
-                  getMenuName(item);
+                  getMenuName(
+                    item
+                  );
+
+                /*
+                 * PENTING:
+                 *
+                 * Ambil catatan dari ITEM,
+                 * bukan cuma order.note.
+                 */
+
+                const itemNote =
+                  getItemNote(
+                    item
+                  );
 
                 return (
                   <div
-                    className="menu-row"
+                    className="menu-row-wrapper"
                     key={
                       item?.id ??
                       item?.menu_id ??
+                      item?.menuId ??
                       `item-${index}`
                     }
                   >
-                    <div className="menu-info">
-                      <strong>
-                        {menuName}
-                      </strong>
 
-                      <p>
-                        {quantity} × Rp{" "}
-                        {formatPrice(price)}
-                      </p>
+                    {/* =========================================
+                        MENU ROW
+                    ========================================= */}
+
+                    <div className="menu-row">
+
+                      <div className="menu-info">
+
+                        <strong>
+                          {menuName}
+                        </strong>
+
+                        <p>
+                          {quantity} × Rp{" "}
+                          {formatPrice(
+                            price
+                          )}
+                        </p>
+
+                      </div>
+
+                      <span className="menu-subtotal">
+
+                        Rp{" "}
+                        {formatPrice(
+                          subtotal
+                        )}
+
+                      </span>
+
                     </div>
 
-                    <span className="menu-subtotal">
-                      Rp{" "}
-                      {formatPrice(subtotal)}
-                    </span>
+
+                    {/* =========================================
+                        ITEM NOTE
+                    ========================================= */}
+
+                    {itemNote && (
+                      <div className="history-item-note">
+
+                        <div className="history-item-note-icon">
+
+                          <StickyNote
+                            size={15}
+                          />
+
+                        </div>
+
+                        <div className="history-item-note-content">
+
+                          <span>
+                            Catatan menu
+                          </span>
+
+                          <p>
+                            {itemNote}
+                          </p>
+
+                        </div>
+
+                      </div>
+                    )}
+
                   </div>
                 );
               }
             )}
+
           </div>
+
         ) : (
+
           <div className="empty-menu">
             Tidak ada detail menu.
           </div>
+
         )}
+
       </div>
+
+
+      {/* =================================================
+          ORDER LEVEL NOTE
+          
+          Ini hanya muncul kalau memang
+          backend mengirim catatan order-level.
+          
+          Catatan per menu TIDAK masuk sini.
+      ================================================= */}
+
+      {orderNote && (
+        <div className="detail-card order-note-card">
+
+          <div className="card-title">
+
+            <div className="card-title-icon">
+
+              <StickyNote
+                size={19}
+              />
+
+            </div>
+
+            <h3>
+              Catatan Pesanan
+            </h3>
+
+          </div>
+
+          <div className="order-note-content">
+
+            <div className="order-note-icon">
+
+              <StickyNote
+                size={18}
+              />
+
+            </div>
+
+            <div className="order-note-text">
+
+              <span>
+                Catatan dari pelanggan
+              </span>
+
+              <p>
+                {orderNote}
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+      )}
+
 
       {/* =================================================
           PAYMENT
@@ -720,28 +1023,38 @@ export default function OrderDetail() {
       <div className="detail-card">
 
         <div className="card-title">
+
           <h3>
             Informasi Pembayaran
           </h3>
+
         </div>
+
 
         <div className="payment-info">
 
           {/* TOTAL */}
 
           <div className="payment-row">
+
             <span>
               Total Pembayaran
             </span>
 
             <strong>
-              Rp {formatPrice(orderTotal)}
+              Rp{" "}
+              {formatPrice(
+                orderTotal
+              )}
             </strong>
+
           </div>
+
 
           {/* METHOD */}
 
           <div className="payment-row">
+
             <span>
               Metode Pembayaran
             </span>
@@ -751,20 +1064,25 @@ export default function OrderDetail() {
                 order.payment_method
               )}
             </strong>
+
           </div>
+
 
           {/* STATUS */}
 
           <div className="payment-row">
+
             <span>
               Status Pembayaran
             </span>
 
             <strong
               className={
-                paymentStatus === "paid"
+                paymentStatus ===
+                  "paid"
                   ? "payment-status-paid"
-                  : paymentStatus === "failed" ||
+                  : paymentStatus ===
+                    "failed" ||
                     paymentStatus ===
                     "cancelled" ||
                     paymentStatus ===
@@ -777,10 +1095,13 @@ export default function OrderDetail() {
                 order.payment_status
               )}
             </strong>
+
           </div>
 
         </div>
+
       </div>
+
 
       {/* =================================================
           TOTAL
@@ -789,7 +1110,9 @@ export default function OrderDetail() {
       <div className="detail-card total-card">
 
         <div className="payment-row order-total-row">
+
           <div>
+
             <span className="order-total-label">
               Total Pesanan
             </span>
@@ -797,14 +1120,22 @@ export default function OrderDetail() {
             <small>
               Sudah termasuk seluruh item
             </small>
+
           </div>
 
           <strong className="order-total-value">
-            Rp {formatPrice(orderTotal)}
+
+            Rp{" "}
+            {formatPrice(
+              orderTotal
+            )}
+
           </strong>
+
         </div>
 
       </div>
+
 
       {/* =================================================
           CONTINUE PAYMENT
@@ -824,6 +1155,7 @@ export default function OrderDetail() {
         </button>
       )}
 
+
       {/* =================================================
           PAYMENT SUCCESS
       ================================================= */}
@@ -834,10 +1166,12 @@ export default function OrderDetail() {
           <div className="payment-success-top">
 
             <div className="payment-success-icon">
+
               <CheckCircle2
                 size={42}
                 strokeWidth={2}
               />
+
             </div>
 
             <h3>
@@ -849,11 +1183,14 @@ export default function OrderDetail() {
               Pesanan kamu akan segera
               diproses oleh penjual.
             </p>
+
           </div>
+
 
           <div className="payment-success-info">
 
             <div className="success-item">
+
               <span className="success-label">
                 Nomor Pesanan
               </span>
@@ -861,9 +1198,12 @@ export default function OrderDetail() {
               <strong className="success-value">
                 {order.order_number}
               </strong>
+
             </div>
 
+
             <div className="success-item">
+
               <span>
                 Status Pesanan
               </span>
@@ -873,9 +1213,12 @@ export default function OrderDetail() {
                   order.status
                 )}
               </strong>
+
             </div>
 
+
             <div className="success-item">
+
               <span>
                 Metode Pembayaran
               </span>
@@ -885,21 +1228,30 @@ export default function OrderDetail() {
                   order.payment_method
                 )}
               </strong>
+
             </div>
 
+
             <div className="success-item total">
+
               <span>
                 Total Dibayar
               </span>
 
               <strong>
-                Rp {formatPrice(orderTotal)}
+                Rp{" "}
+                {formatPrice(
+                  orderTotal
+                )}
               </strong>
+
             </div>
 
           </div>
+
         </div>
       )}
+
 
       {/* =================================================
           CANCELLED / FAILED
@@ -907,21 +1259,29 @@ export default function OrderDetail() {
 
       {!isPaid &&
         (
-          paymentStatus === "failed" ||
+          paymentStatus ===
+          "failed" ||
           paymentStatus ===
           "cancelled" ||
           paymentStatus ===
           "expired" ||
           isOrderCancelled
         ) && (
+
           <div className="payment-failed-card">
 
             <div className="payment-failed-icon">
-              <XCircle size={34} />
+
+              <XCircle
+                size={34}
+              />
+
             </div>
 
             <div>
+
               <h3>
+
                 {paymentStatus ===
                   "expired"
                   ? "Pembayaran Kedaluwarsa"
@@ -930,12 +1290,14 @@ export default function OrderDetail() {
                     isOrderCancelled
                     ? "Pesanan Dibatalkan"
                     : "Pembayaran Gagal"}
+
               </h3>
 
               <p>
                 Pesanan ini tidak dapat
                 dilanjutkan ke pembayaran.
               </p>
+
             </div>
 
           </div>
@@ -945,6 +1307,7 @@ export default function OrderDetail() {
   );
 }
 
+
 /* =====================================================
    EXTRACT ORDER
 ===================================================== */
@@ -952,15 +1315,20 @@ export default function OrderDetail() {
 function extractOrder(
   raw: unknown
 ): any | null {
+
   if (
     !raw ||
-    typeof raw !== "object"
+    typeof raw !==
+    "object"
   ) {
     return null;
   }
 
   const data =
-    raw as Record<string, any>;
+    raw as Record<
+      string,
+      any
+    >;
 
   /* ---------------------------------------------
      DIRECT ORDER
@@ -981,7 +1349,8 @@ function extractOrder(
 
   if (
     data.order &&
-    typeof data.order === "object"
+    typeof data.order ===
+    "object"
   ) {
     return extractOrder(
       data.order
@@ -994,7 +1363,8 @@ function extractOrder(
 
   if (
     data.data &&
-    typeof data.data === "object"
+    typeof data.data ===
+    "object"
   ) {
     return extractOrder(
       data.data
@@ -1007,7 +1377,8 @@ function extractOrder(
 
   if (
     data.result &&
-    typeof data.result === "object"
+    typeof data.result ===
+    "object"
   ) {
     return extractOrder(
       data.result
@@ -1017,6 +1388,7 @@ function extractOrder(
   return null;
 }
 
+
 /* =====================================================
    NORMALIZE ORDER
 ===================================================== */
@@ -1024,6 +1396,7 @@ function extractOrder(
 function normalizeOrder(
   raw: any
 ): NormalizedOrder {
+
   const id =
     String(
       raw?.id ??
@@ -1072,6 +1445,36 @@ function normalizeOrder(
       ? rawItems
       : [];
 
+  /* ===================================================
+     NORMALIZE ITEM NOTES
+     
+     Pastikan setiap item punya
+     field `note` yang konsisten.
+  =================================================== */
+
+  const normalizedItems =
+    items.map(
+      (
+        item
+      ) => {
+
+        const note =
+          getItemNote(
+            item
+          );
+
+        return {
+          ...item,
+          note,
+        };
+
+      }
+    );
+
+  /* ===================================================
+     TOTAL
+  =================================================== */
+
   const totalCandidates = [
     raw?.total_amount,
     raw?.totalAmount,
@@ -1083,35 +1486,66 @@ function normalizeOrder(
   let total = 0;
 
   for (
-    const candidate of totalCandidates
+    const candidate of
+    totalCandidates
   ) {
+
     const parsed =
       Number(candidate);
 
     if (
-      Number.isFinite(parsed) &&
+      Number.isFinite(
+        parsed
+      ) &&
       parsed > 0
     ) {
-      total = parsed;
+      total =
+        parsed;
+
       break;
     }
   }
 
-  if (total <= 0) {
+  if (
+    total <= 0
+  ) {
     total =
-      calculateItemsTotal(items);
+      calculateItemsTotal(
+        normalizedItems
+      );
   }
 
+  /* ===================================================
+     ORDER LEVEL NOTE
+  =================================================== */
+
+  const note =
+    String(
+      raw?.note ??
+      raw?.notes ??
+      raw?.order_note ??
+      raw?.order_notes ??
+      raw?.customer_note ??
+      raw?.customer_notes ??
+      raw?.catatan ??
+      raw?.orderNote ??
+      raw?.customerNote ??
+      ""
+    ).trim();
+
   return {
+
     ...raw,
 
     id,
 
     order_number:
       orderNumber ||
-      (id
-        ? `Order #${id}`
-        : "Order"),
+      (
+        id
+          ? `Order #${id}`
+          : "Order"
+      ),
 
     status,
 
@@ -1124,7 +1558,15 @@ function normalizeOrder(
     total_amount:
       total,
 
-    items,
+    /*
+     * IMPORTANT:
+     * Gunakan normalizedItems.
+     */
+
+    items:
+      normalizedItems,
+
+    note,
 
     created_at:
       raw?.created_at ??
@@ -1136,6 +1578,107 @@ function normalizeOrder(
   };
 }
 
+
+/* =====================================================
+   GET ITEM NOTE
+===================================================== */
+
+/**
+ * Catatan di Cart adalah catatan PER MENU.
+ *
+ * Backend bisa mengirim dengan berbagai
+ * nama field tergantung struktur response.
+ *
+ * Fungsi ini dibuat fleksibel supaya:
+ *
+ * note
+ * notes
+ * item_note
+ * item_notes
+ * menu_note
+ * menu_notes
+ * customer_note
+ * customer_notes
+ * catatan
+ * catatan_menu
+ * itemNote
+ * menuNote
+ * customerNote
+ *
+ * semuanya bisa terbaca.
+ */
+function getItemNote(
+  item: OrderItem
+): string {
+
+  const candidates = [
+
+    item?.note,
+
+    item?.notes,
+
+    item?.item_note,
+
+    item?.item_notes,
+
+    item?.menu_note,
+
+    item?.menu_notes,
+
+    item?.customer_note,
+
+    item?.customer_notes,
+
+    item?.catatan,
+
+    item?.catatan_menu,
+
+    item?.itemNote,
+
+    item?.menuNote,
+
+    item?.customerNote,
+
+    item?.menu?.note,
+
+    item?.menu?.notes,
+
+    item?.menu?.menu_note,
+
+    item?.menu?.menuNote,
+
+  ];
+
+  for (
+    const candidate
+    of candidates
+  ) {
+
+    if (
+      candidate ===
+      null ||
+      candidate ===
+      undefined
+    ) {
+      continue;
+    }
+
+    const value =
+      String(
+        candidate
+      ).trim();
+
+    if (
+      value.length > 0
+    ) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+
 /* =====================================================
    NORMALIZE STATUS
 ===================================================== */
@@ -1143,14 +1686,22 @@ function normalizeOrder(
 function normalizeStatus(
   value: unknown
 ): string {
+
   return String(
     value ?? ""
   )
     .toLowerCase()
     .trim()
-    .replace(/-/g, "_")
-    .replace(/\s+/g, "_");
+    .replace(
+      /-/g,
+      "_"
+    )
+    .replace(
+      /\s+/g,
+      "_"
+    );
 }
+
 
 /* =====================================================
    NORMALIZE PAYMENT STATUS
@@ -1159,16 +1710,25 @@ function normalizeStatus(
 function normalizePaymentStatus(
   value: unknown
 ): PaymentStatus {
+
   const status =
     String(
-      value ?? "pending"
+      value ??
+      "pending"
     )
       .toLowerCase()
       .trim()
-      .replace(/-/g, "_")
-      .replace(/\s+/g, "_");
+      .replace(
+        /-/g,
+        "_"
+      )
+      .replace(
+        /\s+/g,
+        "_"
+      );
 
   switch (status) {
+
     case "paid":
     case "success":
     case "successful":
@@ -1197,6 +1757,7 @@ function normalizePaymentStatus(
   }
 }
 
+
 /* =====================================================
    GET ITEM QUANTITY
 ===================================================== */
@@ -1204,6 +1765,7 @@ function normalizePaymentStatus(
 function getItemQuantity(
   item: OrderItem
 ): number {
+
   const quantity =
     Number(
       item?.quantity ??
@@ -1213,7 +1775,9 @@ function getItemQuantity(
     );
 
   if (
-    !Number.isFinite(quantity) ||
+    !Number.isFinite(
+      quantity
+    ) ||
     quantity <= 0
   ) {
     return 1;
@@ -1222,6 +1786,7 @@ function getItemQuantity(
   return quantity;
 }
 
+
 /* =====================================================
    GET MENU NAME
 ===================================================== */
@@ -1229,6 +1794,7 @@ function getItemQuantity(
 function getMenuName(
   item: OrderItem
 ): string {
+
   return (
     item?.menu_name ??
     item?.menuName ??
@@ -1239,6 +1805,7 @@ function getMenuName(
   );
 }
 
+
 /* =====================================================
    BASE ITEM PRICE
 ===================================================== */
@@ -1246,24 +1813,37 @@ function getMenuName(
 function getBaseItemPrice(
   item: OrderItem
 ): number {
+
   const directCandidates = [
+
     item?.price,
+
     item?.unit_price,
+
     item?.unitPrice,
+
     item?.menu_price,
+
     item?.menuPrice,
+
     item?.menu?.price,
+
     item?.menu?.unit_price,
+
   ];
 
   for (
-    const candidate of directCandidates
+    const candidate of
+    directCandidates
   ) {
+
     const price =
       Number(candidate);
 
     if (
-      Number.isFinite(price) &&
+      Number.isFinite(
+        price
+      ) &&
       price > 0
     ) {
       return price;
@@ -1280,18 +1860,26 @@ function getBaseItemPrice(
     );
 
   const quantity =
-    getItemQuantity(item);
+    getItemQuantity(
+      item
+    );
 
   if (
-    Number.isFinite(subtotal) &&
+    Number.isFinite(
+      subtotal
+    ) &&
     subtotal > 0 &&
     quantity > 0
   ) {
-    return subtotal / quantity;
+    return (
+      subtotal /
+      quantity
+    );
   }
 
   return 0;
 }
+
 
 /* =====================================================
    ITEM SUBTOTAL
@@ -1300,43 +1888,54 @@ function getBaseItemPrice(
 function getItemSubtotal(
   item: OrderItem
 ): number {
+
   const subtotalCandidates = [
+
     item?.subtotal,
+
     item?.sub_total,
+
     item?.item_total,
+
   ];
 
   for (
-    const candidate of subtotalCandidates
+    const candidate of
+    subtotalCandidates
   ) {
+
     const subtotal =
       Number(candidate);
 
     if (
-      Number.isFinite(subtotal) &&
+      Number.isFinite(
+        subtotal
+      ) &&
       subtotal > 0
     ) {
       return subtotal;
     }
   }
 
-  /*
-   * Be careful with `item.total`.
-   * Some backend responses use total
-   * as order total rather than item subtotal.
-   */
-
   const itemTotal =
-    Number(item?.total);
+    Number(
+      item?.total
+    );
 
   const price =
-    getBaseItemPrice(item);
+    getBaseItemPrice(
+      item
+    );
 
   const quantity =
-    getItemQuantity(item);
+    getItemQuantity(
+      item
+    );
 
   if (
-    Number.isFinite(itemTotal) &&
+    Number.isFinite(
+      itemTotal
+    ) &&
     itemTotal > 0 &&
     price <= 0
   ) {
@@ -1349,6 +1948,7 @@ function getItemSubtotal(
   );
 }
 
+
 /* =====================================================
    CALCULATE ITEMS TOTAL
 ===================================================== */
@@ -1356,8 +1956,11 @@ function getItemSubtotal(
 function calculateItemsTotal(
   items: OrderItem[]
 ): number {
+
   if (
-    !Array.isArray(items)
+    !Array.isArray(
+      items
+    )
   ) {
     return 0;
   }
@@ -1367,10 +1970,14 @@ function calculateItemsTotal(
       total: number,
       item: OrderItem
     ) => {
+
       return (
         total +
-        getItemSubtotal(item)
+        getItemSubtotal(
+          item
+        )
       );
+
     },
     0
   );

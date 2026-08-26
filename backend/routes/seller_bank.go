@@ -14,6 +14,22 @@ import (
 //
 // PUT /api/v1/sellers/:seller_id/bank/verify
 // =====================================================
+//
+// Flow:
+//
+// JWT middleware
+//      ↓
+// user_id dari authentication context
+//      ↓
+// seller_id dari URL
+//      ↓
+// cek ownership seller
+//      ↓
+// update data rekening
+//      ↓
+// SaveProfile(sellerID, profile)
+//
+// =====================================================
 
 func verifySellerBank(c *gin.Context) {
 
@@ -26,7 +42,6 @@ func verifySellerBank(c *gin.Context) {
 	)
 
 	if sellerID == "" {
-
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -34,7 +49,6 @@ func verifySellerBank(c *gin.Context) {
 				"message": "Seller ID tidak boleh kosong",
 			},
 		)
-
 		return
 	}
 
@@ -42,7 +56,7 @@ func verifySellerBank(c *gin.Context) {
 	// USER ID DARI AUTHENTICATION CONTEXT
 	// =================================================
 	//
-	// user_id harus sudah dimasukkan oleh middleware JWT.
+	// user_id harus berasal dari JWT middleware.
 	//
 	// Jangan mengambil user_id dari request body.
 	//
@@ -53,7 +67,6 @@ func verifySellerBank(c *gin.Context) {
 	)
 
 	if userID == "" {
-
 		c.JSON(
 			http.StatusUnauthorized,
 			gin.H{
@@ -61,12 +74,11 @@ func verifySellerBank(c *gin.Context) {
 				"message": "User ID tidak ditemukan dari authentication context",
 			},
 		)
-
 		return
 	}
 
 	// =================================================
-	// REQUEST
+	// REQUEST BODY
 	// =================================================
 
 	var request struct {
@@ -75,7 +87,6 @@ func verifySellerBank(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -84,7 +95,6 @@ func verifySellerBank(c *gin.Context) {
 				"error":   err.Error(),
 			},
 		)
-
 		return
 	}
 
@@ -105,7 +115,6 @@ func verifySellerBank(c *gin.Context) {
 	// =================================================
 
 	if request.Bank == "" {
-
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -113,7 +122,6 @@ func verifySellerBank(c *gin.Context) {
 				"message": "Bank wajib dipilih",
 			},
 		)
-
 		return
 	}
 
@@ -122,7 +130,6 @@ func verifySellerBank(c *gin.Context) {
 	// =================================================
 
 	if request.NomorRekening == "" {
-
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -130,7 +137,6 @@ func verifySellerBank(c *gin.Context) {
 				"message": "Nomor rekening wajib diisi",
 			},
 		)
-
 		return
 	}
 
@@ -145,45 +151,37 @@ func verifySellerBank(c *gin.Context) {
 	// =================================================
 	// PROFILE BELUM ADA
 	// =================================================
+	//
+	// Tidak menggunakan EnsureProfile().
+	//
+	// Kita buat object profile baru di memory.
+	// SaveProfile() akan melakukan INSERT jika
+	// profile belum ada di database.
+	//
+	// =================================================
 
 	if err != nil {
-
-		profile, err = sellerdb.EnsureProfile(
-			sellerID,
-			userID,
-			"",
-		)
-
-		if err != nil {
-
-			c.JSON(
-				http.StatusInternalServerError,
-				gin.H{
-					"success": false,
-					"message": "Gagal membuat profil seller",
-					"error":   err.Error(),
-				},
-			)
-
-			return
+		profile = sellerdb.SellerProfile{
+			SellerID: sellerID,
+			UserID:   userID,
 		}
 	}
 
 	// =================================================
-	// SECURITY
+	// SECURITY / OWNERSHIP
 	// =================================================
 	//
-	// Pastikan profile yang akan diubah memang milik
-	// user yang sedang login.
+	// Jika profile sudah memiliki UserID, pastikan
+	// user yang login memang pemilik profile tersebut.
 	//
 	// =================================================
 
-	profile.UserID = strings.TrimSpace(
+	profileUserID := strings.TrimSpace(
 		profile.UserID,
 	)
 
-	if profile.UserID != "" &&
-		profile.UserID != userID {
+	if profileUserID != "" &&
+		profileUserID != userID {
 
 		c.JSON(
 			http.StatusForbidden,
@@ -192,12 +190,18 @@ func verifySellerBank(c *gin.Context) {
 				"message": "Anda tidak memiliki akses ke seller ini",
 			},
 		)
-
 		return
 	}
 
 	// =================================================
 	// FORCE OWNERSHIP
+	// =================================================
+	//
+	// SellerID berasal dari URL.
+	// UserID berasal dari authentication context.
+	//
+	// Jangan percaya kedua nilai tersebut dari body.
+	//
 	// =================================================
 
 	profile.SellerID = sellerID
@@ -209,18 +213,17 @@ func verifySellerBank(c *gin.Context) {
 
 	profile.Bank = request.Bank
 
-	profile.NomorRekening =
-		request.NomorRekening
+	profile.NomorRekening = request.NomorRekening
 
 	// =================================================
 	// VERIFICATION
 	// =================================================
 	//
-	// Untuk sementara sistem menganggap rekening valid
-	// setelah data rekening berhasil disimpan.
+	// Sementara sistem menganggap rekening valid
+	// setelah data berhasil disimpan.
 	//
-	// Nantinya bagian ini bisa diganti dengan API
-	// verifikasi rekening bank sungguhan.
+	// Nantinya bisa diganti dengan API verifikasi
+	// rekening bank sungguhan.
 	//
 	// =================================================
 
@@ -230,8 +233,8 @@ func verifySellerBank(c *gin.Context) {
 	// NAMA REKENING
 	// =================================================
 	//
-	// Jika nama rekening belum ada, gunakan nama pemilik
-	// seller sebagai fallback.
+	// Jika nama rekening belum tersedia, gunakan
+	// nama pemilik seller sebagai fallback.
 	//
 	// =================================================
 
@@ -239,19 +242,27 @@ func verifySellerBank(c *gin.Context) {
 		profile.NamaRekening,
 	) == "" {
 
-		profile.NamaRekening =
-			strings.TrimSpace(
-				profile.NamaPemilik,
-			)
+		profile.NamaRekening = strings.TrimSpace(
+			profile.NamaPemilik,
+		)
 	}
 
 	// =================================================
 	// SAVE PROFILE
 	// =================================================
+	//
+	// Repository:
+	//
+	// SaveProfile(sellerID, profile)
+	//
+	// BUKAN:
+	//
+	// SaveProfile(sellerID, userID, profile)
+	//
+	// =================================================
 
 	if err := sellerdb.SaveProfile(
 		sellerID,
-		userID,
 		profile,
 	); err != nil {
 
@@ -263,7 +274,6 @@ func verifySellerBank(c *gin.Context) {
 				"error":   err.Error(),
 			},
 		)
-
 		return
 	}
 
@@ -276,7 +286,6 @@ func verifySellerBank(c *gin.Context) {
 	)
 
 	if err != nil {
-
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
@@ -285,7 +294,6 @@ func verifySellerBank(c *gin.Context) {
 				"error":   err.Error(),
 			},
 		)
-
 		return
 	}
 
@@ -300,7 +308,6 @@ func verifySellerBank(c *gin.Context) {
 			"message": "Rekening berhasil diverifikasi",
 
 			"data": gin.H{
-
 				"bank": savedProfile.Bank,
 
 				"nomor_rekening": savedProfile.NomorRekening,

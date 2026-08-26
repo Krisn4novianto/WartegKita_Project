@@ -1,0 +1,1157 @@
+/* =====================================================
+   WARTEGKITA — ORDER DETAIL MODAL
+===================================================== */
+
+.order-detail-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px;
+
+    background: rgba(15, 23, 42, 0.58);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    animation: orderDetailOverlayIn 0.2s ease-out;
+}
+
+@keyframes orderDetailOverlayIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* =====================================================
+   MODAL
+===================================================== */
+
+.order-detail-modal {
+    position: relative;
+
+    width: min(720px, 100%);
+    max-height: min(850px, calc(100vh - 48px));
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 22px;
+
+    box-shadow:
+        0 30px 80px rgba(15, 23, 42, 0.22),
+        0 10px 30px rgba(15, 23, 42, 0.1);
+
+    animation: orderDetailModalIn 0.25s ease-out;
+}
+
+@keyframes orderDetailModalIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.order-detail-header {
+    position: relative;
+
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    padding: 26px 28px 22px;
+
+    background:
+        linear-gradient(180deg,
+            #ffffff 0%,
+            #fafffb 100%);
+
+    border-bottom: 1px solid #edf1ee;
+}
+
+.order-detail-header-info {
+    min-width: 0;
+}
+
+.order-detail-kicker {
+    display: inline-flex;
+    align-items: center;
+
+    margin-bottom: 7px;
+
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.13em;
+
+    color: #16a34a;
+}
+
+.order-detail-header h2 {
+    margin: 0;
+
+    font-size: 23px;
+    line-height: 1.25;
+    font-weight: 800;
+
+    letter-spacing: -0.025em;
+
+    color: #111827;
+}
+
+.order-detail-header p {
+    margin: 7px 0 0;
+
+    font-size: 12px;
+    line-height: 1.5;
+
+    color: #6b7280;
+}
+
+/* =====================================================
+   CLOSE
+===================================================== */
+
+.order-detail-close {
+    flex: 0 0 auto;
+
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: 16px;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 11px;
+
+    background: #ffffff;
+
+    color: #6b7280;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.order-detail-close:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    color: #111827;
+
+    transform: rotate(3deg);
+}
+
+.order-detail-close:active {
+    transform: scale(0.94);
+}
+
+/* =====================================================
+   CUSTOMER
+===================================================== */
+
+.order-detail-customer {
+    display: flex;
+    align-items: center;
+
+    gap: 13px;
+
+    margin: 20px 28px 0;
+    padding: 15px 16px;
+
+    background: #f8faf9;
+
+    border: 1px solid #e8eee9;
+    border-radius: 14px;
+}
+
+.order-detail-customer-icon {
+    width: 40px;
+    height: 40px;
+
+    flex: 0 0 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 12px;
+
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.order-detail-customer-info {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.order-detail-customer-info>span {
+    margin-bottom: 2px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+
+    color: #9ca3af;
+}
+
+.order-detail-customer-info strong {
+    overflow: hidden;
+
+    font-size: 14px;
+    line-height: 1.35;
+    font-weight: 750;
+
+    color: #111827;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.order-detail-customer-info small {
+    margin-top: 2px;
+
+    overflow: hidden;
+
+    font-size: 11px;
+    line-height: 1.4;
+
+    color: #6b7280;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* =====================================================
+   META
+===================================================== */
+
+.order-detail-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+
+    margin: 14px 28px 0;
+}
+
+.order-detail-meta-card {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+
+    padding: 14px 15px;
+
+    background: #ffffff;
+
+    border: 1px solid #e8ece9;
+    border-radius: 13px;
+}
+
+.order-detail-meta-card>span {
+    margin-bottom: 7px;
+
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+
+    color: #9ca3af;
+}
+
+.order-detail-meta-card>small {
+    margin-top: 5px;
+
+    font-size: 11px;
+
+    color: #6b7280;
+}
+
+/* =====================================================
+   STATUS BADGE
+===================================================== */
+
+.order-detail-modal .status-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 25px;
+
+    padding: 5px 9px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+/* NEW */
+
+.order-detail-modal .status-badge.new {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+/* CONFIRMED */
+
+.order-detail-modal .status-badge.confirmed {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+/* PREPARING */
+
+.order-detail-modal .status-badge.preparing {
+    background: #fefce8;
+    color: #a16207;
+}
+
+/* READY */
+
+.order-detail-modal .status-badge.ready {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+/* DELIVERING */
+
+.order-detail-modal .status-badge.delivering {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+/* DONE */
+
+.order-detail-modal .status-badge.done {
+    background: #dcfce7;
+    color: #166534;
+}
+
+/* REJECTED */
+
+.order-detail-modal .status-badge.rejected {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* =====================================================
+   PAYMENT BADGE
+===================================================== */
+
+.order-detail-modal .payment-badge {
+    display: inline-flex;
+    align-items: center;
+
+    min-height: 25px;
+
+    padding: 5px 9px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 750;
+
+    white-space: nowrap;
+}
+
+.order-detail-modal .payment-badge.paid {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.order-detail-modal .payment-badge.pending {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.order-detail-modal .payment-badge.failed {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* =====================================================
+   SECTION
+===================================================== */
+
+.order-detail-section {
+    min-height: 0;
+
+    margin-top: 20px;
+    padding: 0 28px;
+}
+
+.order-detail-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin-bottom: 11px;
+}
+
+.order-detail-section-header>div {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+}
+
+.order-detail-section-header h3 {
+    margin: 0;
+
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 800;
+
+    color: #111827;
+}
+
+.order-detail-section-header span {
+    font-size: 11px;
+    font-weight: 600;
+
+    color: #9ca3af;
+}
+
+/* =====================================================
+   ITEMS
+===================================================== */
+
+.order-detail-items {
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+
+    max-height: 330px;
+
+    overflow-y: auto;
+
+    padding-right: 3px;
+}
+
+/* SCROLLBAR */
+
+.order-detail-items::-webkit-scrollbar {
+    width: 5px;
+}
+
+.order-detail-items::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.order-detail-items::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 99px;
+}
+
+.order-detail-items::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* =====================================================
+   ITEM
+===================================================== */
+
+.order-detail-item {
+    padding: 14px 15px;
+
+    background: #ffffff;
+
+    border: 1px solid #e7ebe8;
+    border-radius: 13px;
+
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.order-detail-item:hover {
+    border-color: #cce8d4;
+
+    box-shadow:
+        0 5px 18px rgba(22, 163, 74, 0.07);
+
+    transform: translateY(-1px);
+}
+
+/* =====================================================
+   ITEM TOP
+===================================================== */
+
+.order-detail-item-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 16px;
+}
+
+.order-detail-item-name {
+    min-width: 0;
+
+    display: flex;
+    align-items: flex-start;
+
+    gap: 11px;
+}
+
+.order-detail-quantity {
+    flex: 0 0 auto;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 37px;
+    height: 27px;
+
+    padding: 0 7px;
+
+    background: #f0fdf4;
+
+    border: 1px solid #dcfce7;
+    border-radius: 7px;
+
+    font-size: 11px;
+    font-weight: 800;
+
+    color: #15803d;
+}
+
+.order-detail-item-name>div {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+}
+
+.order-detail-item-name strong {
+    overflow: hidden;
+
+    font-size: 13px;
+    line-height: 1.4;
+    font-weight: 750;
+
+    color: #111827;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.order-detail-item-name small {
+    margin-top: 3px;
+
+    font-size: 10px;
+    line-height: 1.4;
+
+    color: #9ca3af;
+}
+
+.order-detail-item-price {
+    flex: 0 0 auto;
+
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 800;
+
+    color: #111827;
+
+    white-space: nowrap;
+}
+
+/* =====================================================
+   CUSTOMER NOTE
+===================================================== */
+
+.order-detail-note {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 10px;
+
+    margin-top: 12px;
+    padding: 11px 12px;
+
+    background: #fffbeb;
+
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+}
+
+.order-detail-note-icon {
+    flex: 0 0 28px;
+
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-top: 1px;
+
+    background: #fef3c7;
+
+    border-radius: 8px;
+
+    color: #b45309;
+}
+
+.order-detail-note-content {
+    min-width: 0;
+}
+
+.order-detail-note-content>span {
+    display: block;
+
+    margin-bottom: 3px;
+
+    font-size: 9px;
+    line-height: 1.3;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+
+    color: #a16207;
+}
+
+.order-detail-note-content p {
+    margin: 0;
+
+    font-size: 12px;
+    line-height: 1.55;
+    font-weight: 600;
+
+    color: #713f12;
+
+    overflow-wrap: anywhere;
+}
+
+/* =====================================================
+   NO NOTE
+===================================================== */
+
+.order-detail-no-note {
+    margin-top: 10px;
+    padding: 8px 10px;
+
+    background: #f9fafb;
+
+    border-radius: 8px;
+
+    font-size: 10px;
+    line-height: 1.4;
+
+    color: #9ca3af;
+}
+
+/* =====================================================
+   EMPTY
+===================================================== */
+
+.order-detail-empty {
+    min-height: 110px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    background: #f9fafb;
+
+    border: 1px dashed #d1d5db;
+    border-radius: 13px;
+
+    color: #9ca3af;
+}
+
+.order-detail-empty span {
+    font-size: 12px;
+}
+
+/* =====================================================
+   TOTAL
+===================================================== */
+
+.order-detail-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    margin: 18px 28px 0;
+    padding: 17px 18px;
+
+    background: #f0fdf4;
+
+    border: 1px solid #dcfce7;
+    border-radius: 14px;
+}
+
+.order-detail-total>div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.order-detail-total>div span {
+    font-size: 12px;
+    font-weight: 750;
+
+    color: #374151;
+}
+
+.order-detail-total>div small {
+    font-size: 10px;
+
+    color: #6b7280;
+}
+
+.order-detail-total>strong {
+    font-size: 18px;
+    font-weight: 850;
+    letter-spacing: -0.02em;
+
+    color: #15803d;
+}
+
+/* =====================================================
+   FOOTER
+===================================================== */
+
+.order-detail-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 18px;
+    padding: 16px 28px 22px;
+
+    border-top: 1px solid #edf1ee;
+
+    background: #ffffff;
+}
+
+/* =====================================================
+   CLOSE BUTTON
+===================================================== */
+
+.order-detail-close-btn {
+    min-width: 86px;
+    height: 40px;
+
+    padding: 0 16px;
+
+    border: 1px solid #dfe4e1;
+    border-radius: 10px;
+
+    background: #ffffff;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    color: #4b5563;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+}
+
+.order-detail-close-btn:hover:not(:disabled) {
+    background: #f9fafb;
+
+    border-color: #cbd5d1;
+
+    color: #111827;
+}
+
+/* =====================================================
+   PROCESS BUTTON
+===================================================== */
+
+.order-detail-process-btn {
+    min-width: 145px;
+    height: 40px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 0 17px;
+
+    border: 0;
+    border-radius: 10px;
+
+    background: #16a34a;
+
+    font-size: 12px;
+    font-weight: 750;
+
+    color: #ffffff;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 4px 12px rgba(22, 163, 74, 0.2);
+
+    transition:
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
+}
+
+.order-detail-process-btn:hover:not(:disabled) {
+    background: #15803d;
+
+    box-shadow:
+        0 7px 17px rgba(22, 163, 74, 0.25);
+
+    transform: translateY(-1px);
+}
+
+.order-detail-process-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.order-detail-process-btn:disabled,
+.order-detail-close-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+/* =====================================================
+   SPINNER
+===================================================== */
+
+.order-detail-spinner {
+    width: 14px;
+    height: 14px;
+
+    display: inline-block;
+
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #ffffff;
+
+    border-radius: 50%;
+
+    animation: orderDetailSpin 0.7s linear infinite;
+}
+
+@keyframes orderDetailSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =====================================================
+   RESPONSIVE — TABLET
+===================================================== */
+
+@media (max-width: 768px) {
+    .order-detail-overlay {
+        align-items: center;
+
+        padding: 16px;
+    }
+
+    .order-detail-modal {
+        max-height: calc(100vh - 32px);
+
+        border-radius: 18px;
+    }
+
+    .order-detail-header {
+        padding: 22px 20px 18px;
+    }
+
+    .order-detail-customer {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .order-detail-meta {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .order-detail-section {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+
+    .order-detail-total {
+        margin-left: 20px;
+        margin-right: 20px;
+    }
+
+    .order-detail-footer {
+        padding-left: 20px;
+        padding-right: 20px;
+    }
+}
+
+/* =====================================================
+   RESPONSIVE — MOBILE
+===================================================== */
+
+@media (max-width: 560px) {
+    .order-detail-overlay {
+        align-items: flex-end;
+
+        padding: 0;
+    }
+
+    .order-detail-modal {
+        width: 100%;
+
+        max-height: 92vh;
+
+        border-radius: 20px 20px 0 0;
+
+        animation-name: orderDetailMobileIn;
+    }
+
+    @keyframes orderDetailMobileIn {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .order-detail-header {
+        padding: 20px 18px 17px;
+    }
+
+    .order-detail-header h2 {
+        font-size: 19px;
+    }
+
+    .order-detail-header p {
+        font-size: 10px;
+    }
+
+    .order-detail-close {
+        width: 35px;
+        height: 35px;
+    }
+
+    .order-detail-customer {
+        margin: 14px 18px 0;
+
+        padding: 12px 13px;
+    }
+
+    .order-detail-customer-icon {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+    }
+
+    .order-detail-meta {
+        grid-template-columns: 1fr;
+
+        gap: 8px;
+
+        margin: 10px 18px 0;
+    }
+
+    .order-detail-meta-card {
+        padding: 11px 13px;
+    }
+
+    .order-detail-section {
+        margin-top: 16px;
+
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .order-detail-items {
+        max-height: 300px;
+    }
+
+    .order-detail-item {
+        padding: 12px;
+    }
+
+    .order-detail-item-top {
+        gap: 10px;
+    }
+
+    .order-detail-item-name {
+        gap: 8px;
+    }
+
+    .order-detail-quantity {
+        min-width: 34px;
+        height: 25px;
+
+        font-size: 10px;
+    }
+
+    .order-detail-item-name strong {
+        font-size: 12px;
+    }
+
+    .order-detail-item-name small {
+        font-size: 9px;
+    }
+
+    .order-detail-item-price {
+        font-size: 11px;
+    }
+
+    .order-detail-note {
+        padding: 9px 10px;
+    }
+
+    .order-detail-note-content p {
+        font-size: 11px;
+    }
+
+    .order-detail-total {
+        margin: 14px 18px 0;
+
+        padding: 14px;
+    }
+
+    .order-detail-total>strong {
+        font-size: 16px;
+    }
+
+    .order-detail-footer {
+        padding: 14px 18px 18px;
+    }
+
+    .order-detail-close-btn,
+    .order-detail-process-btn {
+        flex: 1;
+
+        min-width: 0;
+    }
+}
+
+/* =====================================================
+   RESPONSIVE — SMALL MOBILE
+===================================================== */
+
+@media (max-width: 380px) {
+    .order-detail-header {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .order-detail-customer {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .order-detail-meta {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .order-detail-section {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .order-detail-total {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .order-detail-footer {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+
+    .order-detail-footer {
+        gap: 7px;
+    }
+
+    .order-detail-close-btn,
+    .order-detail-process-btn {
+        padding: 0 10px;
+
+        font-size: 11px;
+    }
+}
+
+/* =====================================================
+   ACCESSIBILITY
+===================================================== */
+
+.order-detail-close:focus-visible,
+.order-detail-close-btn:focus-visible,
+.order-detail-process-btn:focus-visible {
+    outline: 3px solid rgba(22, 163, 74, 0.22);
+    outline-offset: 2px;
+}
+
+/* =====================================================
+   REDUCED MOTION
+===================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .order-detail-overlay,
+    .order-detail-modal,
+    .order-detail-close,
+    .order-detail-item,
+    .order-detail-process-btn {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .order-detail-spinner {
+        animation: none !important;
+    }
+}

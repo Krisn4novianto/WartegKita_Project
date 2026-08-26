@@ -69,28 +69,6 @@ interface CheckoutMenu {
 
 /* =====================================================
    CART ITEM
-
-   Support dua bentuk:
-
-   1. Cart baru:
-   {
-     id,
-     name,
-     price,
-     seller_id,
-     quantity
-   }
-
-   2. Cart lama:
-   {
-     menu: {
-       id,
-       name,
-       price,
-       seller_id
-     },
-     quantity
-   }
 ===================================================== */
 
 interface CheckoutCartItem {
@@ -112,7 +90,37 @@ interface CheckoutCartItem {
 
   quantity: number;
 
+  /**
+   * Catatan khusus untuk item.
+   *
+   * Contoh:
+   * "Pedas"
+   * "Jangan pakai sambal"
+   * "Sambal dipisah"
+   */
+  note?: string;
+
   menu?: CheckoutMenu;
+}
+
+/* =====================================================
+   NORMALIZED ITEM
+===================================================== */
+
+interface NormalizedCheckoutItem {
+  item: CheckoutCartItem;
+
+  menuId: string;
+
+  sellerId: string;
+
+  menuName: string;
+
+  quantity: number;
+
+  price: number;
+
+  note: string;
 }
 
 /* =====================================================
@@ -175,19 +183,6 @@ interface NotificationState {
 
 /* =====================================================
    UUID
-
-   IMPORTANT:
-
-   Backend WartegKita menggunakan UUID v7.
-
-   Contoh dari backend:
-
-   019fb617-3daa-7a3d-a29a-b7be83204aad
-                     ↑
-                     VERSION 7
-
-   Regex lama hanya menerima [1-5].
-   Sekarang kita support UUID v1-v8.
 ===================================================== */
 
 const UUID_REGEX =
@@ -225,6 +220,24 @@ function normalizeString(
 }
 
 /* =====================================================
+   NORMALIZE NOTE
+===================================================== */
+
+function normalizeNote(
+  value: unknown
+): string {
+  if (
+    typeof value !== "string"
+  ) {
+    return "";
+  }
+
+  return value
+    .trim()
+    .slice(0, 200);
+}
+
+/* =====================================================
    GET MENU OBJECT
 ===================================================== */
 
@@ -235,35 +248,12 @@ function getMenuObject(
     return {};
   }
 
-  /*
-   * Jika cart menggunakan:
-   *
-   * {
-   *   menu: {...}
-   * }
-   *
-   * gunakan menu tersebut.
-   */
-
   if (
     item.menu &&
     typeof item.menu === "object"
   ) {
     return item.menu;
   }
-
-  /*
-   * Jika cart menyimpan menu
-   * langsung di item:
-   *
-   * {
-   *   id,
-   *   name,
-   *   price
-   * }
-   *
-   * item sendiri dianggap sebagai menu.
-   */
 
   return item;
 }
@@ -282,15 +272,6 @@ function getMenuId(
   const menu =
     getMenuObject(item);
 
-  /*
-   * Prioritas ID:
-   *
-   * 1. menu.id
-   * 2. menu.menu_id
-   * 3. item.id
-   * 4. item.menu_id
-   */
-
   const candidates = [
     menu.id,
     menu.menu_id,
@@ -302,9 +283,7 @@ function getMenuId(
     const candidate of candidates
   ) {
     const normalized =
-      normalizeString(
-        candidate
-      );
+      normalizeString(candidate);
 
     if (
       normalized !== ""
@@ -331,17 +310,11 @@ function getSellerIdFromItem(
     getMenuObject(item);
 
   const candidates = [
-    /*
-     * Dari menu
-     */
     menu.seller_id,
     menu.sellerId,
     menu.seller?.seller_id,
     menu.seller?.id,
 
-    /*
-     * Dari cart item
-     */
     item.seller_id,
     item.sellerId,
     item.seller?.seller_id,
@@ -352,9 +325,7 @@ function getSellerIdFromItem(
     const candidate of candidates
   ) {
     const normalized =
-      normalizeString(
-        candidate
-      );
+      normalizeString(candidate);
 
     if (
       normalized !== ""
@@ -416,14 +387,10 @@ function getMenuPrice(
     item.price;
 
   const price =
-    Number(
-      rawPrice
-    );
+    Number(rawPrice);
 
   if (
-    !Number.isFinite(
-      price
-    ) ||
+    !Number.isFinite(price) ||
     price < 0
   ) {
     return 0;
@@ -444,19 +411,31 @@ function getQuantity(
   }
 
   const quantity =
-    Number(
-      item.quantity
-    );
+    Number(item.quantity);
 
   if (
-    !Number.isFinite(
-      quantity
-    )
+    !Number.isFinite(quantity)
   ) {
     return 0;
   }
 
   return quantity;
+}
+
+/* =====================================================
+   GET MENU NOTE
+===================================================== */
+
+function getMenuNote(
+  item?: CheckoutCartItem
+): string {
+  if (!item) {
+    return "";
+  }
+
+  return normalizeNote(
+    item.note
+  );
 }
 
 /* =====================================================
@@ -479,9 +458,7 @@ function getOrderIdFromResponse(
     const candidate of candidates
   ) {
     const normalized =
-      normalizeString(
-        candidate
-      );
+      normalizeString(candidate);
 
     if (
       normalized !== ""
@@ -548,26 +525,20 @@ export default function Checkout() {
 
   useEffect(() => {
 
-    if (
-      !notification
-    ) {
+    if (!notification) {
       return;
     }
 
     const timer =
       window.setTimeout(
         () => {
-          setNotification(
-            null
-          );
+          setNotification(null);
         },
         3500
       );
 
     return () => {
-      window.clearTimeout(
-        timer
-      );
+      window.clearTimeout(timer);
     };
 
   }, [
@@ -593,9 +564,7 @@ export default function Checkout() {
   };
 
   const closeNotification = () => {
-    setNotification(
-      null
-    );
+    setNotification(null);
   };
 
   /* ===================================================
@@ -604,8 +573,7 @@ export default function Checkout() {
 
   const deliveryType:
     DeliveryType =
-    pickupMethod ===
-      "pickup"
+    pickupMethod === "pickup"
       ? "pickup"
       : "delivery";
 
@@ -624,9 +592,7 @@ export default function Checkout() {
         <div className="empty-card">
 
           <div className="empty-checkout-icon">
-            <ShoppingBag
-              size={30}
-            />
+            <ShoppingBag size={30} />
           </div>
 
           <h1>
@@ -643,9 +609,7 @@ export default function Checkout() {
             type="button"
             className="primary-button"
             onClick={() =>
-              navigate(
-                "/explore"
-              )
+              navigate("/explore")
             }
           >
             Cari Makanan
@@ -669,19 +633,14 @@ export default function Checkout() {
       ) => {
 
         const price =
-          getMenuPrice(
-            item
-          );
+          getMenuPrice(item);
 
         const quantity =
-          getQuantity(
-            item
-          );
+          getQuantity(item);
 
         return (
           totalAmount +
-          price *
-          quantity
+          price * quantity
         );
 
       },
@@ -689,8 +648,7 @@ export default function Checkout() {
     );
 
   const deliveryFee =
-    deliveryType ===
-      "delivery"
+    deliveryType === "delivery"
       ? 5000
       : 0;
 
@@ -718,15 +676,11 @@ export default function Checkout() {
 
   const handleBack = () => {
 
-    if (
-      isSubmitting
-    ) {
+    if (isSubmitting) {
       return;
     }
 
-    navigate(
-      "/cart"
-    );
+    navigate("/cart");
 
   };
 
@@ -737,9 +691,7 @@ export default function Checkout() {
   const handlePayment =
     async () => {
 
-      if (
-        isSubmitting
-      ) {
+      if (isSubmitting) {
         return;
       }
 
@@ -748,8 +700,7 @@ export default function Checkout() {
       ============================================= */
 
       if (
-        deliveryType ===
-        "delivery" &&
+        deliveryType === "delivery" &&
         !address.trim()
       ) {
 
@@ -766,9 +717,7 @@ export default function Checkout() {
          PAYMENT METHOD
       ============================================= */
 
-      if (
-        !paymentMethod
-      ) {
+      if (!paymentMethod) {
 
         showNotification(
           "warning",
@@ -827,9 +776,7 @@ export default function Checkout() {
          START SUBMIT
       ============================================= */
 
-      setIsSubmitting(
-        true
-      );
+      setIsSubmitting(true);
 
       try {
 
@@ -851,10 +798,11 @@ export default function Checkout() {
         );
 
         /* ===========================================
-           VALIDATE ALL ITEMS
+           NORMALIZE ALL ITEMS
         =========================================== */
 
-        const normalizedItems =
+        const normalizedItems:
+          NormalizedCheckoutItem[] =
           items.map(
             (
               item,
@@ -862,29 +810,22 @@ export default function Checkout() {
             ) => {
 
               const menuId =
-                getMenuId(
-                  item
-                );
+                getMenuId(item);
 
               const sellerId =
-                getSellerIdFromItem(
-                  item
-                );
+                getSellerIdFromItem(item);
 
               const menuName =
-                getMenuName(
-                  item
-                );
+                getMenuName(item);
 
               const quantity =
-                getQuantity(
-                  item
-                );
+                getQuantity(item);
 
               const price =
-                getMenuPrice(
-                  item
-                );
+                getMenuPrice(item);
+
+              const note =
+                getMenuNote(item);
 
               console.log(
                 "CHECKOUT ITEM:",
@@ -893,18 +834,14 @@ export default function Checkout() {
                   menuName,
                   menuId,
                   menuIdValid:
-                    isValidUUID(
-                      menuId
-                    ),
+                    isValidUUID(menuId),
                   sellerId,
                   sellerIdValid:
-                    isValidUUID(
-                      sellerId
-                    ),
+                    isValidUUID(sellerId),
                   quantity,
                   price,
-                  rawItem:
-                    item,
+                  note,
+                  rawItem: item,
                 }
               );
 
@@ -915,6 +852,7 @@ export default function Checkout() {
                 menuName,
                 quantity,
                 price,
+                note,
               };
 
             }
@@ -976,12 +914,9 @@ export default function Checkout() {
         =========================================== */
 
         const sellerId =
-          sellerIds[0] ??
-          "";
+          sellerIds[0] ?? "";
 
-        if (
-          !sellerId
-        ) {
+        if (!sellerId) {
 
           showNotification(
             "error",
@@ -997,9 +932,7 @@ export default function Checkout() {
         =========================================== */
 
         if (
-          !isValidUUID(
-            sellerId
-          )
+          !isValidUUID(sellerId)
         ) {
 
           console.error(
@@ -1030,9 +963,7 @@ export default function Checkout() {
               )
           );
 
-        if (
-          missingSeller
-        ) {
+        if (missingSeller) {
 
           console.error(
             "MISSING / INVALID SELLER:",
@@ -1061,9 +992,7 @@ export default function Checkout() {
               sellerId
           );
 
-        if (
-          differentSeller
-        ) {
+        if (differentSeller) {
 
           console.error(
             "MULTIPLE SELLERS:",
@@ -1103,9 +1032,7 @@ export default function Checkout() {
             }
           );
 
-        if (
-          invalidQuantity
-        ) {
+        if (invalidQuantity) {
 
           console.error(
             "INVALID QUANTITY:",
@@ -1116,6 +1043,30 @@ export default function Checkout() {
             "error",
             "Jumlah menu tidak valid",
             "Jumlah setiap menu harus berupa angka bulat lebih dari 0."
+          );
+
+          return;
+        }
+
+        /* ===========================================
+           NOTE VALIDATION
+        =========================================== */
+
+        const invalidNote =
+          normalizedItems.some(
+            (
+              normalizedItem
+            ) =>
+              normalizedItem.note.length >
+              200
+          );
+
+        if (invalidNote) {
+
+          showNotification(
+            "warning",
+            "Catatan terlalu panjang",
+            "Catatan menu maksimal 200 karakter."
           );
 
           return;
@@ -1136,6 +1087,9 @@ export default function Checkout() {
 
               quantity:
                 normalizedItem.quantity,
+
+              note:
+                normalizedItem.note,
 
             })
           );
@@ -1176,9 +1130,7 @@ export default function Checkout() {
 
         console.log(
           "SELLER UUID VALID:",
-          isValidUUID(
-            sellerId
-          )
+          isValidUUID(sellerId)
         );
 
         console.log(
@@ -1244,9 +1196,7 @@ export default function Checkout() {
         =========================================== */
 
         if (
-          !isValidUUID(
-            orderId
-          )
+          !isValidUUID(orderId)
         ) {
 
           console.error(
@@ -1390,9 +1340,7 @@ export default function Checkout() {
 
           window.setTimeout(
             () => {
-              navigate(
-                "/login"
-              );
+              navigate("/login");
             },
             1200
           );
@@ -1594,23 +1542,17 @@ export default function Checkout() {
 
             {notification.type ===
               "warning" && (
-                <AlertTriangle
-                  size={20}
-                />
+                <AlertTriangle size={20} />
               )}
 
             {notification.type ===
               "error" && (
-                <XCircle
-                  size={20}
-                />
+                <XCircle size={20} />
               )}
 
             {notification.type ===
               "success" && (
-                <CheckCircle2
-                  size={20}
-                />
+                <CheckCircle2 size={20} />
               )}
 
           </div>
@@ -1635,9 +1577,7 @@ export default function Checkout() {
               closeNotification
             }
           >
-            <X
-              size={17}
-            />
+            <X size={17} />
           </button>
 
         </div>
@@ -1645,33 +1585,39 @@ export default function Checkout() {
       )}
 
       {/* =================================================
-          HEADER
+          TOP / HERO
       ================================================= */}
 
       <div className="checkout-top">
 
-        <button
-          type="button"
-          className="back-button"
-          onClick={
-            handleBack
-          }
-          disabled={
-            isSubmitting
-          }
-        >
-
-          <ArrowLeft
-            size={19}
-          />
-
-          <span>
-            Kembali
-          </span>
-
-        </button>
-
         <div className="checkout-hero">
+
+          {/* =============================================
+              BACK BUTTON
+          ============================================= */}
+
+          <button
+            type="button"
+            className="back-button"
+            onClick={
+              handleBack
+            }
+            disabled={
+              isSubmitting
+            }
+          >
+
+            <ArrowLeft size={19} />
+
+            <span>
+              Kembali
+            </span>
+
+          </button>
+
+          {/* =============================================
+              HERO CONTENT
+          ============================================= */}
 
           <div className="checkout-header">
 
@@ -1687,6 +1633,10 @@ export default function Checkout() {
             </p>
 
           </div>
+
+          {/* =============================================
+              PROGRESS
+          ============================================= */}
 
           <div className="checkout-progress">
 
@@ -1779,8 +1729,7 @@ export default function Checkout() {
               <button
                 type="button"
                 className={
-                  deliveryType ===
-                    "delivery"
+                  deliveryType === "delivery"
                     ? "delivery-option active"
                     : "delivery-option"
                 }
@@ -1796,9 +1745,7 @@ export default function Checkout() {
               >
 
                 <span className="delivery-icon">
-                  <Bike
-                    size={25}
-                  />
+                  <Bike size={25} />
                 </span>
 
                 <span className="delivery-text">
@@ -1827,8 +1774,7 @@ export default function Checkout() {
               <button
                 type="button"
                 className={
-                  deliveryType ===
-                    "pickup"
+                  deliveryType === "pickup"
                     ? "delivery-option active"
                     : "delivery-option"
                 }
@@ -1844,9 +1790,7 @@ export default function Checkout() {
               >
 
                 <span className="delivery-icon">
-                  <ShoppingBag
-                    size={25}
-                  />
+                  <ShoppingBag size={25} />
                 </span>
 
                 <span className="delivery-text">
@@ -1907,15 +1851,11 @@ export default function Checkout() {
 
                 <div className="address-input-wrapper">
 
-                  <MapPin
-                    size={20}
-                  />
+                  <MapPin size={20} />
 
                   <textarea
                     rows={4}
-                    value={
-                      address
-                    }
+                    value={address}
                     disabled={
                       isSubmitting
                     }
@@ -1975,9 +1915,7 @@ export default function Checkout() {
                   "qris"
                 }
                 icon={
-                  <QrCode
-                    size={22}
-                  />
+                  <QrCode size={22} />
                 }
                 title="QRIS"
                 description="Scan menggunakan mobile banking atau e-wallet."
@@ -1998,9 +1936,7 @@ export default function Checkout() {
                   "bank_transfer"
                 }
                 icon={
-                  <Building2
-                    size={22}
-                  />
+                  <Building2 size={22} />
                 }
                 title="Transfer Bank / ATM"
                 description="Transfer melalui ATM atau mobile banking."
@@ -2021,9 +1957,7 @@ export default function Checkout() {
                   "virtual_account"
                 }
                 icon={
-                  <CreditCard
-                    size={22}
-                  />
+                  <CreditCard size={22} />
                 }
                 title="Virtual Account"
                 description="Bayar menggunakan nomor virtual account."
@@ -2071,49 +2005,47 @@ export default function Checkout() {
               ) => {
 
                 const price =
-                  getMenuPrice(
-                    item
-                  );
+                  getMenuPrice(item);
 
                 const quantity =
-                  getQuantity(
-                    item
-                  );
+                  getQuantity(item);
 
                 const itemTotal =
-                  price *
-                  quantity;
+                  price * quantity;
 
                 const menuId =
-                  getMenuId(
-                    item
-                  ) ||
+                  getMenuId(item) ||
                   `checkout-item-${index}`;
+
+                const note =
+                  getMenuNote(item);
 
                 return (
 
                   <div
                     className="checkout-item"
                     key={
-                      menuId
+                      `${menuId}-${item.id ?? index}`
                     }
                   >
 
-                    <div>
+                    <div className="checkout-item-info">
 
                       <strong>
                         {
-                          getMenuName(
-                            item
-                          )
+                          getMenuName(item)
                         }
                       </strong>
 
+                      {note && (
+                        <small className="checkout-item-note">
+                          Catatan: {note}
+                        </small>
+                      )}
+
                       <span>
                         {quantity} ×{" "}
-                        {formatRupiah(
-                          price
-                        )}
+                        {formatRupiah(price)}
                       </span>
 
                     </div>
@@ -2157,8 +2089,7 @@ export default function Checkout() {
 
             <strong>
 
-              {deliveryFee ===
-                0
+              {deliveryFee === 0
                 ? "Gratis"
                 : formatRupiah(
                   deliveryFee
@@ -2177,9 +2108,7 @@ export default function Checkout() {
             </span>
 
             <strong>
-              {formatRupiah(
-                total
-              )}
+              {formatRupiah(total)}
             </strong>
 
           </div>
@@ -2219,9 +2148,7 @@ export default function Checkout() {
                   Lanjut Bayar
                 </span>
 
-                <ArrowRight
-                  size={18}
-                />
+                <ArrowRight size={18} />
 
               </>
 
@@ -2273,15 +2200,9 @@ function PaymentOption({
           ? "payment-method active"
           : "payment-method"
       }
-      onClick={
-        onClick
-      }
-      disabled={
-        disabled
-      }
-      aria-pressed={
-        active
-      }
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
     >
 
       <div className="payment-icon">

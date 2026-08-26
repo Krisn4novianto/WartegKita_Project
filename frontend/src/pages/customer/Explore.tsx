@@ -1,37 +1,115 @@
 import {
+  ArrowDownUp,
+  ArrowRight,
+  Bike,
+  ChevronDown,
+  Clock3,
+  MapPin,
+  Navigation,
+  Search,
+  ShieldCheck,
+  ShoppingBag,
+  SlidersHorizontal,
+  Star,
+  X,
+  Zap,
+} from "lucide-react";
+
+import {
   useEffect,
   useMemo,
   useState,
 } from "react";
 
 import {
-  Search,
-  MapPin,
-  SlidersHorizontal,
-  Star,
-  Clock3,
-  Bike,
-  ChevronDown,
-  X,
-  Navigation,
-  ShieldCheck,
-  Zap,
-  ArrowDownUp,
-} from "lucide-react";
+  Link,
+} from "react-router-dom";
 
 import api from "../../services/api";
+
 import {
   Seller,
   Menu,
 } from "../../types";
 
-import StoreCard from "../../components/StoreCard";
-
 import "../../styles/explore.css";
 
 
 /* =====================================================
-   CONSTANTS
+   TYPES
+===================================================== */
+
+type PopularMenu = {
+  menu_id: string;
+  menu_name: string;
+  total_sold: number;
+};
+
+type PopularSeller = {
+  seller_id: string;
+  total_orders: number;
+  popular_menus: PopularMenu[];
+};
+
+type ExploreSeller = Seller & {
+  id?: string;
+  seller_id?: string;
+
+  store_name?: string;
+  name?: string;
+  owner?: string;
+
+  image_url?: string;
+  image?: string;
+  logo_url?: string;
+  photo_url?: string;
+  cover_image?: string;
+
+  location?: string;
+  address?: string;
+  city?: string;
+  district?: string;
+  kecamatan?: string;
+  kelurahan?: string;
+  province?: string;
+  region?: string;
+
+  rating?: number | string;
+  distance_km?: number | string;
+  is_open?: boolean;
+
+  total_orders?: number;
+  popular_menus?: PopularMenu[];
+};
+
+
+type ExploreMenu = Menu & {
+  id?: string;
+  menu_id?: string;
+
+  seller_id?: string;
+
+  name?: string;
+  menu_name?: string;
+
+  description?: string;
+
+  price?: number | string;
+
+  image?: string;
+  image_url?: string;
+  photo_url?: string;
+
+  category?: string;
+  category_name?: string;
+
+  available?: boolean;
+  stock?: number;
+};
+
+
+/* =====================================================
+   CATEGORIES
 ===================================================== */
 
 const categories = [
@@ -67,6 +145,11 @@ const categories = [
   },
 ];
 
+
+/* =====================================================
+   LOCATIONS
+===================================================== */
+
 const locations = [
   "Semua Lokasi",
   "Jakarta Selatan",
@@ -77,11 +160,286 @@ const locations = [
 ];
 
 
-const normalize = (value: unknown) =>
+/* =====================================================
+   CATEGORY KEYWORDS
+===================================================== */
+
+const categoryKeywords: Record<string, string[]> = {
+  "nasi-rames": [
+    "nasi",
+    "rames",
+    "nasi rames",
+    "nasi campur",
+  ],
+
+  ayam: [
+    "ayam",
+    "chicken",
+  ],
+
+  ikan: [
+    "ikan",
+    "lele",
+    "nila",
+    "gurame",
+    "bandeng",
+    "tongkol",
+    "kembung",
+  ],
+
+  sayur: [
+    "sayur",
+    "kangkung",
+    "bayam",
+    "capcay",
+    "tumis",
+    "sop",
+    "lodeh",
+    "asem",
+  ],
+
+  minuman: [
+    "minuman",
+    "minum",
+    "teh",
+    "kopi",
+    "jeruk",
+    "jus",
+    "susu",
+    "es",
+  ],
+};
+
+
+/* =====================================================
+   HELPERS
+===================================================== */
+
+const normalize = (
+  value: unknown
+) =>
   String(value ?? "")
     .toLowerCase()
     .trim();
 
+
+/* =====================================================
+   API BASE URL
+===================================================== */
+
+const getApiBaseUrl = () => {
+
+  const baseURL =
+    (api.defaults as any)?.baseURL;
+
+  if (!baseURL) {
+    return window.location.origin;
+  }
+
+  return String(baseURL).replace(
+    /\/api\/v1\/?$/,
+    ""
+  );
+};
+
+
+/* =====================================================
+   IMAGE URL
+===================================================== */
+
+const getImageUrl = (
+  value?: unknown
+) => {
+
+  if (!value) {
+    return "";
+  }
+
+  const image =
+    String(value).trim();
+
+  if (!image) {
+    return "";
+  }
+
+  if (
+    image.startsWith("http://") ||
+    image.startsWith("https://") ||
+    image.startsWith("blob:") ||
+    image.startsWith("data:")
+  ) {
+    return image;
+  }
+
+  const baseURL =
+    getApiBaseUrl();
+
+  if (
+    image.startsWith("/uploads/")
+  ) {
+    return `${baseURL}${image}`;
+  }
+
+  if (
+    image.startsWith("uploads/")
+  ) {
+    return `${baseURL}/${image}`;
+  }
+
+  if (
+    image.startsWith("/images/")
+  ) {
+    return `${baseURL}${image}`;
+  }
+
+  if (
+    image.startsWith("images/")
+  ) {
+    return `${baseURL}/${image}`;
+  }
+
+  if (
+    image.startsWith("/")
+  ) {
+    return `${baseURL}${image}`;
+  }
+
+  return `${baseURL}/${image}`;
+};
+
+
+/* =====================================================
+   SELLER ID
+===================================================== */
+
+const getSellerId = (
+  seller: any
+) => {
+
+  return String(
+    seller?.id ??
+    seller?.seller_id ??
+    ""
+  ).trim();
+};
+
+
+/* =====================================================
+   MENU ID
+===================================================== */
+
+const getMenuId = (
+  menu: any
+) => {
+
+  return String(
+    menu?.id ??
+    menu?.menu_id ??
+    ""
+  ).trim();
+};
+
+
+/* =====================================================
+   MENU NAME
+===================================================== */
+
+const getMenuName = (
+  menu: any
+) => {
+
+  return (
+    menu?.name ??
+    menu?.menu_name ??
+    "Menu"
+  );
+};
+
+
+/* =====================================================
+   MENU PRICE
+===================================================== */
+
+const getMenuPrice = (
+  menu: any
+) => {
+
+  const price =
+    Number(
+      menu?.price ?? 0
+    );
+
+  if (!price) {
+    return "Harga belum tersedia";
+  }
+
+  return new Intl.NumberFormat(
+    "id-ID",
+    {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }
+  ).format(price);
+};
+
+
+/* =====================================================
+   SELLER IMAGE
+===================================================== */
+
+const getSellerImage = (
+  seller: any
+) => {
+
+  return getImageUrl(
+    seller?.image_url ||
+    seller?.image ||
+    seller?.logo_url ||
+    seller?.photo_url ||
+    seller?.cover_image ||
+    ""
+  );
+};
+
+
+/* =====================================================
+   MENU IMAGE
+===================================================== */
+
+const getMenuImage = (
+  menu: any
+) => {
+
+  return getImageUrl(
+    menu?.image_url ||
+    menu?.image ||
+    menu?.photo_url ||
+    ""
+  );
+};
+
+
+/* =====================================================
+   MENU AVAILABLE
+===================================================== */
+
+const isMenuAvailable = (
+  menu: ExploreMenu
+) => {
+
+  return (
+    menu.available !== false &&
+    Number(
+      menu.stock ?? 1
+    ) > 0
+  );
+};
+
+
+/* =====================================================
+   LOCATION MATCH
+===================================================== */
 
 const sellerMatchesLocation = (
   seller: any,
@@ -96,14 +454,14 @@ const sellerMatchesLocation = (
   }
 
   const sellerLocation = [
-    seller.address,
-    seller.location,
-    seller.city,
-    seller.province,
-    seller.district,
-    seller.kecamatan,
-    seller.kelurahan,
-    seller.region,
+    seller?.address,
+    seller?.location,
+    seller?.city,
+    seller?.province,
+    seller?.district,
+    seller?.kecamatan,
+    seller?.kelurahan,
+    seller?.region,
   ]
     .filter(Boolean)
     .map(normalize)
@@ -112,86 +470,835 @@ const sellerMatchesLocation = (
   return sellerLocation.includes(
     normalize(location)
   );
-
 };
 
 
-export default function Explore() {
+/* =====================================================
+   MENU CATEGORY MATCH
+===================================================== */
 
-  const [sellers, setSellers] =
-    useState<Seller[]>([]);
+const menuMatchesCategory = (
+  menu: any,
+  category: string
+) => {
 
-  const [menus, setMenus] =
-    useState<Menu[]>([]);
+  if (category === "all") {
+    return true;
+  }
 
-  const [search, setSearch] =
-    useState("");
+  const keywords =
+    categoryKeywords[category] ?? [];
 
-  const [selectedCategory, setSelectedCategory] =
-    useState("all");
+  const menuText = [
+    menu?.name,
+    menu?.menu_name,
+    menu?.description,
+    menu?.category,
+    menu?.category_name,
+  ]
+    .filter(Boolean)
+    .map(normalize)
+    .join(" ");
 
-  const [selectedLocation, setSelectedLocation] =
-    useState("Semua Lokasi");
+  return keywords.some(
+    keyword =>
+      menuText.includes(
+        normalize(keyword)
+      )
+  );
+};
 
-  const [sortBy, setSortBy] =
-    useState("recommended");
 
-  const [onlyOpen, setOnlyOpen] =
-    useState(false);
+/* =====================================================
+   MENU CARD
+===================================================== */
 
-  const [maxDistance, setMaxDistance] =
-    useState(5);
+type ExploreMenuCardProps = {
+  menu: ExploreMenu;
+  sellerId: string;
+};
 
-  const [minimumRating, setMinimumRating] =
-    useState(0);
 
-  const [showFilter, setShowFilter] =
-    useState(false);
+function ExploreMenuCard({
+  menu,
+  sellerId,
+}: ExploreMenuCardProps) {
 
-  const [showLocation, setShowLocation] =
-    useState(false);
+  const image =
+    getMenuImage(menu);
 
-  const [loading, setLoading] =
-    useState(true);
+  const name =
+    getMenuName(menu);
+
+  const price =
+    getMenuPrice(menu);
+
+  const menuId =
+    getMenuId(menu);
+
+  const available =
+    isMenuAvailable(menu);
+
+
+  /*
+   * Ini yang membuat lauk bisa diklik.
+   *
+   * Contoh:
+   *
+   * /store/SELLER_UUID?menu_id=MENU_UUID
+   *
+   * StoreDetail.tsx nantinya membaca
+   * parameter menu_id tersebut.
+   */
+
+  const menuUrl =
+    menuId && sellerId
+      ? `/store/${sellerId}?menu_id=${encodeURIComponent(menuId)}`
+      : `/store/${sellerId}`;
+
+
+  return (
+
+    <Link
+      to={menuUrl}
+      className="explore-menu-card"
+      aria-label={`Lihat menu ${name}`}
+      title={`Lihat ${name}`}
+    >
+
+      {/* =================================================
+         IMAGE
+      ================================================= */}
+
+      <div className="explore-menu-card-image">
+
+        {image ? (
+
+          <img
+            src={image}
+            alt={name}
+            loading="lazy"
+            onError={event => {
+
+              event.currentTarget.style.display =
+                "none";
+
+              event.currentTarget
+                .parentElement
+                ?.classList.add(
+                  "has-error"
+                );
+
+            }}
+          />
+
+        ) : (
+
+          <div className="explore-menu-image-placeholder">
+
+            <span>
+              🍛
+            </span>
+
+          </div>
+
+        )}
+
+
+        {!available && (
+
+          <div className="explore-menu-unavailable">
+            Habis
+          </div>
+
+        )}
+
+      </div>
+
+
+      {/* =================================================
+         CONTENT
+      ================================================= */}
+
+      <div className="explore-menu-card-content">
+
+        <strong
+          className="explore-menu-card-name"
+          title={name}
+        >
+          {name}
+        </strong>
+
+        <span className="explore-menu-card-price">
+          {price}
+        </span>
+
+      </div>
+
+    </Link>
+  );
+}
+
+
+/* =====================================================
+   EXPLORE STORE CARD
+===================================================== */
+
+type ExploreStoreCardProps = {
+  seller: ExploreSeller;
+
+  menus: ExploreMenu[];
+
+  popularMenus?: PopularMenu[];
+
+  categoryLabel?: string;
+};
+
+
+function ExploreStoreCard({
+  seller,
+  menus,
+  popularMenus = [],
+  categoryLabel,
+}: ExploreStoreCardProps) {
+
+  const sellerId =
+    getSellerId(seller);
+
+  const sellerImage =
+    getSellerImage(seller);
 
 
   /* =====================================================
-     LOAD SELLERS + MENUS
+     DISPLAY MENUS
+  ===================================================== */
+
+  const displayMenus =
+    useMemo(() => {
+
+      if (
+        popularMenus.length > 0
+      ) {
+
+        const popular =
+          popularMenus
+            .map(popularMenu => {
+
+              const found =
+                menus.find(
+                  menu =>
+                    getMenuId(menu) ===
+                    String(
+                      popularMenu.menu_id
+                    )
+                );
+
+
+              if (found) {
+                return found;
+              }
+
+
+              /*
+               * Popular menu belum ditemukan
+               * di endpoint /menus.
+               *
+               * Tetap dibuat sebagai object
+               * supaya menu_id tetap tersedia
+               * untuk navigasi.
+               */
+
+              return {
+                id:
+                  popularMenu.menu_id,
+
+                menu_id:
+                  popularMenu.menu_id,
+
+                seller_id:
+                  sellerId,
+
+                name:
+                  popularMenu.menu_name,
+
+                menu_name:
+                  popularMenu.menu_name,
+
+                price:
+                  0,
+
+                image:
+                  "",
+
+                available:
+                  true,
+
+                stock:
+                  1,
+
+              } as ExploreMenu;
+
+            })
+            .filter(
+              menu =>
+                Boolean(
+                  getMenuId(menu)
+                )
+            );
+
+
+        return popular.slice(
+          0,
+          8
+        );
+      }
+
+
+      return menus
+        .filter(
+          menu =>
+            menu.available !== false
+        )
+        .slice(
+          0,
+          8
+        );
+
+    }, [
+      menus,
+      popularMenus,
+      sellerId,
+    ]);
+
+
+  /* =====================================================
+     STORE DATA
+  ===================================================== */
+
+  const storeName =
+    seller.store_name ||
+    seller.name ||
+    "Warteg";
+
+
+  const rating =
+    Number(
+      seller.rating ?? 0
+    );
+
+
+  const distance =
+    Number(
+      seller.distance_km ?? 0
+    );
+
+
+  const address =
+    seller.address ||
+    seller.location ||
+    seller.city ||
+    "Lokasi warteg";
+
+
+  return (
+
+    <article className="explore-store-card">
+
+      {/* =================================================
+         STORE IMAGE
+      ================================================= */}
+
+      <Link
+        to={`/store/${sellerId}`}
+        className="explore-store-card-image-link"
+        aria-label={`Lihat ${storeName}`}
+      >
+
+        <div className="explore-store-card-image">
+
+          {sellerImage ? (
+
+            <img
+              src={sellerImage}
+              alt={storeName}
+              loading="lazy"
+              onError={event => {
+
+                event.currentTarget.style.display =
+                  "none";
+
+                event.currentTarget
+                  .parentElement
+                  ?.classList.add(
+                    "has-error"
+                  );
+
+              }}
+            />
+
+          ) : (
+
+            <div className="explore-store-card-placeholder">
+
+              <span>
+                🍛
+              </span>
+
+            </div>
+
+          )}
+
+
+          <div
+            className={
+              seller.is_open
+                ? "explore-store-status is-open"
+                : "explore-store-status is-closed"
+            }
+          >
+
+            <span className="explore-store-status-dot" />
+
+            {seller.is_open
+              ? "Buka"
+              : "Tutup"}
+
+          </div>
+
+        </div>
+
+      </Link>
+
+
+      {/* =================================================
+         STORE INFO
+      ================================================= */}
+
+      <div className="explore-store-card-content">
+
+        <div className="explore-store-heading">
+
+          <Link
+            to={`/store/${sellerId}`}
+            className="explore-store-card-name"
+          >
+            {storeName}
+          </Link>
+
+
+          <div className="explore-rating">
+
+            <Star
+              size={14}
+              fill="currentColor"
+            />
+
+            <strong>
+              {rating > 0
+                ? rating.toFixed(1)
+                : "Baru"}
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        {/* =================================================
+           LOCATION
+        ================================================= */}
+
+        <div className="explore-store-card-location">
+
+          <MapPin size={13} />
+
+          <span>
+            {address}
+          </span>
+
+          {distance > 0 && (
+
+            <>
+
+              <span className="location-separator">
+                •
+              </span>
+
+              <span>
+                {distance.toFixed(1)} km
+              </span>
+
+            </>
+
+          )}
+
+        </div>
+
+
+        {/* =================================================
+           MENU PANEL
+        ================================================= */}
+
+        <div className="explore-menu-panel">
+
+          {/* HEADER */}
+
+          <div className="explore-menu-panel-header">
+
+            <div className="explore-menu-available">
+
+              <span className="explore-menu-available-dot" />
+
+              <strong>
+                {displayMenus.length > 0
+                  ? "Menu tersedia"
+                  : "Belum ada menu"}
+              </strong>
+
+              {displayMenus.length > 0 && (
+
+                <span className="explore-menu-count">
+                  {displayMenus.length}
+                </span>
+
+              )}
+
+            </div>
+
+
+            <Link
+              to={`/store/${sellerId}`}
+              className="explore-see-menu"
+            >
+
+              <span>
+                Lihat menu
+              </span>
+
+              <ArrowRight size={15} />
+
+            </Link>
+
+          </div>
+
+
+          {/* =================================================
+             MENU CAROUSEL
+          ================================================= */}
+
+          {displayMenus.length > 0 ? (
+
+            <div
+              className="explore-menu-scroll"
+              onWheel={event => {
+
+                /*
+                 * Mouse wheel vertikal
+                 * diarahkan menjadi horizontal.
+                 */
+
+                if (
+                  Math.abs(
+                    event.deltaY
+                  ) >
+                  Math.abs(
+                    event.deltaX
+                  )
+                ) {
+
+                  event.currentTarget.scrollLeft +=
+                    event.deltaY;
+
+                }
+
+              }}
+            >
+
+              {displayMenus.map(
+                menu => (
+
+                  <ExploreMenuCard
+                    key={
+                      getMenuId(menu)
+                    }
+                    menu={
+                      menu
+                    }
+                    sellerId={
+                      sellerId
+                    }
+                  />
+
+                )
+              )}
+
+            </div>
+
+          ) : (
+
+            <div className="explore-no-menu">
+
+              <span>
+                🍽️
+              </span>
+
+              <span>
+                Menu belum tersedia
+              </span>
+
+            </div>
+
+          )}
+
+        </div>
+
+
+        {/* =================================================
+           FOOTER
+        ================================================= */}
+
+        <div className="explore-store-card-footer">
+
+          <div
+            className={
+              seller.is_open
+                ? "explore-store-card-open"
+                : "explore-store-card-closed"
+            }
+          >
+
+            <Clock3 size={13} />
+
+            <span>
+              {seller.is_open
+                ? "Buka sekarang"
+                : "Sedang tutup"}
+            </span>
+
+          </div>
+
+
+          <Link
+            to={`/store/${sellerId}`}
+            className="explore-card-detail-link"
+          >
+
+            Detail warteg
+
+            <ArrowRight size={13} />
+
+          </Link>
+
+        </div>
+
+      </div>
+
+    </article>
+  );
+}
+
+
+/* =====================================================
+   SKELETON
+===================================================== */
+
+function ExploreSkeleton() {
+
+  return (
+
+    <div className="explore-skeleton-card">
+
+      <div className="explore-skeleton-image" />
+
+      <div className="explore-skeleton-content">
+
+        <div className="explore-skeleton-line large" />
+
+        <div className="explore-skeleton-line medium" />
+
+        <div className="explore-skeleton-line small" />
+
+        <div className="explore-skeleton-menu">
+
+          <span />
+          <span />
+          <span />
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+}
+
+
+/* =====================================================
+   COMPONENT
+===================================================== */
+
+export default function Explore() {
+
+  const [
+    sellers,
+    setSellers,
+  ] = useState<ExploreSeller[]>([]);
+
+
+  const [
+    menus,
+    setMenus,
+  ] = useState<ExploreMenu[]>([]);
+
+
+  const [
+    popularSellers,
+    setPopularSellers,
+  ] = useState<PopularSeller[]>([]);
+
+
+  const [
+    search,
+    setSearch,
+  ] = useState("");
+
+
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] = useState("all");
+
+
+  const [
+    selectedLocation,
+    setSelectedLocation,
+  ] = useState(
+    "Semua Lokasi"
+  );
+
+
+  const [
+    sortBy,
+    setSortBy,
+  ] = useState(
+    "recommended"
+  );
+
+
+  const [
+    onlyOpen,
+    setOnlyOpen,
+  ] = useState(false);
+
+
+  const [
+    maxDistance,
+    setMaxDistance,
+  ] = useState(999);
+
+
+  const [
+    minimumRating,
+    setMinimumRating,
+  ] = useState(0);
+
+
+  const [
+    showFilter,
+    setShowFilter,
+  ] = useState(false);
+
+
+  const [
+    showLocation,
+    setShowLocation,
+  ] = useState(false);
+
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+
+  /* =====================================================
+     LOAD DATA
   ===================================================== */
 
   useEffect(() => {
 
     let mounted = true;
 
-    const loadData = async () => {
 
-      setLoading(true);
+    const loadData =
+      async () => {
 
-      try {
+        setLoading(true);
 
-        const [
-          sellerResponse,
-          menuResponse,
-        ] = await Promise.all([
-          api.get("/sellers"),
-          api.get("/menus"),
-        ]);
+
+        const results =
+          await Promise.allSettled([
+
+            api.get("/sellers"),
+
+            api.get("/menus"),
+
+            api.get("/explore/popular"),
+
+          ]);
+
 
         if (!mounted) {
           return;
         }
 
+
+        /* =============================================
+           SELLERS
+        ============================================= */
+
+        const sellerResult =
+          results[0];
+
+
         if (
-          Array.isArray(
-            sellerResponse.data
-          )
+          sellerResult.status ===
+          "fulfilled"
         ) {
 
+          const sellerData =
+            sellerResult.value.data;
+
+
+          const rawSellers =
+            Array.isArray(
+              sellerData
+            )
+              ? sellerData
+              : Array.isArray(
+                sellerData?.data
+              )
+                ? sellerData.data
+                : Array.isArray(
+                  sellerData?.sellers
+                )
+                  ? sellerData.sellers
+                  : [];
+
+
           setSellers(
-            sellerResponse.data.map(
+            rawSellers.map(
               (item: any) => ({
 
                 ...item,
+
+                id:
+                  item.id ??
+                  item.seller_id,
+
+                seller_id:
+                  item.seller_id ??
+                  item.id,
 
                 store_name:
                   item.store_name ??
@@ -208,7 +1315,8 @@ export default function Explore() {
 
                 rating:
                   Number(
-                    item.rating ?? 0
+                    item.rating ??
+                    0
                   ),
 
                 is_open:
@@ -217,7 +1325,8 @@ export default function Explore() {
 
                 distance_km:
                   Number(
-                    item.distance_km ?? 0
+                    item.distance_km ??
+                    0
                   ),
 
               })
@@ -226,39 +1335,103 @@ export default function Explore() {
 
         }
 
+
+        /* =============================================
+           MENUS
+        ============================================= */
+
+        const menuResult =
+          results[1];
+
+
         if (
-          Array.isArray(
-            menuResponse.data
-          )
+          menuResult.status ===
+          "fulfilled"
         ) {
 
+          const menuData =
+            menuResult.value.data;
+
+
+          const rawMenus =
+            Array.isArray(
+              menuData
+            )
+              ? menuData
+              : Array.isArray(
+                menuData?.data
+              )
+                ? menuData.data
+                : [];
+
+
           setMenus(
-            menuResponse.data
+            rawMenus
           );
 
         }
 
-      } catch (error) {
+
+        /* =============================================
+           POPULAR
+        ============================================= */
+
+        const popularResult =
+          results[2];
+
+
+        if (
+          popularResult.status ===
+          "fulfilled"
+        ) {
+
+          const popularData =
+            popularResult.value.data;
+
+
+          const rawPopular =
+            Array.isArray(
+              popularData
+            )
+              ? popularData
+              : Array.isArray(
+                popularData?.data
+              )
+                ? popularData.data
+                : [];
+
+
+          setPopularSellers(
+            rawPopular
+          );
+
+        }
+
+
+        setLoading(false);
+
+      };
+
+
+    loadData()
+      .catch(error => {
 
         console.error(
           "Gagal mengambil data Explore:",
           error
         );
 
-      } finally {
-
         if (mounted) {
           setLoading(false);
         }
 
-      }
+      });
 
-    };
-
-    loadData();
 
     return () => {
+
       mounted = false;
+
     };
 
   }, []);
@@ -274,15 +1447,77 @@ export default function Explore() {
 
     return menus.filter(
       (menu: any) =>
-        String(menu.seller_id) ===
-        String(sellerId)
+
+        String(
+          menu?.seller_id
+        ) ===
+        String(
+          sellerId
+        )
     );
 
   };
 
 
   /* =====================================================
-     FILTER
+     CATEGORY MENUS
+  ===================================================== */
+
+  const getCategoryMenus = (
+    sellerId: string | number,
+    category: string
+  ) => {
+
+    return getSellerMenus(
+      sellerId
+    ).filter(
+      menu =>
+        menuMatchesCategory(
+          menu,
+          category
+        )
+    );
+
+  };
+
+
+  /* =====================================================
+     POPULAR MAP
+  ===================================================== */
+
+  const popularMap =
+    useMemo(() => {
+
+      const map =
+        new Map<
+          string,
+          PopularSeller
+        >();
+
+
+      popularSellers.forEach(
+        item => {
+
+          map.set(
+            String(
+              item.seller_id
+            ),
+            item
+          );
+
+        }
+      );
+
+
+      return map;
+
+    }, [
+      popularSellers,
+    ]);
+
+
+  /* =====================================================
+     FILTER SELLERS
   ===================================================== */
 
   const filteredSellers =
@@ -291,15 +1526,18 @@ export default function Explore() {
       let result =
         [...sellers];
 
+
       const keyword =
         normalize(search);
 
 
-      /* LOCATION */
+      /* =========================================
+         LOCATION
+      ========================================= */
 
       result =
         result.filter(
-          (seller: any) =>
+          seller =>
             sellerMatchesLocation(
               seller,
               selectedLocation
@@ -307,51 +1545,81 @@ export default function Explore() {
         );
 
 
-      /* SEARCH */
+      /* =========================================
+         SEARCH
+      ========================================= */
 
       if (keyword) {
 
         result =
           result.filter(
-            (seller: any) => {
+            seller => {
+
+              const sellerId =
+                getSellerId(
+                  seller
+                );
+
 
               const sellerMenus =
                 getSellerMenus(
-                  seller.id
+                  sellerId
                 );
 
+
               const sellerText = [
+
                 seller.store_name,
+
                 seller.name,
+
                 seller.owner,
+
                 seller.description,
+
                 seller.address,
+
+                seller.location,
+
                 seller.city,
+
                 seller.district,
+
                 seller.kecamatan,
+
+                seller.kelurahan,
+
               ]
                 .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
+                .map(normalize)
+                .join(" ");
+
 
               const menuText =
                 sellerMenus
-                  .map((menu: any) =>
-                    [
-                      menu.name,
-                      menu.description,
-                      menu.category,
-                      menu.category_name,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")
+                  .map(
+                    menu =>
+                      [
+                        menu.name,
+                        menu.menu_name,
+                        menu.description,
+                        menu.category,
+                        menu.category_name,
+                      ]
+                        .filter(Boolean)
+                        .map(normalize)
+                        .join(" ")
                   )
-                  .join(" ")
-                  .toLowerCase();
+                  .join(" ");
+
 
               return (
-                sellerText.includes(keyword) ||
-                menuText.includes(keyword)
+                sellerText.includes(
+                  keyword
+                ) ||
+                menuText.includes(
+                  keyword
+                )
               );
 
             }
@@ -360,42 +1628,30 @@ export default function Explore() {
       }
 
 
-      /* CATEGORY */
+      /* =========================================
+         CATEGORY
+      ========================================= */
 
       if (
-        selectedCategory !== "all"
+        selectedCategory !==
+        "all"
       ) {
 
         result =
           result.filter(
-            (seller: any) => {
+            seller => {
 
-              const sellerMenus =
-                getSellerMenus(
-                  seller.id
+              const sellerId =
+                getSellerId(
+                  seller
                 );
 
-              return sellerMenus.some(
-                (menu: any) => {
 
-                  const category =
-                    normalize(
-                      menu.category ??
-                      menu.category_name
-                    );
-
-                  const selected =
-                    normalize(
-                      selectedCategory
-                    );
-
-                  return (
-                    category === selected ||
-                    category.includes(selected) ||
-                    selected.includes(category)
-                  );
-
-                }
+              return (
+                getCategoryMenus(
+                  sellerId,
+                  selectedCategory
+                ).length > 0
               );
 
             }
@@ -404,82 +1660,180 @@ export default function Explore() {
       }
 
 
-      /* OPEN */
+      /* =========================================
+         OPEN
+      ========================================= */
 
       if (onlyOpen) {
 
         result =
           result.filter(
-            (seller: any) =>
-              Boolean(
-                seller.is_open
-              )
+            seller =>
+              seller.is_open ===
+              true
           );
 
       }
 
 
-      /* DISTANCE */
-
-      result =
-        result.filter(
-          (seller: any) =>
-            Number(
-              seller.distance_km ?? 0
-            ) <= maxDistance
-        );
-
-
-      /* RATING */
-
-      result =
-        result.filter(
-          (seller: any) =>
-            Number(
-              seller.rating ?? 0
-            ) >= minimumRating
-        );
-
-
-      /* SORT */
+      /* =========================================
+         DISTANCE
+      ========================================= */
 
       if (
-        sortBy === "nearest"
+        maxDistance <
+        999
+      ) {
+
+        result =
+          result.filter(
+            seller => {
+
+              const distance =
+                Number(
+                  seller.distance_km ??
+                  0
+                );
+
+              return (
+                distance <=
+                maxDistance
+              );
+
+            }
+          );
+
+      }
+
+
+      /* =========================================
+         RATING
+      ========================================= */
+
+      if (
+        minimumRating >
+        0
+      ) {
+
+        result =
+          result.filter(
+            seller =>
+              Number(
+                seller.rating ??
+                0
+              ) >=
+              minimumRating
+          );
+
+      }
+
+
+      /* =========================================
+         SORT
+      ========================================= */
+
+      if (
+        sortBy ===
+        "nearest"
       ) {
 
         result.sort(
-          (a: any, b: any) =>
-            Number(
-              a.distance_km ?? 999
-            ) -
-            Number(
-              b.distance_km ?? 999
-            )
+          (
+            a,
+            b
+          ) => {
+
+            return (
+              Number(
+                a.distance_km ??
+                999
+              ) -
+              Number(
+                b.distance_km ??
+                999
+              )
+            );
+
+          }
         );
 
       }
 
+
       if (
-        sortBy === "rating"
+        sortBy ===
+        "rating"
       ) {
 
         result.sort(
-          (a: any, b: any) =>
-            Number(
-              b.rating ?? 0
-            ) -
-            Number(
-              a.rating ?? 0
-            )
+          (
+            a,
+            b
+          ) => {
+
+            return (
+              Number(
+                b.rating ??
+                0
+              ) -
+              Number(
+                a.rating ??
+                0
+              )
+            );
+
+          }
         );
 
       }
+
+
+      if (
+        sortBy ===
+        "popular"
+      ) {
+
+        result.sort(
+          (
+            a,
+            b
+          ) => {
+
+            const aPopular =
+              popularMap.get(
+                getSellerId(a)
+              );
+
+
+            const bPopular =
+              popularMap.get(
+                getSellerId(b)
+              );
+
+
+            return (
+              Number(
+                bPopular?.total_orders ??
+                0
+              ) -
+              Number(
+                aPopular?.total_orders ??
+                0
+              )
+            );
+
+          }
+        );
+
+      }
+
 
       return result;
 
     }, [
       sellers,
       menus,
+      popularMap,
       search,
       selectedCategory,
       selectedLocation,
@@ -494,25 +1848,62 @@ export default function Explore() {
      RESET
   ===================================================== */
 
-  const resetFilter = () => {
+  const resetFilter =
+    () => {
 
-    setSearch("");
-    setSelectedCategory("all");
-    setSelectedLocation("Semua Lokasi");
-    setSortBy("recommended");
-    setOnlyOpen(false);
-    setMaxDistance(5);
-    setMinimumRating(0);
+      setSearch("");
 
-  };
+      setSelectedCategory(
+        "all"
+      );
 
+      setSelectedLocation(
+        "Semua Lokasi"
+      );
+
+      setSortBy(
+        "recommended"
+      );
+
+      setOnlyOpen(
+        false
+      );
+
+      setMaxDistance(
+        999
+      );
+
+      setMinimumRating(
+        0
+      );
+
+    };
+
+
+  /* =====================================================
+     CATEGORY LABEL
+  ===================================================== */
+
+  const selectedCategoryLabel =
+    categories.find(
+      category =>
+        category.value ===
+        selectedCategory
+    )?.label ??
+    "";
+
+
+  /* =====================================================
+     RENDER
+  ===================================================== */
 
   return (
 
-    <div className="explore-page">
+    <main className="explore-page">
 
-
-      {/* HEADER */}
+      {/* =================================================
+         HERO
+      ================================================= */}
 
       <section className="explore-header">
 
@@ -531,25 +1922,26 @@ export default function Explore() {
           </h1>
 
           <p>
-            Temukan warteg terdekat, lihat menu,
-            pilih makanan favoritmu, dan pesan
-            langsung dari satu aplikasi.
+            Temukan warteg terdekat,
+            lihat menu favorit,
+            dan pesan langsung
+            dari satu aplikasi.
           </p>
 
           <div className="explore-trust">
 
             <span>
-              <ShieldCheck size={17} />
+              <ShieldCheck size={16} />
               Penjual terpercaya
             </span>
 
             <span>
-              <Zap size={17} />
+              <Zap size={16} />
               Pesan lebih cepat
             </span>
 
             <span>
-              <Bike size={17} />
+              <Bike size={16} />
               Bisa diantar
             </span>
 
@@ -558,7 +1950,9 @@ export default function Explore() {
         </div>
 
 
-        {/* LOCATION */}
+        {/* =================================================
+           LOCATION
+        ================================================= */}
 
         <div className="location-selector">
 
@@ -567,13 +1961,14 @@ export default function Explore() {
             className="location-selector-button"
             onClick={() =>
               setShowLocation(
-                value => !value
+                value =>
+                  !value
               )
             }
           >
 
             <div className="location-main-icon">
-              <MapPin size={22} />
+              <MapPin size={21} />
             </div>
 
             <div className="location-text">
@@ -629,9 +2024,11 @@ export default function Explore() {
                     }}
                   >
 
-                    <MapPin size={16} />
+                    <MapPin size={15} />
 
-                    {location}
+                    <span>
+                      {location}
+                    </span>
 
                   </button>
 
@@ -647,13 +2044,15 @@ export default function Explore() {
       </section>
 
 
-      {/* SEARCH */}
+      {/* =================================================
+         SEARCH
+      ================================================= */}
 
       <section className="explore-search-wrapper">
 
         <div className="explore-search-box">
 
-          <Search size={22} />
+          <Search size={20} />
 
           <input
             value={search}
@@ -662,7 +2061,7 @@ export default function Explore() {
                 event.target.value
               )
             }
-            placeholder="Cari warteg, menu, ayam, nasi rames..."
+            placeholder="Cari warteg atau makanan..."
           />
 
           {search && (
@@ -674,7 +2073,9 @@ export default function Explore() {
                 setSearch("")
               }
             >
-              <X size={18} />
+
+              <X size={16} />
+
             </button>
 
           )}
@@ -691,21 +2092,26 @@ export default function Explore() {
           }
           onClick={() =>
             setShowFilter(
-              value => !value
+              value =>
+                !value
             )
           }
         >
 
-          <SlidersHorizontal size={18} />
+          <SlidersHorizontal size={17} />
 
-          Filter
+          <span>
+            Filter
+          </span>
 
         </button>
 
       </section>
 
 
-      {/* FILTER */}
+      {/* =================================================
+         FILTER
+      ================================================= */}
 
       {showFilter && (
 
@@ -714,7 +2120,7 @@ export default function Explore() {
           <div className="filter-control">
 
             <label>
-              <ArrowDownUp size={16} />
+              <ArrowDownUp size={14} />
               Urutkan
             </label>
 
@@ -729,6 +2135,10 @@ export default function Explore() {
 
               <option value="recommended">
                 Rekomendasi
+              </option>
+
+              <option value="popular">
+                Paling sering dipesan
               </option>
 
               <option value="nearest">
@@ -747,7 +2157,7 @@ export default function Explore() {
           <div className="filter-control">
 
             <label>
-              <Navigation size={16} />
+              <Navigation size={14} />
               Jarak maksimal
             </label>
 
@@ -790,7 +2200,7 @@ export default function Explore() {
           <div className="filter-control">
 
             <label>
-              <Star size={16} />
+              <Star size={14} />
               Rating minimal
             </label>
 
@@ -835,7 +2245,8 @@ export default function Explore() {
             />
 
             <span>
-              Hanya tampilkan warteg yang sedang buka
+              Hanya tampilkan warteg
+              yang sedang buka
             </span>
 
           </label>
@@ -844,7 +2255,9 @@ export default function Explore() {
           <button
             type="button"
             className="reset-filter-button"
-            onClick={resetFilter}
+            onClick={
+              resetFilter
+            }
           >
             Reset filter
           </button>
@@ -854,23 +2267,21 @@ export default function Explore() {
       )}
 
 
-      {/* CATEGORY */}
+      {/* =================================================
+         CATEGORIES
+      ================================================= */}
 
       <section className="explore-category-section">
 
         <div className="section-header">
 
-          <div>
+          <span className="eyebrow">
+            PILIH SESUAI SELERA
+          </span>
 
-            <span className="eyebrow">
-              PILIH SESUAI SELERA
-            </span>
-
-            <h2>
-              Mau makan apa hari ini?
-            </h2>
-
-          </div>
+          <h2>
+            Mau makan apa hari ini?
+          </h2>
 
         </div>
 
@@ -914,87 +2325,108 @@ export default function Explore() {
       </section>
 
 
-      {/* BENEFITS */}
+      {/* =================================================
+         BENEFITS
+      ================================================= */}
 
       <section className="explore-benefit-grid">
 
         <div className="explore-benefit-card">
-          <MapPin size={22} />
+
+          <div className="explore-benefit-icon">
+            <MapPin size={19} />
+          </div>
+
           <div>
+
             <strong>
               Dekat denganmu
             </strong>
+
             <span>
               Temukan warteg berdasarkan lokasi.
             </span>
+
           </div>
+
         </div>
 
+
         <div className="explore-benefit-card">
-          <Bike size={22} />
+
+          <div className="explore-benefit-icon">
+            <Bike size={19} />
+          </div>
+
           <div>
+
             <strong>
               Antar ke lokasi
             </strong>
+
             <span>
               Pesan makanan tanpa perlu keluar.
             </span>
+
           </div>
+
         </div>
 
+
         <div className="explore-benefit-card">
-          <Clock3 size={22} />
+
+          <div className="explore-benefit-icon">
+            <Clock3 size={19} />
+          </div>
+
           <div>
+
             <strong>
               Hemat waktu
             </strong>
+
             <span>
               Pesan dulu, makan kemudian.
             </span>
+
           </div>
+
         </div>
 
       </section>
 
 
-      {/* RESULTS */}
+      {/* =================================================
+         LOADING
+      ================================================= */}
 
-      <section className="explore-results-section">
+      {loading ? (
 
-        <div className="explore-result-header">
+        <section className="explore-results-section">
 
-          <div>
+          <div className="explore-result-header">
 
-            <span className="eyebrow">
-              WARTEG DI SEKITARMU
-            </span>
+            <div>
 
-            <h2>
-              {filteredSellers.length} warteg ditemukan
-            </h2>
+              <span className="eyebrow">
+                WARTEG DI SEKITARMU
+              </span>
 
-          </div>
+              <h2>
+                Memuat warteg...
+              </h2>
 
-          <div className="result-location">
-
-            <MapPin size={16} />
-
-            {selectedLocation}
+            </div>
 
           </div>
 
-        </div>
 
-
-        {loading ? (
-
-          <div className="grid explore-grid">
+          <div className="explore-grid">
 
             {[1, 2, 3, 4].map(
               item => (
 
-                <div
-                  className="explore-skeleton"
+                <ExploreSkeleton
                   key={item}
                 />
 
@@ -1003,53 +2435,256 @@ export default function Explore() {
 
           </div>
 
-        ) : filteredSellers.length > 0 ? (
+        </section>
 
-          <div className="grid explore-grid">
+      ) : (
 
-            {filteredSellers.map(
-              (seller, index) => (
+        <>
 
-                <StoreCard
-                  key={seller.id}
-                  seller={seller}
-                  imageIndex={index}
-                />
+          {/* =================================================
+             RESULT HEADER
+          ================================================= */}
 
-              )
+          <section className="explore-results-section">
+
+            <div className="explore-result-header">
+
+              <div>
+
+                <span className="eyebrow">
+
+                  {search
+                    ? "HASIL PENCARIAN"
+                    : selectedCategory !== "all"
+                      ? `MENU ${selectedCategoryLabel.toUpperCase()}`
+                      : "WARTEG DI SEKITARMU"}
+
+                </span>
+
+                <h2>
+
+                  {search
+
+                    ? `${filteredSellers.length} warteg ditemukan`
+
+                    : selectedCategory !== "all"
+
+                      ? `Pilihan ${selectedCategoryLabel}`
+
+                      : "Semua warteg"}
+
+                </h2>
+
+              </div>
+
+
+              <div className="result-location">
+
+                <MapPin size={14} />
+
+                <span>
+                  {selectedLocation}
+                </span>
+
+              </div>
+
+            </div>
+
+
+            {/* =================================================
+               DESCRIPTION
+            ================================================= */}
+
+            <div className="explore-section-description">
+
+              {selectedCategory !== "all" ? (
+
+                <>
+
+                  <span className="category-description-emoji">
+
+                    {
+                      categories.find(
+                        category =>
+                          category.value ===
+                          selectedCategory
+                      )?.emoji
+                    }
+
+                  </span>
+
+                  <span>
+
+                    Warteg yang menyediakan
+                    menu{" "}
+
+                    <strong>
+                      {selectedCategoryLabel.toLowerCase()}
+                    </strong>
+
+                  </span>
+
+                </>
+
+              ) : search ? (
+
+                <>
+
+                  <Search size={15} />
+
+                  <span>
+                    Menampilkan hasil untuk{" "}
+                    <strong>
+                      "{search}"
+                    </strong>
+                  </span>
+
+                </>
+
+              ) : (
+
+                <>
+
+                  <ShoppingBag size={15} />
+
+                  <span>
+                    Temukan warteg dan lihat
+                    menu yang tersedia.
+                  </span>
+
+                </>
+
+              )}
+
+            </div>
+
+
+            {/* =================================================
+               RESULTS
+            ================================================= */}
+
+            {filteredSellers.length > 0 ? (
+
+              <div className="explore-grid">
+
+                {filteredSellers.map(
+                  seller => {
+
+                    const sellerId =
+                      getSellerId(
+                        seller
+                      );
+
+
+                    const sellerMenus =
+                      selectedCategory !== "all"
+
+                        ? getCategoryMenus(
+                          sellerId,
+                          selectedCategory
+                        )
+
+                        : getSellerMenus(
+                          sellerId
+                        );
+
+
+                    const popular =
+                      popularMap.get(
+                        sellerId
+                      );
+
+
+                    return (
+
+                      <ExploreStoreCard
+                        key={
+                          sellerId
+                        }
+                        seller={
+                          seller
+                        }
+                        menus={
+                          sellerMenus
+                        }
+                        popularMenus={
+                          popular?.popular_menus
+                        }
+                        categoryLabel={
+                          selectedCategory !== "all"
+                            ? selectedCategoryLabel
+                            : undefined
+                        }
+                      />
+
+                    );
+
+                  }
+                )}
+
+              </div>
+
+            ) : (
+
+              <div className="explore-empty-state">
+
+                <div className="explore-empty-icon">
+
+                  {search
+                    ? "🔎"
+                    : selectedCategory !== "all"
+                      ? "🍽️"
+                      : "📍"}
+
+                </div>
+
+
+                <h3>
+
+                  {search
+
+                    ? "Tidak ada hasil"
+
+                    : selectedCategory !== "all"
+
+                      ? `Belum ada warteg dengan menu ${selectedCategoryLabel.toLowerCase()}`
+
+                      : "Tidak ada warteg yang sesuai"}
+
+                </h3>
+
+
+                <p>
+
+                  {search
+
+                    ? "Coba cari nama warteg atau makanan lain."
+
+                    : "Coba ubah lokasi atau filter pencarian."}
+
+                </p>
+
+
+                <button
+                  type="button"
+                  className="explore-primary-button"
+                  onClick={
+                    resetFilter
+                  }
+                >
+                  Reset Filter
+                </button>
+
+              </div>
+
             )}
 
-          </div>
+          </section>
 
-        ) : (
+        </>
 
-          <div className="empty-state card">
+      )}
 
-            <h3>
-              Tidak ada warteg yang sesuai
-            </h3>
-
-            <p>
-              Coba ubah lokasi, kategori,
-              pencarian, atau filter.
-            </p>
-
-            <button
-              type="button"
-              className="button"
-              onClick={resetFilter}
-            >
-              Reset Filter
-            </button>
-
-          </div>
-
-        )}
-
-      </section>
-
-    </div>
-
+    </main>
   );
-
 }

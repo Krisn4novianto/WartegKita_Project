@@ -14,8 +14,10 @@ import {
   Clock3,
   MapPin,
   MessageCircle,
+  Search,
   ShoppingCart,
   Star,
+  X,
 } from "lucide-react";
 
 import MenuCard from "./MenuCard";
@@ -30,60 +32,54 @@ import {
   useCartStore,
 } from "../../store/cartStore";
 
-import {
-  useCheckoutStore,
-} from "../../store/checkoutStore";
-
 import "../../styles/store-detail.css";
 
-
 /* =====================================================
-   CUSTOMER SELLER
+   TYPE
 ===================================================== */
 
 interface CustomerSeller {
   id: string;
-
   store_name: string;
-
   description: string;
-
   address: string;
-
   owner: string;
-
   phone: string;
-
   rating: number;
-
-  is_open: boolean;
-
   distance_km: number;
-
   total_menu: number;
-
   opening_time: string;
-
   closing_time: string;
-
+  is_open: boolean;
   image: string;
 }
 
+/* =====================================================
+   HELPERS
+===================================================== */
+
+const numberValue = (
+  value: unknown,
+): number => {
+  const result = Number(value);
+
+  return Number.isFinite(result)
+    ? result
+    : 0;
+};
 
 /* =====================================================
-   IMAGE URL HELPER
+   IMAGE URL
 ===================================================== */
 
 const getImageUrl = (
   image?: string | null,
 ): string => {
-
   if (!image) {
     return "";
   }
 
-  const value =
-    String(image).trim();
+  const value = String(image).trim();
 
   if (!value) {
     return "";
@@ -98,304 +94,191 @@ const getImageUrl = (
   }
 
   const baseURL =
-    api.defaults.baseURL || "";
+    api.defaults.baseURL ?? "";
 
-  let origin =
-    baseURL;
+  let origin = baseURL;
 
   try {
-
     if (
       baseURL.startsWith("http://") ||
       baseURL.startsWith("https://")
     ) {
-
-      origin =
-        new URL(
-          baseURL,
-        ).origin;
+      origin = new URL(baseURL).origin;
     }
-
   } catch {
-
-    origin =
-      baseURL;
+    origin = baseURL;
   }
 
-  origin =
-    origin.replace(
-      /\/+$/,
-      "",
-    );
-
-  const cleanPath =
-    value.replace(
-      /^\/+/,
-      "",
-    );
-
-  const encodedPath =
-    cleanPath
-      .split("/")
-      .map(
-        (
-          part,
-        ) =>
-          encodeURIComponent(
-            part,
-          ),
-      )
-      .join("/");
-
-  return `${origin}/${encodedPath}`;
+  return `${origin.replace(
+    /\/$/,
+    "",
+  )}/${value.replace(
+    /^\//,
+    "",
+  )}`;
 };
 
-
 /* =====================================================
-   TIME FORMAT
+   TIME PARSER
 ===================================================== */
 
-/*
-  Backend menjadi sumber data jam.
-
-  Fungsi ini HANYA bertugas mengubah format tampilan.
-
-  Contoh:
-
-  08:00:00
-  -> 08.00
-
-  17:30:00
-  -> 17.30
-
-  08:00
-  -> 08.00
-
-  2026-08-02T08:00:00Z
-  -> 08.00
-
-  2026-08-02T17:30:00+07:00
-  -> 17.30
-*/
-
-const formatOpeningTime = (
+const timeToMinute = (
   value?: string | null,
-): string => {
+): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  const match = String(value).match(
+    /(\d{1,2}):(\d{2})/,
+  );
+
+  if (!match) {
+    return null;
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
 
   if (
-    value === null ||
-    value === undefined
+    hour < 0 ||
+    hour > 23 ||
+    minute < 0 ||
+    minute > 59
   ) {
-    return "";
+    return null;
   }
 
-  const raw =
-    String(value).trim();
-
-  if (!raw) {
-    return "";
-  }
-
-
-  /* =================================================
-     ISO DATETIME
-     CONTOH:
-     2026-08-02T08:00:00Z
-     2026-08-02T17:30:00+07:00
-  ================================================= */
-
-  const isoMatch =
-    raw.match(
-      /T(\d{1,2}):(\d{2})/,
-    );
-
-  if (isoMatch) {
-
-    const hour =
-      isoMatch[1].padStart(
-        2,
-        "0",
-      );
-
-    const minute =
-      isoMatch[2];
-
-    return `${hour}.${minute}`;
-  }
-
-
-  /* =================================================
-     HH:mm:ss
-     HH:mm
-
-     CONTOH:
-     08:00:00
-     17:30:00
-     08:00
-     17:30
-  ================================================= */
-
-  const colonMatch =
-    raw.match(
-      /^(\d{1,2}):(\d{2})(?::\d{2})?/,
-    );
-
-  if (colonMatch) {
-
-    const hour =
-      colonMatch[1].padStart(
-        2,
-        "0",
-      );
-
-    const minute =
-      colonMatch[2];
-
-    return `${hour}.${minute}`;
-  }
-
-
-  /* =================================================
-     HH.mm
-
-     CONTOH:
-     08.00
-     17.30
-  ================================================= */
-
-  const dotMatch =
-    raw.match(
-      /^(\d{1,2})\.(\d{2})$/,
-    );
-
-  if (dotMatch) {
-
-    const hour =
-      dotMatch[1].padStart(
-        2,
-        "0",
-      );
-
-    const minute =
-      dotMatch[2];
-
-    return `${hour}.${minute}`;
-  }
-
-
-  /* =================================================
-     FALLBACK
-  ================================================= */
-
-  return raw;
+  return (
+    hour * 60 +
+    minute
+  );
 };
-
 
 /* =====================================================
-   SAFE NUMBER
+   JAKARTA TIME
 ===================================================== */
 
-const safeNumber = (
-  value: unknown,
-  fallback = 0,
-): number => {
+const getJakartaMinute = (): number => {
+  const parts =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone:
+          "Asia/Jakarta",
+        hour:
+          "2-digit",
+        minute:
+          "2-digit",
+        hourCycle:
+          "h23",
+      },
+    ).formatToParts(
+      new Date(),
+    );
 
-  const number =
-    Number(value);
+  const hour = Number(
+    parts.find(
+      item =>
+        item.type === "hour",
+    )?.value ?? 0,
+  );
 
-  return Number.isFinite(number)
-    ? number
-    : fallback;
+  const minute = Number(
+    parts.find(
+      item =>
+        item.type === "minute",
+    )?.value ?? 0,
+  );
+
+  return (
+    hour * 60 +
+    minute
+  );
 };
 
+/* =====================================================
+   OPEN STATUS
+===================================================== */
+
+const calculateOpen = (
+  open?: string,
+  close?: string,
+): boolean => {
+  const start =
+    timeToMinute(open);
+
+  const end =
+    timeToMinute(close);
+
+  if (
+    start === null ||
+    end === null
+  ) {
+    return false;
+  }
+
+  /*
+    Jika jam buka dan tutup sama,
+    anggap toko buka 24 jam.
+  */
+  if (start === end) {
+    return true;
+  }
+
+  const now =
+    getJakartaMinute();
+
+  /*
+    Normal:
+    08:00 - 22:00
+  */
+  if (start < end) {
+    return (
+      now >= start &&
+      now < end
+    );
+  }
+
+  /*
+    Overnight:
+    22:00 - 04:00
+  */
+  return (
+    now >= start ||
+    now < end
+  );
+};
+
+/* =====================================================
+   PRICE
+===================================================== */
+
+const formatPrice = (
+  value: number,
+): string => {
+  return `Rp ${value.toLocaleString(
+    "id-ID",
+  )}`;
+};
 
 /* =====================================================
    COMPONENT
 ===================================================== */
 
 export default function StoreDetail() {
-
-  /* =================================================
-     ROUTE
-  ================================================= */
-
   const {
     id,
-  } =
-    useParams<{
-      id: string;
-    }>();
-
-
-  /* =================================================
-     NAVIGATION
-  ================================================= */
+  } = useParams<{
+    id: string;
+  }>();
 
   const navigate =
     useNavigate();
 
-
-  /* =================================================
-     CART STORE
-  ================================================= */
-
-  const addItem =
-    useCartStore(
-      (
-        state,
-      ) =>
-        state.addItem,
-    );
-
-  const setStoreId =
-    useCartStore(
-      (
-        state,
-      ) =>
-        state.setStoreId,
-    );
-
-  const clearCart =
-    useCartStore(
-      (
-        state,
-      ) =>
-        state.clear,
-    );
-
-  const cartItems =
-    useCartStore(
-      (
-        state,
-      ) =>
-        state.items,
-    );
-
-  const cartStoreId =
-    useCartStore(
-      (
-        state,
-      ) =>
-        state.storeId,
-    );
-
-
-  /* =================================================
-     CHECKOUT STORE
-  ================================================= */
-
-  const resetCheckout =
-    useCheckoutStore(
-      (
-        state,
-      ) =>
-        state.resetCheckout,
-    );
-
-
-  /* =================================================
-     SELLER
-  ================================================= */
+  /* =====================================================
+     STATE
+  ===================================================== */
 
   const [
     store,
@@ -405,23 +288,11 @@ export default function StoreDetail() {
       null,
     );
 
-
-  /* =================================================
-     MENUS
-  ================================================= */
-
   const [
     menus,
     setMenus,
   ] =
-    useState<Menu[]>(
-      [],
-    );
-
-
-  /* =================================================
-     LOADING
-  ================================================= */
+    useState<Menu[]>([]);
 
   const [
     loading,
@@ -429,32 +300,23 @@ export default function StoreDetail() {
   ] =
     useState(true);
 
-
-  /* =================================================
-     ERROR
-  ================================================= */
-
   const [
     error,
     setError,
   ] =
     useState("");
 
-
-  /* =================================================
-     ACTIVE CATEGORY
-  ================================================= */
+  const [
+    search,
+    setSearch,
+  ] =
+    useState("");
 
   const [
-    activeCategory,
-    setActiveCategory,
+    category,
+    setCategory,
   ] =
     useState("Semua");
-
-
-  /* =================================================
-     QUANTITY
-  ================================================= */
 
   const [
     quantities,
@@ -464,1748 +326,1323 @@ export default function StoreDetail() {
       Record<string, number>
     >({});
 
+  const [
+    toast,
+    setToast,
+  ] =
+    useState("");
+
+  const [
+    showChangeStore,
+    setShowChangeStore,
+  ] =
+    useState(false);
+
+  const [
+    pendingMenu,
+    setPendingMenu,
+  ] =
+    useState<Menu | null>(null);
+
+  const [
+    pendingQuantity,
+    setPendingQuantity,
+  ] =
+    useState(0);
+
+  /* =====================================================
+     CART STORE
+  ===================================================== */
+
+  const addItem =
+    useCartStore(
+      state =>
+        state.addItem,
+    );
+
+  const clearCart =
+    useCartStore(
+      state =>
+        state.clear,
+    );
+
+  const setStoreId =
+    useCartStore(
+      state =>
+        state.setStoreId,
+    );
+
+  const cartItems =
+    useCartStore(
+      state =>
+        state.items,
+    );
+
+  const cartStoreId =
+    useCartStore(
+      state =>
+        state.storeId,
+    );
+
+  /* =====================================================
+     TOAST
+  ===================================================== */
+
+  const showToast = (
+    message: string,
+  ) => {
+    setToast(message);
+
+    window.setTimeout(() => {
+      setToast("");
+    }, 2500);
+  };
 
   /* =====================================================
      LOAD STORE
   ===================================================== */
 
   useEffect(() => {
+    let cancelled = false;
 
-    let cancelled =
-      false;
+    const loadStore = async () => {
+      const sellerId =
+        String(id ?? "").trim();
 
+      if (!sellerId) {
+        setError(
+          "ID warteg tidak ditemukan",
+        );
 
-    const loadStore =
-      async () => {
+        setLoading(false);
 
-        /* =============================================
-           VALIDATE ID
-        ============================================= */
+        return;
+      }
 
-        const sellerID =
-          String(
-            id ?? "",
-          ).trim();
+      try {
+        setLoading(true);
+        setError("");
 
-        if (!sellerID) {
+        console.log(
+          "[StoreDetail] Loading seller:",
+          sellerId,
+        );
 
-          setStore(null);
+        /* =================================================
+           SELLER
+        ================================================= */
 
-          setMenus([]);
-
-          setError(
-            "ID warteg tidak ditemukan.",
+        const sellerResponse =
+          await api.get(
+            `/sellers/${sellerId}`,
           );
 
-          setLoading(false);
+        console.log(
+          "[StoreDetail] Seller response:",
+          sellerResponse.data,
+        );
 
+        const sellerPayload =
+          sellerResponse.data;
+
+        const seller =
+          sellerPayload?.data ??
+          sellerPayload;
+
+        if (!seller) {
+          throw new Error(
+            "Warteg tidak ditemukan",
+          );
+        }
+
+        /*
+          Pastikan ID seller selalu menggunakan
+          ID dari URL jika response tidak memiliki ID.
+        */
+
+        const normalizedSellerId =
+          String(
+            seller.id ??
+            seller.seller_id ??
+            sellerId,
+          ).trim();
+
+        const opening =
+          String(
+            seller.opening_time ??
+            seller.jam_buka ??
+            seller.open_time ??
+            "",
+          );
+
+        const closing =
+          String(
+            seller.closing_time ??
+            seller.jam_tutup ??
+            seller.close_time ??
+            "",
+          );
+
+        const normalizedSeller:
+          CustomerSeller = {
+          id:
+            normalizedSellerId,
+
+          store_name:
+            String(
+              seller.store_name ??
+              seller.nama_warteg ??
+              seller.name ??
+              "Warteg",
+            ),
+
+          description:
+            String(
+              seller.description ??
+              seller.deskripsi ??
+              "",
+            ),
+
+          address:
+            String(
+              seller.address ??
+              seller.alamat ??
+              "",
+            ),
+
+          owner:
+            String(
+              seller.owner ??
+              seller.nama_pemilik ??
+              "",
+            ),
+
+          phone:
+            String(
+              seller.phone ??
+              seller.nomor_hp ??
+              "",
+            ),
+
+          rating:
+            numberValue(
+              seller.rating,
+            ),
+
+          distance_km:
+            numberValue(
+              seller.distance_km,
+            ),
+
+          total_menu:
+            0,
+
+          opening_time:
+            opening,
+
+          closing_time:
+            closing,
+
+          is_open:
+            calculateOpen(
+              opening,
+              closing,
+            ),
+
+          image:
+            getImageUrl(
+              seller.image ??
+              seller.image_url ??
+              seller.foto ??
+              seller.foto_warteg,
+            ),
+        };
+
+        if (cancelled) {
           return;
         }
 
+        setStore(
+          normalizedSeller,
+        );
 
-        try {
+        /* =================================================
+           MENU
+        ================================================= */
 
-          setLoading(true);
-
-          setError("");
-
-          setStore(null);
-
-          setMenus([]);
-
-          setQuantities({});
-
-          setActiveCategory(
-            "Semua",
+        const menuResponse =
+          await api.get(
+            `/menus`,
+            {
+              params: {
+                seller_id:
+                  normalizedSellerId,
+              },
+            },
           );
 
-
-          /* =========================================
-             GET SELLER
-          ========================================= */
-
-          const sellerResponse =
-            await api.get(
-              `/sellers/${encodeURIComponent(
-                sellerID,
-              )}`,
-            );
-
-
-          if (cancelled) {
-            return;
-          }
-
-
-          const sellerPayload =
-            sellerResponse.data;
-
-
-          /* =========================================
-             VALIDATE RESPONSE
-          ========================================= */
-
-          if (
-            sellerPayload?.success === false
-          ) {
-
-            throw new Error(
-              sellerPayload?.message ??
-              "Warteg tidak ditemukan.",
-            );
-          }
-
-
-          const sellerData =
-            sellerPayload?.data ??
-            sellerPayload ??
-            null;
-
-
-          if (
-            !sellerData ||
-            typeof sellerData !== "object"
-          ) {
-
-            throw new Error(
-              "Data warteg tidak ditemukan.",
-            );
-          }
-
-
-          /* =========================================
-             OPENING TIME
-          ========================================= */
-
-          const openingTime =
-            String(
-              sellerData?.opening_time ??
-              sellerData?.jam_buka ??
-              sellerData?.open_time ??
-              "",
-            ).trim();
-
-
-          /* =========================================
-             CLOSING TIME
-          ========================================= */
-
-          const closingTime =
-            String(
-              sellerData?.closing_time ??
-              sellerData?.jam_tutup ??
-              sellerData?.close_time ??
-              "",
-            ).trim();
-
-
-          /*
-            DEBUG:
-
-            Kalau perlu cek response backend,
-            buka DevTools -> Console.
-
-            Akan muncul data asli dari backend.
-          */
-
-          console.log(
-            "STORE DETAIL - SELLER DATA:",
-            sellerData,
-          );
-
-          console.log(
-            "OPENING TIME:",
-            openingTime,
-          );
-
-          console.log(
-            "CLOSING TIME:",
-            closingTime,
-          );
-
-          console.log(
-            "IS OPEN:",
-            sellerData?.is_open,
-          );
-
-
-          /* =========================================
-             OPEN STATUS
-
-             PENTING:
-
-             Frontend TIDAK menghitung jam buka/tutup.
-
-             Backend adalah sumber kebenaran.
-
-             Backend mengirim:
-             is_open: true / false
-          ========================================= */
-
-          const backendIsOpen =
-            sellerData?.is_open === true;
-
-
-          /* =========================================
-             SELLER NORMALIZATION
-          ========================================= */
-
-          const normalizedSeller:
-            CustomerSeller = {
-
-            id:
-              String(
-                sellerData?.seller_id ??
-                sellerData?.id ??
-                sellerID,
-              ),
-
-            store_name:
-              String(
-                sellerData?.nama_warteg ??
-                sellerData?.store_name ??
-                sellerData?.name ??
-                "Warteg",
-              ).trim(),
-
-            description:
-              String(
-                sellerData?.deskripsi ??
-                sellerData?.description ??
-                "",
-              ).trim(),
-
-            address:
-              String(
-                sellerData?.alamat ??
-                sellerData?.address ??
-                "",
-              ).trim(),
-
-            owner:
-              String(
-                sellerData?.nama_pemilik ??
-                sellerData?.owner ??
-                "",
-              ).trim(),
-
-            phone:
-              String(
-                sellerData?.nomor_hp ??
-                sellerData?.phone ??
-                "",
-              ).trim(),
-
-            rating:
-              safeNumber(
-                sellerData?.rating,
-                0,
-              ),
-
-            is_open:
-              backendIsOpen,
-
-            distance_km:
-              safeNumber(
-                sellerData?.distance_km,
-                0,
-              ),
-
-            total_menu:
-              safeNumber(
-                sellerData?.total_menu,
-                0,
-              ),
-
-            opening_time:
-              openingTime,
-
-            closing_time:
-              closingTime,
-
-            image:
-              getImageUrl(
-                sellerData?.image ??
-                sellerData?.image_url ??
-                sellerData?.foto ??
-                sellerData?.foto_warteg ??
-                "",
-              ),
-          };
-
-
-          setStore(
-            normalizedSeller,
-          );
-
-
-          /* =========================================
-             GET MENUS
-          ========================================= */
-
-          const menuResponse =
-            await api.get(
-              `/menus?seller_id=${encodeURIComponent(
-                sellerID,
-              )}`,
-            );
-
-
-          if (cancelled) {
-            return;
-          }
-
-
-          const menuPayload =
-            menuResponse.data;
-
-
-          if (
-            menuPayload?.success === false
-          ) {
-
-            throw new Error(
-              menuPayload?.message ??
-              "Gagal memuat menu.",
-            );
-          }
-
-
-          const menuData =
-            menuPayload?.data ??
-            menuPayload ??
-            [];
-
-
-          const menuArray =
-            Array.isArray(
-              menuData,
-            )
-              ? menuData
-              : [];
-
-
-          /* =========================================
-             NORMALIZE MENUS
-          ========================================= */
-
-          const normalizedMenus:
-            Menu[] =
-            menuArray
-              .map(
-                (
-                  item: any,
-                ) => {
-
-                  const menuID =
+        console.log(
+          "[StoreDetail] Menu response:",
+          menuResponse.data,
+        );
+
+        const menuPayload =
+          menuResponse.data;
+
+        const rawMenus =
+          menuPayload?.data ??
+          menuPayload?.menus ??
+          menuPayload ??
+          [];
+
+        const menuArray =
+          Array.isArray(rawMenus)
+            ? rawMenus
+            : [];
+
+        const normalizedMenus =
+          menuArray
+            .map(
+              (
+                item: any,
+              ): Menu => {
+                const stock =
+                  numberValue(
+                    item.stock ??
+                    item.stok,
+                  );
+
+                return {
+                  id:
                     String(
-                      item?.id ??
-                      item?.menu_id ??
+                      item.id ??
+                      item.menu_id ??
                       "",
-                    ).trim();
+                    ),
 
+                  seller_id:
+                    String(
+                      item.seller_id ??
+                      normalizedSellerId,
+                    ),
 
-                  const stock =
-                    Math.max(
-                      0,
-                      safeNumber(
-                        item?.stock ??
-                        item?.stok,
-                        0,
-                      ),
-                    );
+                  name:
+                    String(
+                      item.name ??
+                      item.nama_menu ??
+                      "",
+                    ),
 
+                  description:
+                    String(
+                      item.description ??
+                      item.deskripsi ??
+                      "",
+                    ),
 
-                  const available =
-                    item?.available !== false &&
-                    item?.is_available !== false &&
-                    item?.tersedia !== false;
+                  price:
+                    numberValue(
+                      item.price ??
+                      item.harga,
+                    ),
 
+                  stock,
 
-                  return {
+                  category:
+                    String(
+                      item.category ??
+                      item.kategori ??
+                      "Lainnya",
+                    ),
 
-                    id:
-                      menuID,
+                  image:
+                    getImageUrl(
+                      item.image ??
+                      item.image_url ??
+                      item.foto,
+                    ),
 
-                    seller_id:
-                      String(
-                        item?.seller_id ??
-                        sellerID,
-                      ),
+                  available:
+                    item.available !== false &&
+                    stock > 0,
 
-                    name:
-                      String(
-                        item?.name ??
-                        item?.nama_menu ??
-                        "",
-                      ).trim(),
+                  created_at:
+                    item.created_at ??
+                    "",
 
-                    description:
-                      String(
-                        item?.description ??
-                        item?.deskripsi ??
-                        "",
-                      ).trim(),
-
-                    price:
-                      Math.max(
-                        0,
-                        safeNumber(
-                          item?.price ??
-                          item?.harga,
-                          0,
-                        ),
-                      ),
-
-                    stock,
-
-                    category:
-                      String(
-                        item?.category ??
-                        item?.kategori ??
-                        "",
-                      ).trim(),
-
-                    image:
-                      getImageUrl(
-                        item?.image ??
-                        item?.image_url ??
-                        item?.foto ??
-                        "",
-                      ),
-
-                    available:
-                      available &&
-                      stock > 0,
-
-                    created_at:
-                      String(
-                        item?.created_at ??
-                        "",
-                      ),
-
-                    updated_at:
-                      String(
-                        item?.updated_at ??
-                        "",
-                      ),
-                  };
-                },
-              )
-              .filter(
-                (
-                  menu,
-                ) =>
-                  Boolean(
-                    menu.id,
-                  ),
-              );
-
-
-          setMenus(
-            normalizedMenus,
-          );
-
-
-          /* =========================================
-             UPDATE TOTAL MENU
-          ========================================= */
-
-          setStore(
-            (
-              previous,
-            ) =>
-              previous
-                ? {
-                  ...previous,
-
-                  total_menu:
-                    normalizedMenus.length,
-                }
-                : previous,
-          );
-
-
-          /* =========================================
-             RESET CHECKOUT
-          ========================================= */
-
-          resetCheckout();
-
-        } catch (
-        err: any
-        ) {
-
-          console.error(
-            "StoreDetail error:",
-            err,
-          );
-
-
-          if (!cancelled) {
-
-            setStore(null);
-
-            setMenus([]);
-
-            setError(
-              err?.response?.data?.message ??
-              err?.response?.data?.error ??
-              err?.message ??
-              "Gagal memuat data warteg.",
+                  updated_at:
+                    item.updated_at ??
+                    "",
+                };
+              },
+            )
+            .filter(
+              menu =>
+                Boolean(menu.id),
             );
-          }
 
-        } finally {
-
-          if (!cancelled) {
-
-            setLoading(false);
-          }
+        if (cancelled) {
+          return;
         }
-      };
 
+        setMenus(
+          normalizedMenus,
+        );
+
+        setStore(
+          previous =>
+            previous
+              ? {
+                ...previous,
+
+                total_menu:
+                  normalizedMenus.length,
+              }
+              : previous,
+        );
+
+        /*
+          JANGAN reset checkout di sini.
+
+          Membuka StoreDetail tidak boleh
+          menghapus / mengubah state cart atau
+          checkout user.
+        */
+      } catch (err: any) {
+        console.error(
+          "[StoreDetail] Error:",
+          err,
+        );
+
+        if (!cancelled) {
+          const message =
+            err?.response?.data?.message ??
+            err?.response?.data?.error ??
+            err?.message ??
+            "Gagal memuat warteg";
+
+          setError(
+            String(message),
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
     loadStore();
 
-
     return () => {
-
-      cancelled =
-        true;
+      cancelled = true;
     };
-
-  }, [
-    id,
-    resetCheckout,
-  ]);
-
-
-  /* =====================================================
-     REFRESH OPEN STATUS
-  ===================================================== */
-
-  useEffect(() => {
-
-    const sellerID =
-      String(
-        id ?? "",
-      ).trim();
-
-    if (!sellerID) {
-      return;
-    }
-
-
-    const refreshSellerStatus =
-      async () => {
-
-        try {
-
-          const response =
-            await api.get(
-              `/sellers/${encodeURIComponent(
-                sellerID,
-              )}`,
-            );
-
-
-          const payload =
-            response.data;
-
-
-          const data =
-            payload?.data ??
-            payload ??
-            null;
-
-
-          if (
-            !data ||
-            typeof data !== "object"
-          ) {
-            return;
-          }
-
-
-          console.log(
-            "REFRESH SELLER STATUS:",
-            {
-              opening_time:
-                data?.opening_time,
-
-              closing_time:
-                data?.closing_time,
-
-              is_open:
-                data?.is_open,
-            },
-          );
-
-
-          setStore(
-            (
-              previous,
-            ) => {
-
-              if (!previous) {
-                return previous;
-              }
-
-
-              return {
-
-                ...previous,
-
-                /*
-                  Backend tetap menjadi
-                  sumber status buka/tutup.
-                */
-
-                is_open:
-                  data?.is_open === true,
-
-                /*
-                  Sekalian refresh jam apabila
-                  backend mengirim perubahan.
-                */
-
-                opening_time:
-                  String(
-                    data?.opening_time ??
-                    data?.jam_buka ??
-                    previous.opening_time ??
-                    "",
-                  ).trim(),
-
-                closing_time:
-                  String(
-                    data?.closing_time ??
-                    data?.jam_tutup ??
-                    previous.closing_time ??
-                    "",
-                  ).trim(),
-              };
-            },
-          );
-
-        } catch (
-        refreshError
-        ) {
-
-          console.error(
-            "Gagal refresh status warteg:",
-            refreshError,
-          );
-        }
-      };
-
-
-    const interval =
-      window.setInterval(
-        refreshSellerStatus,
-        30_000,
-      );
-
-
-    return () => {
-
-      window.clearInterval(
-        interval,
-      );
-    };
-
-  }, [
-    id,
-  ]);
-
+  }, [id]);
 
   /* =====================================================
      CATEGORIES
   ===================================================== */
 
   const categories =
-    useMemo(
-      () => {
+    useMemo(() => {
+      const result =
+        menus
+          .map(
+            menu =>
+              menu.category,
+          )
+          .filter(Boolean);
 
-        const categoryList =
-          menus
-            .map(
-              (
-                menu,
-              ) =>
-                menu.category?.trim(),
-            )
-            .filter(
-              (
-                category,
-              ): category is string =>
-                Boolean(
-                  category,
-                ),
-            );
-
-
-        const uniqueCategories =
-          Array.from(
-            new Set(
-              categoryList,
-            ),
-          );
-
-
-        return [
-          "Semua",
-          ...uniqueCategories,
-        ];
-
-      },
-      [
-        menus,
-      ],
-    );
-
-
-  /* =====================================================
-     FIX ACTIVE CATEGORY
-  ===================================================== */
-
-  useEffect(() => {
-
-    if (
-      activeCategory !== "Semua" &&
-      !categories.includes(
-        activeCategory,
-      )
-    ) {
-
-      setActiveCategory(
+      return [
         "Semua",
-      );
-    }
-
-  }, [
-    categories,
-    activeCategory,
-  ]);
-
+        ...Array.from(
+          new Set(result),
+        ),
+      ];
+    }, [menus]);
 
   /* =====================================================
-     FILTERED MENUS
+     FILTER MENU
   ===================================================== */
 
   const filteredMenus =
-    useMemo(
-      () => {
+    useMemo(() => {
+      const keyword =
+        search
+          .trim()
+          .toLowerCase();
 
-        if (
-          activeCategory ===
-          "Semua"
-        ) {
+      return menus.filter(
+        menu => {
+          const matchCategory =
+            category === "Semua" ||
+            menu.category ===
+            category;
 
-          return menus;
-        }
+          const matchSearch =
+            !keyword ||
+            menu.name
+              .toLowerCase()
+              .includes(keyword) ||
+            menu.description
+              .toLowerCase()
+              .includes(keyword);
 
-
-        return menus.filter(
-          (
-            menu,
-          ) =>
-            menu.category?.trim() ===
-            activeCategory,
-        );
-
-      },
-      [
-        menus,
-        activeCategory,
-      ],
-    );
-
+          return (
+            matchCategory &&
+            matchSearch
+          );
+        },
+      );
+    }, [
+      menus,
+      category,
+      search,
+    ]);
 
   /* =====================================================
-     CART TOTAL
+     CART SUMMARY
   ===================================================== */
+
+  const sameStoreCart =
+    Boolean(
+      store?.id &&
+      cartStoreId &&
+      String(cartStoreId) ===
+      String(store.id),
+    );
+
+  /*
+    Hanya hitung cart yang berasal dari
+    store yang sedang dibuka.
+
+    Ini mencegah cart dari seller lain
+    ikut tampil.
+  */
+
+  const visibleCartItems =
+    sameStoreCart
+      ? cartItems
+      : [];
 
   const cartTotal =
-    cartItems.reduce(
+    visibleCartItems.reduce(
       (
         total,
         item,
-      ) =>
-        total +
-        Math.max(
-          0,
+      ) => {
+        return (
+          total +
           Number(
             item.menu.price,
-          ),
-        ) *
-        Math.max(
-          0,
+          ) *
           Number(
             item.quantity,
-          ),
-        ),
+          )
+        );
+      },
       0,
     );
 
-
-  /* =====================================================
-     TOTAL ITEMS
-  ===================================================== */
-
-  const totalItems =
-    cartItems.reduce(
+  const cartCount =
+    visibleCartItems.reduce(
       (
         total,
         item,
-      ) =>
-        total +
-        Math.max(
-          0,
+      ) => {
+        return (
+          total +
           Number(
             item.quantity,
-          ),
-        ),
+          )
+        );
+      },
       0,
     );
 
-
   /* =====================================================
-     GET QUANTITY
+     QUANTITY
   ===================================================== */
 
-  const getQuantity =
-    (
-      menuId: string,
-    ): number => {
-
-      return Math.max(
-        0,
-        quantities[menuId] ?? 0,
+  const increaseQty = (
+    menu: Menu,
+  ) => {
+    if (!store?.is_open) {
+      showToast(
+        "Warteg sedang tutup",
       );
-    };
 
+      return;
+    }
 
-  /* =====================================================
-     INCREASE
-  ===================================================== */
+    if (!menu.available) {
+      showToast(
+        "Menu tidak tersedia",
+      );
 
-  const increaseQuantity =
-    (
-      menu: Menu,
-    ) => {
+      return;
+    }
 
-      if (!menu.available) {
-        return;
-      }
+    setQuantities(
+      previous => {
+        const current =
+          previous[
+          menu.id
+          ] ?? 0;
 
+        if (
+          current >=
+          menu.stock
+        ) {
+          showToast(
+            "Stok menu sudah maksimal",
+          );
 
-      const stock =
-        Math.max(
-          0,
-          Number(
-            menu.stock,
+          return previous;
+        }
+
+        return {
+          ...previous,
+
+          [menu.id]:
+            current + 1,
+        };
+      },
+    );
+  };
+
+  const decreaseQty = (
+    menuId: string,
+  ) => {
+    setQuantities(
+      previous => ({
+        ...previous,
+
+        [menuId]:
+          Math.max(
+            0,
+            (previous[
+              menuId
+            ] ?? 0) - 1,
           ),
-        );
-
-
-      if (stock <= 0) {
-        return;
-      }
-
-
-      setQuantities(
-        (
-          previous,
-        ) => {
-
-          const current =
-            Math.max(
-              0,
-              previous[menu.id] ?? 0,
-            );
-
-
-          if (
-            current >= stock
-          ) {
-
-            return previous;
-          }
-
-
-          return {
-
-            ...previous,
-
-            [menu.id]:
-              current + 1,
-          };
-        },
-      );
-    };
-
-
-  /* =====================================================
-     DECREASE
-  ===================================================== */
-
-  const decreaseQuantity =
-    (
-      menuId: string,
-    ) => {
-
-      setQuantities(
-        (
-          previous,
-        ) => {
-
-          const current =
-            Math.max(
-              0,
-              previous[menuId] ?? 0,
-            );
-
-
-          if (
-            current <= 0
-          ) {
-
-            return previous;
-          }
-
-
-          return {
-
-            ...previous,
-
-            [menuId]:
-              current - 1,
-          };
-        },
-      );
-    };
-
+      }),
+    );
+  };
 
   /* =====================================================
      ADD TO CART
   ===================================================== */
 
-  const addToCart =
-    (
-      menu: Menu,
-    ) => {
+  const addToCart = (
+    menu: Menu,
+  ) => {
+    const quantity =
+      quantities[
+      menu.id
+      ] ?? 0;
 
-      const sellerID =
-        String(
-          id ?? "",
-        ).trim();
-
-
-      if (!sellerID) {
-
-        window.alert(
-          "ID warteg tidak ditemukan.",
-        );
-
-        return;
-      }
-
-
-      /* =============================================
-         SELLER VALIDATION
-      ============================================= */
-
-      if (
-        String(
-          menu.seller_id,
-        ) !== sellerID
-      ) {
-
-        window.alert(
-          "Menu tidak berasal dari warteg ini.",
-        );
-
-        return;
-      }
-
-
-      /* =============================================
-         AVAILABILITY
-      ============================================= */
-
-      if (!menu.available) {
-
-        window.alert(
-          "Menu sedang tidak tersedia.",
-        );
-
-        return;
-      }
-
-
-      const stock =
-        Math.max(
-          0,
-          Number(
-            menu.stock,
-          ),
-        );
-
-
-      if (stock <= 0) {
-
-        window.alert(
-          "Stok menu sedang habis.",
-        );
-
-        return;
-      }
-
-
-      /* =============================================
-         QUANTITY
-      ============================================= */
-
-      const quantity =
-        Math.min(
-          stock,
-          getQuantity(
-            menu.id,
-          ),
-        );
-
-
-      if (quantity <= 0) {
-
-        window.alert(
-          "Pilih jumlah menu terlebih dahulu.",
-        );
-
-        return;
-      }
-
-
-      /* =============================================
-         DIFFERENT SELLER
-      ============================================= */
-
-      if (
-        cartStoreId &&
-        String(cartStoreId) !== sellerID &&
-        cartItems.length > 0
-      ) {
-
-        const confirmChange =
-          window.confirm(
-            "Keranjang berisi menu dari warteg lain. Kosongkan keranjang dan ganti warteg?",
-          );
-
-
-        if (!confirmChange) {
-          return;
-        }
-
-
-        clearCart();
-      }
-
-
-      /* =============================================
-         SET CURRENT SELLER
-      ============================================= */
-
-      setStoreId(
-        sellerID,
+    if (quantity <= 0) {
+      showToast(
+        "Pilih jumlah menu",
       );
 
+      return;
+    }
 
-      /* =============================================
-         ADD ITEM
-      ============================================= */
+    if (!store) {
+      showToast(
+        "Data warteg belum siap",
+      );
+
+      return;
+    }
+
+    if (!store.is_open) {
+      showToast(
+        "Warteg sedang tutup",
+      );
+
+      return;
+    }
+
+    if (!menu.available) {
+      showToast(
+        "Menu tidak tersedia",
+      );
+
+      return;
+    }
+
+    const sellerId =
+      String(store.id).trim();
+
+    /*
+      Jika cart berasal dari seller lain,
+      tampilkan konfirmasi ganti seller.
+    */
+
+    if (
+      cartItems.length > 0 &&
+      cartStoreId &&
+      String(cartStoreId) !==
+      sellerId
+    ) {
+      setPendingMenu(menu);
+
+      setPendingQuantity(
+        quantity,
+      );
+
+      setShowChangeStore(
+        true,
+      );
+
+      return;
+    }
+
+    /*
+      Pastikan store ID di cart
+      selalu sama dengan seller.
+    */
+
+    setStoreId(
+      sellerId,
+    );
+
+    /*
+      addItem dipanggil sesuai quantity.
+    */
+
+    for (
+      let i = 0;
+      i < quantity;
+      i += 1
+    ) {
+      addItem(menu);
+    }
+
+    /*
+      Reset quantity selector.
+    */
+
+    setQuantities(
+      previous => ({
+        ...previous,
+
+        [menu.id]:
+          0,
+      }),
+    );
+
+    showToast(
+      `${menu.name} ditambahkan ke keranjang`,
+    );
+  };
+
+  /* =====================================================
+     CHANGE STORE
+  ===================================================== */
+
+  const cancelChangeStore =
+    () => {
+      setShowChangeStore(
+        false,
+      );
+
+      setPendingMenu(
+        null,
+      );
+
+      setPendingQuantity(
+        0,
+      );
+    };
+
+  const confirmChangeStore =
+    () => {
+      if (
+        !pendingMenu ||
+        pendingQuantity <= 0 ||
+        !store
+      ) {
+        cancelChangeStore();
+
+        return;
+      }
+
+      const sellerId =
+        String(
+          store.id,
+        ).trim();
+
+      /*
+        Kosongkan cart lama.
+      */
+
+      clearCart();
+
+      /*
+        Set seller baru.
+      */
+
+      setStoreId(
+        sellerId,
+      );
+
+      /*
+        Masukkan item baru.
+      */
 
       for (
-        let index = 0;
-        index < quantity;
-        index += 1
+        let i = 0;
+        i <
+        pendingQuantity;
+        i += 1
       ) {
-
         addItem(
-          menu,
+          pendingMenu,
         );
       }
 
-
-      /* =============================================
-         RESET LOCAL QUANTITY
-      ============================================= */
+      /*
+        Reset quantity.
+      */
 
       setQuantities(
-        (
-          previous,
-        ) => ({
-
+        previous => ({
           ...previous,
 
-          [menu.id]:
+          [pendingMenu.id]:
             0,
         }),
       );
 
+      cancelChangeStore();
+
+      showToast(
+        "Keranjang berhasil diganti",
+      );
     };
 
+  /* =====================================================
+     OPENING HOURS
+  ===================================================== */
+
+  const openingHours =
+    store
+      ? `${store.opening_time || "-"} - ${store.closing_time || "-"
+      }`
+      : "-";
 
   /* =====================================================
-     LOADING SCREEN
+     GO TO CART
+  ===================================================== */
+
+  const openCart = () => {
+    if (!store) {
+      return;
+    }
+
+    /*
+      Jangan gunakan cartStoreId di URL.
+      Gunakan seller ID yang sedang dibuka.
+    */
+
+    navigate(
+      `/cart/${store.id}`,
+    );
+  };
+
+  /* =====================================================
+     LOADING
   ===================================================== */
 
   if (loading) {
-
     return (
-
-      <div
-        className="store-loading"
-      >
-
-        <div
-          className="store-loading-spinner"
-        />
+      <div className="store-page-loading">
+        <div className="loading-circle" />
 
         <h2>
-          Memuat Warteg...
+          Memuat warteg...
         </h2>
-
-        <p>
-          Sedang mengambil informasi
-          warteg dan menu.
-        </p>
-
       </div>
     );
   }
 
-
   /* =====================================================
-     ERROR SCREEN
+     ERROR
   ===================================================== */
 
-  if (error) {
-
+  if (
+    error ||
+    !store
+  ) {
     return (
-
-      <div
-        className="store-error"
-      >
-
-        <div
-          className="store-error-card"
-        >
-
-          <span
-            className="store-error-icon"
-          >
-            !
-          </span>
-
-          <h2>
-            Oops, terjadi kesalahan
-          </h2>
-
-          <p>
-            {error}
-          </p>
-
-          <div
-            className="store-error-actions"
-          >
-
-            <button
-              type="button"
-              onClick={() =>
-                navigate(
-                  "/explore",
-                )
-              }
-            >
-              Kembali
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                window.location.reload()
-              }
-            >
-              Coba Lagi
-            </button>
-
-          </div>
-
-        </div>
-
-      </div>
-    );
-  }
-
-
-  /* =====================================================
-     STORE NOT FOUND
-  ===================================================== */
-
-  if (!store) {
-
-    return (
-
-      <div
-        className="store-error"
-      >
-
-        <div
-          className="store-error-card"
-        >
-
+      <div className="store-error-page">
+        <div className="store-error-box">
           <h2>
             Warteg tidak ditemukan
           </h2>
 
           <p>
-            Warteg yang kamu cari
-            tidak tersedia.
+            {error ||
+              "Data warteg tidak tersedia."}
           </p>
 
           <button
-            type="button"
             onClick={() =>
               navigate(
                 "/explore",
               )
             }
           >
-            Kembali ke Explore
+            Kembali
           </button>
-
         </div>
-
       </div>
     );
   }
-
-
-  /* =====================================================
-     OPENING HOURS
-  ===================================================== */
-
-  const openingTime =
-    formatOpeningTime(
-      store.opening_time,
-    );
-
-
-  const closingTime =
-    formatOpeningTime(
-      store.closing_time,
-    );
-
-
-  const openingHours =
-    openingTime &&
-      closingTime
-      ? `${openingTime} - ${closingTime}`
-      : "Jam buka belum tersedia";
-
 
   /* =====================================================
      RENDER
   ===================================================== */
 
   return (
-
-    <div
-      className="store-detail-page"
-    >
+    <div className="store-detail-page">
 
       {/* =================================================
           HERO
       ================================================= */}
 
-      <section
-        className="store-hero"
+      <section className="gf-hero">
 
-        style={{
-          backgroundImage:
-            store.image
-              ? `
-                linear-gradient(
-                  180deg,
-                  rgba(0, 0, 0, 0.08) 0%,
-                  rgba(0, 0, 0, 0.20) 38%,
-                  rgba(0, 0, 0, 0.78) 100%
-                ),
-                url("${store.image}")
-              `
-              : undefined,
-        }}
-      >
+        <div className="gf-cover">
 
-        {
-          !store.image && (
-
-            <div
-              className="store-hero-fallback"
+          {store.image ? (
+            <img
+              src={store.image}
+              alt={
+                store.store_name
+              }
+              onError={event => {
+                event.currentTarget.style.display =
+                  "none";
+              }}
             />
+          ) : (
+            <div className="gf-empty-cover">
+              🍛
+            </div>
+          )}
 
-          )
-        }
-
-
-        {/* =================================================
-            BACK
-        ================================================= */}
-
-        <button
-          type="button"
-          className="back-button"
-          onClick={() =>
-            navigate(
-              "/explore",
-            )
-          }
-          aria-label="Kembali ke Explore"
-        >
-
-          <ArrowLeft
-            size={19}
-          />
-
-          <span>
-            Kembali
-          </span>
-
-        </button>
-
-
-        {/* =================================================
-            HEADER CONTENT
-        ================================================= */}
-
-        <div
-          className="store-header-content"
-        >
-
-          <span
-            className="eyebrow"
-          >
-            WARTEGKITA
-          </span>
-
-
-          <h1>
-            {
-              store.store_name ||
-              "Warteg"
+          <button
+            type="button"
+            className="gf-back-button"
+            onClick={() =>
+              navigate(
+                "/explore",
+              )
             }
-          </h1>
-
-
-          {
-            store.description && (
-
-              <p>
-                {store.description}
-              </p>
-
-            )
-          }
-
-
-          {/* =================================================
-              META
-          ================================================= */}
-
-          <div
-            className="store-meta"
+            aria-label="Kembali"
           >
+            <ArrowLeft
+              size={22}
+            />
+          </button>
+        </div>
 
-            {/* RATING */}
+        <div className="gf-store-card">
 
-            <div
-              className="meta-card"
-            >
+          <div className="gf-store-header">
 
-              <Star
-                size={18}
-              />
+            <div>
+              <h1>
+                {store.store_name}
+              </h1>
 
-              <strong>
-                {
-                  store.rating > 0
+              <div className="gf-rating-row">
+
+                <span>
+                  <Star
+                    size={16}
+                    fill="currentColor"
+                  />
+
+                  {store.rating >
+                    0
                     ? store.rating.toFixed(
                       1,
                     )
-                    : "0.0"
-                }
-              </strong>
+                    : "Baru"}
+                </span>
 
-            </div>
+                <span>
+                  •
+                </span>
 
-
-            {/* DISTANCE */}
-
-            {
-              store.distance_km > 0 && (
-
-                <div
-                  className="meta-card"
+                <span
+                  className={
+                    store.is_open
+                      ? "open-status"
+                      : "close-status"
+                  }
                 >
+                  {store.is_open
+                    ? "Buka"
+                    : "Tutup"}
+                </span>
 
-                  <MapPin
-                    size={18}
-                  />
-
-                  <strong>
-                    {
-                      store.distance_km.toFixed(
-                        1,
-                      )
-                    }{" "}
-                    km
-                  </strong>
-
-                </div>
-
-              )
-            }
-
-
-            {/* HOURS */}
-
-            <div
-              className="meta-card"
-            >
-
-              <Clock3
-                size={18}
-              />
-
-              <strong>
-                {openingHours}
-              </strong>
-
+              </div>
             </div>
+
+            <button
+              type="button"
+              className="gf-chat-button"
+              onClick={() =>
+                navigate(
+                  `/chat?seller_id=${encodeURIComponent(
+                    store.id,
+                  )}`,
+                )
+              }
+              aria-label="Chat penjual"
+            >
+              <MessageCircle
+                size={22}
+              />
+            </button>
 
           </div>
 
-
-          {/* =================================================
-              ADDRESS
-          ================================================= */}
-
-          <div
-            className="store-address"
-          >
-
+          <div className="gf-detail-row">
             <MapPin
-              size={18}
+              size={17}
             />
 
             <span>
-              {
-                store.address ||
-                "Alamat belum tersedia"
-              }
+              {store.address ||
+                "Alamat belum tersedia"}
             </span>
-
           </div>
 
-
-          {/* =================================================
-              Kirim Pesan
-          ================================================= */}
-          <button
-            type="button"
-            className="store-chat-button"
-            onClick={() =>
-              navigate(
-                `/chat?seller_id=${encodeURIComponent(store.id)}`
-              )
-            }
-          >
-            <MessageCircle size={18} />
+          <div className="gf-detail-row">
+            <Clock3
+              size={17}
+            />
 
             <span>
-              Chat Penjual
+              {openingHours}
             </span>
-          </button>
+          </div>
+
+          {store.description && (
+            <p className="gf-description">
+              {store.description}
+            </p>
+          )}
 
         </div>
-
-
-        {/* =================================================
-            STATUS
-        ================================================= */}
-
-        <div
-          className={
-            store.is_open
-              ? "store-status open"
-              : "store-status closed"
-          }
-        >
-
-          <span
-            className="store-status-dot"
-          />
-
-          {
-            store.is_open
-              ? "Sedang buka"
-              : "Sedang tutup"
-          }
-
-        </div>
-
       </section>
-
 
       {/* =================================================
           MENU
       ================================================= */}
 
-      <main
-        className="store-menu-section"
-      >
+      <section className="menu-container">
 
-        <div
-          className="menu-section-header"
-        >
+        <div className="menu-search">
 
-          <div>
+          <Search
+            size={18}
+          />
 
-            <span
-              className="menu-section-eyebrow"
+          <input
+            type="text"
+            value={search}
+            onChange={event =>
+              setSearch(
+                event.target.value,
+              )
+            }
+            placeholder="Cari menu..."
+          />
+
+          {search && (
+            <button
+              type="button"
+              onClick={() =>
+                setSearch("")
+              }
+              aria-label="Hapus pencarian"
             >
-              MENU WARTEG
-            </span>
-
-            <h2>
-              Pilih makanan favoritmu
-            </h2>
-
-            <p>
-              Nikmati berbagai pilihan
-              makanan rumahan favorit.
-            </p>
-
-          </div>
+              <X
+                size={17}
+              />
+            </button>
+          )}
 
         </div>
 
+        <div className="category-sticky">
 
-        {/* =================================================
-            CATEGORY
-        ================================================= */}
-
-        {
-          categories.length > 1 && (
-
-            <div
-              className="category-list"
-            >
-
-              {
-                categories.map(
-                  (
-                    category,
-                  ) => (
-
-                    <button
-                      key={
-                        category
-                      }
-                      type="button"
-                      className={
-                        activeCategory ===
-                          category
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() =>
-                        setActiveCategory(
-                          category,
-                        )
-                      }
-                    >
-                      {category}
-                    </button>
-
-                  ),
-                )
-              }
-
-            </div>
-
-          )
-        }
-
-
-        {/* =================================================
-            MENU GRID
-        ================================================= */}
-
-        <section
-          className="menu-grid"
-        >
-
-          {
-            filteredMenus.length ===
-              0 ? (
-
-              <div
-                className="store-empty-menu"
+          {categories.map(
+            item => (
+              <button
+                type="button"
+                key={item}
+                className={
+                  category === item
+                    ? "active"
+                    : ""
+                }
+                onClick={() =>
+                  setCategory(
+                    item,
+                  )
+                }
               >
+                {item}
+              </button>
+            ),
+          )}
 
-                <div
-                  className="store-empty-icon"
-                >
-                  🍽️
-                </div>
+        </div>
 
-                <h3>
-                  Belum ada menu
-                </h3>
+        <div className="menu-grid">
 
-                <p>
-                  Warteg ini belum memiliki
-                  menu untuk ditampilkan.
-                </p>
+          {filteredMenus.length ===
+            0 ? (
+            <div className="empty-menu">
 
+              <div>
+                🍽️
               </div>
 
-            ) : (
+              <h3>
+                {search
+                  ? "Menu tidak ditemukan"
+                  : "Menu belum tersedia"}
+              </h3>
 
-              filteredMenus.map(
-                (
-                  menu,
-                ) => (
+              <p>
+                {search
+                  ? `Tidak ada menu yang cocok dengan "${search}".`
+                  : "Belum ada menu tersedia di warteg ini."}
+              </p>
 
-                  <MenuCard
-                    key={
-                      menu.id
-                    }
+              {search && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSearch("")
+                  }
+                >
+                  Reset pencarian
+                </button>
+              )}
 
-                    menu={
-                      menu
-                    }
-
-                    quantity={
-                      getQuantity(
-                        menu.id,
-                      )
-                    }
-
-                    onIncrease={() =>
-                      increaseQuantity(
-                        menu,
-                      )
-                    }
-
-                    onDecrease={() =>
-                      decreaseQuantity(
-                        menu.id,
-                      )
-                    }
-
-                    onAdd={() =>
-                      addToCart(
-                        menu,
-                      )
-                    }
-
-                  />
-
-                ),
-              )
-
+            </div>
+          ) : (
+            filteredMenus.map(
+              menu => (
+                <MenuCard
+                  key={menu.id}
+                  menu={menu}
+                  quantity={
+                    quantities[
+                    menu.id
+                    ] ?? 0
+                  }
+                  storeIsOpen={
+                    store.is_open
+                  }
+                  onIncrease={() =>
+                    increaseQty(
+                      menu,
+                    )
+                  }
+                  onDecrease={() =>
+                    decreaseQty(
+                      menu.id,
+                    )
+                  }
+                  onAdd={() =>
+                    addToCart(
+                      menu,
+                    )
+                  }
+                />
+              ),
             )
-          }
+          )}
 
-        </section>
-
-      </main>
-
+        </div>
+      </section>
 
       {/* =================================================
           FLOATING CART
       ================================================= */}
 
-      {
-        cartItems.length > 0 && (
-
+      {sameStoreCart &&
+        cartCount > 0 && (
           <button
             type="button"
-            className="floating-cart-bar"
-            onClick={() =>
-              navigate(
-                `/cart/${id}`,
-              )
+            className="floating-cart"
+            onClick={
+              openCart
             }
             aria-label="Lihat keranjang"
           >
 
-            <div
-              className="floating-cart-icon"
-            >
+            <div className="cart-left">
 
-              <ShoppingCart
-                size={22}
-              />
+              <div className="cart-icon">
 
-              <span>
-                {totalItems}
-              </span>
+                <ShoppingCart
+                  size={24}
+                />
 
-            </div>
+                <span>
+                  {cartCount}
+                </span>
 
+              </div>
 
-            <div
-              className="floating-left"
-            >
+              <div>
 
-              <strong>
-                {totalItems} Item
-              </strong>
+                <strong>
+                  Lihat keranjang
+                </strong>
 
-              <span>
-                Rp{" "}
-                {
-                  cartTotal.toLocaleString(
-                    "id-ID",
-                  )
-                }
-              </span>
+                <small>
+                  {cartCount} item
+                </small>
+
+              </div>
 
             </div>
 
-
-            <div
-              className="floating-right"
-            >
-
-              <span>
-                Lihat Keranjang
-              </span>
-
-              <span>
-                →
-              </span>
-
-            </div>
+            <strong>
+              {formatPrice(
+                cartTotal,
+              )}
+            </strong>
 
           </button>
+        )}
 
-        )
-      }
+      {/* =================================================
+          CHANGE STORE MODAL
+      ================================================= */}
+
+      {showChangeStore && (
+        <div
+          className="modal-overlay"
+          onClick={
+            cancelChangeStore
+          }
+        >
+
+          <div
+            className="change-modal"
+            onClick={event =>
+              event.stopPropagation()
+            }
+          >
+
+            <button
+              type="button"
+              className="modal-close"
+              onClick={
+                cancelChangeStore
+              }
+              aria-label="Tutup"
+            >
+              <X
+                size={18}
+              />
+            </button>
+
+            <ShoppingCart
+              size={30}
+            />
+
+            <h2>
+              Ganti warteg?
+            </h2>
+
+            <p>
+              Keranjang kamu berisi
+              menu dari warteg lain.
+            </p>
+
+            <p>
+              Menu lama akan
+              dikosongkan dan diganti
+              dengan menu dari{" "}
+              <strong>
+                {store.store_name}
+              </strong>
+              .
+            </p>
+
+            <div className="modal-actions">
+
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={
+                  cancelChangeStore
+                }
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                className="btn-confirm"
+                onClick={
+                  confirmChangeStore
+                }
+              >
+                Ganti Warteg
+              </button>
+
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* =================================================
+          TOAST
+      ================================================= */}
+
+      {toast && (
+        <div className="store-toast">
+
+          <Clock3
+            size={18}
+          />
+
+          <span>
+            {toast}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              setToast("")
+            }
+            aria-label="Tutup notifikasi"
+          >
+            <X
+              size={15}
+            />
+          </button>
+
+        </div>
+      )}
 
     </div>
   );

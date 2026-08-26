@@ -67,11 +67,14 @@ type Order struct {
 	   ASSOCIATIONS
 	================================================= */
 
-	Items []OrderItem `gorm:"foreignKey:OrderID;constraint:OnDelete:CASCADE" json:"items,omitempty"`
+	Items []OrderItem `gorm:"foreignKey:OrderID;references:ID;constraint:OnDelete:CASCADE" json:"items,omitempty"`
 
-	User *User `gorm:"foreignKey:UserID;references:ID;constraint:OnDelete:RESTRICT" json:"-"`
+	// Riwayat perubahan status order.
+	StatusHistories []OrderStatusHistory `gorm:"foreignKey:OrderID;references:ID;constraint:OnDelete:CASCADE" json:"status_histories,omitempty"`
 
-	Seller *SellerProfile `gorm:"foreignKey:SellerID;references:SellerID;constraint:OnDelete:RESTRICT" json:"-"`
+	User *User `gorm:"foreignKey:UserID;references:ID" json:"-"`
+
+	Seller *SellerProfile `gorm:"foreignKey:SellerID;references:SellerID" json:"-"`
 }
 
 /* =====================================================
@@ -91,9 +94,11 @@ type OrderItem struct {
 
 	Price float64 `gorm:"type:numeric(12,2);not null;default:0" json:"price"`
 
+	Note string `gorm:"type:text" json:"note"`
+
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at"`
 
-	Order *Order `gorm:"foreignKey:OrderID;references:ID;constraint:OnDelete:CASCADE" json:"-"`
+	Order *Order `gorm:"foreignKey:OrderID;references:ID" json:"-"`
 
-	Menu *Menu `gorm:"foreignKey:MenuID;references:ID;constraint:OnDelete:RESTRICT" json:"-"`
+	Menu *Menu `gorm:"foreignKey:MenuID;references:ID" json:"-"`
 }

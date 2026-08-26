@@ -9,140 +9,84 @@ const api = axios.create({
   },
 });
 
-
 // =====================================================
 // REQUEST INTERCEPTOR
 // =====================================================
 
 api.interceptors.request.use(
   (config) => {
+    const token =
+      localStorage.getItem("token");
 
-    const token = localStorage.getItem("token");
+    const isLoginRequest =
+      config.url === "/auth/login" ||
+      config.url?.endsWith("/auth/login");
 
-    console.log("================================");
-    console.log("🔐 API REQUEST");
-    console.log(
-      "URL:",
-      `${config.baseURL}${config.url}`
-    );
-    console.log(
-      "METHOD:",
-      config.method
-    );
-    console.log(
-      "TOKEN ADA:",
-      !!token
-    );
+    const isForgotPassword =
+      config.url === "/auth/forgot-password" ||
+      config.url?.endsWith("/auth/forgot-password");
 
-    // =================================================
-    // AUTHORIZATION
-    // =================================================
-
-    if (token) {
-
+    if (
+      !isLoginRequest &&
+      !isForgotPassword &&
+      token
+    ) {
       config.headers =
         config.headers || {};
 
       config.headers.Authorization =
         `Bearer ${token}`;
-
-      console.log(
-        "AUTHORIZATION:",
-        `Bearer ${token.substring(0, 20)}...`
-      );
-
-    } else {
-
-      console.log(
-        "❌ TOKEN TIDAK ADA DI LOCALSTORAGE"
-      );
-
     }
 
-
     // =================================================
-    // CONTENT TYPE
+    // FORMDATA
     // =================================================
-
-    /**
-     * Jangan memaksa Content-Type:
-     *
-     * application/json
-     *
-     * karena beberapa endpoint seperti
-     * upload menu menggunakan FormData.
-     *
-     * Axios akan menentukan Content-Type
-     * secara otomatis berdasarkan data.
-     */
 
     if (
       typeof FormData !== "undefined" &&
       config.data instanceof FormData
     ) {
-
-      /**
-       * Hapus Content-Type jika sebelumnya
-       * pernah diset oleh default/interceptor.
-       *
-       * Browser/Axios akan membuat:
-       *
-       * multipart/form-data;
-       * boundary=----------------...
-       */
-
       if (config.headers) {
-
-        delete config.headers[
-          "Content-Type"
-        ];
-
-        delete config.headers[
-          "content-type"
-        ];
+        delete config.headers["Content-Type"];
+        delete config.headers["content-type"];
       }
-
-      console.log(
-        "📦 REQUEST BODY: FormData"
-      );
-
-      console.log(
-        "📦 CONTENT TYPE: multipart/form-data"
-      );
-
-    } else {
-
-      console.log(
-        "📦 REQUEST BODY:",
-        config.data
-      );
-
     }
 
+    // =================================================
+    // DEBUG
+    // =================================================
 
-    console.log("================================");
+    console.log(
+      "➡️ API REQUEST:",
+      config.method?.toUpperCase(),
+      `${config.baseURL ?? ""}${config.url ?? ""}`,
+    );
 
     return config;
   },
 
   (error) => {
-    return Promise.reject(error);
-  }
-);
+    console.error(
+      "❌ API REQUEST ERROR:",
+      error,
+    );
 
+    return Promise.reject(error);
+  },
+);
 
 // =====================================================
 // RESPONSE INTERCEPTOR
 // =====================================================
 
 api.interceptors.response.use(
-
   (response) => {
 
     console.log(
-      "✅ API SUCCESS:",
+      "✅ API RESPONSE:",
+      response.status,
       response.config.url,
-      response.status
+      response.data,
     );
 
     return response;
@@ -151,47 +95,32 @@ api.interceptors.response.use(
   (error) => {
 
     console.error(
-      "========== API ERROR =========="
+      "❌ API RESPONSE ERROR:",
+      {
+        status:
+          error?.response?.status,
+
+        url:
+          error?.config?.url,
+
+        data:
+          error?.response?.data,
+
+        message:
+          error?.message,
+      },
     );
 
-    console.error(
-      "URL:",
-      error.config?.baseURL +
-      error.config?.url
-    );
-
-    console.error(
-      "METHOD:",
-      error.config?.method
-    );
-
-    console.error(
-      "STATUS:",
-      error.response?.status
-    );
-
-    console.error(
-      "DATA:",
-      error.response?.data
-    );
-
-    console.error(
-      "TOKEN:",
-      localStorage.getItem("token")
-    );
-
-    console.error(
-      "AUTH HEADER:",
-      error.config?.headers?.Authorization
-    );
-
-    console.error(
-      "==============================="
-    );
+    if (
+      error.response?.status === 401
+    ) {
+      localStorage.removeItem(
+        "token",
+      );
+    }
 
     return Promise.reject(error);
-  }
+  },
 );
-
 
 export default api;

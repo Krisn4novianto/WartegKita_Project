@@ -22,6 +22,7 @@ import (
 // Mengambil satu order milik user yang sedang login.
 //
 // AUTH REQUIRED
+//
 // =====================================================
 
 func GetOrder(c *gin.Context) {
@@ -64,7 +65,9 @@ func GetOrder(c *gin.Context) {
 	// VALIDATE ORDER UUID
 	// =================================================
 
-	if _, err := uuid.Parse(orderID); err != nil {
+	parsedOrderID, err := uuid.Parse(orderID)
+
+	if err != nil {
 		c.JSON(
 			http.StatusBadRequest,
 			gin.H{
@@ -79,9 +82,7 @@ func GetOrder(c *gin.Context) {
 	// GET USER ID FROM JWT
 	// =================================================
 
-	userIDValue, exists := c.Get(
-		"user_id",
-	)
+	userIDValue, exists := c.Get("user_id")
 
 	if !exists {
 		c.JSON(
@@ -94,9 +95,21 @@ func GetOrder(c *gin.Context) {
 		return
 	}
 
-	userID, ok := userIDValue.(string)
+	// =================================================
+	// NORMALIZE USER ID
+	// =================================================
 
-	if !ok {
+	var userID string
+
+	switch value := userIDValue.(type) {
+
+	case string:
+		userID = strings.TrimSpace(value)
+
+	case uuid.UUID:
+		userID = value.String()
+
+	default:
 		c.JSON(
 			http.StatusUnauthorized,
 			gin.H{
@@ -106,10 +119,6 @@ func GetOrder(c *gin.Context) {
 		)
 		return
 	}
-
-	userID = strings.TrimSpace(
-		userID,
-	)
 
 	if userID == "" {
 		c.JSON(
@@ -126,7 +135,9 @@ func GetOrder(c *gin.Context) {
 	// VALIDATE USER UUID
 	// =================================================
 
-	if _, err := uuid.Parse(userID); err != nil {
+	parsedUserID, err := uuid.Parse(userID)
+
+	if err != nil {
 		c.JSON(
 			http.StatusUnauthorized,
 			gin.H{
@@ -143,13 +154,15 @@ func GetOrder(c *gin.Context) {
 
 	var order models.Order
 
-	err := database.DB.
+	err = database.DB.
 		Where(
 			"id = ? AND user_id = ?",
-			orderID,
-			userID,
+			parsedOrderID,
+			parsedUserID,
 		).
+		Preload("User").
 		Preload("Items").
+		Preload("Items.Menu").
 		First(&order).
 		Error
 

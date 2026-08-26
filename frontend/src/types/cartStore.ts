@@ -1,8 +1,6 @@
 import { create } from "zustand";
 
-
 export interface CartItem {
-
     id: number;
 
     menu_id: number;
@@ -16,19 +14,37 @@ export interface CartItem {
 
     quantity: number;
 
+    // Optional kalau nanti mau catatan per-menu
     notes?: string;
-
 }
 
-
-
 interface CartStore {
+
+    /* =====================================================
+       CART
+    ===================================================== */
 
     items: CartItem[];
 
     storeId: number | null;
 
+    /* =====================================================
+       ORDER NOTE
+    ===================================================== */
+
+    orderNote: string;
+
+    setOrderNote: (note: string) => void;
+
+    /* =====================================================
+       STORE
+    ===================================================== */
+
     setStoreId: (id: number) => void;
+
+    /* =====================================================
+       CART ACTION
+    ===================================================== */
 
     addItem: (item: CartItem) => void;
 
@@ -41,140 +57,203 @@ interface CartStore {
     clear: () => void;
 
     total: () => number;
-
 }
 
 
+export const useCartStore =
+    create<CartStore>((set, get) => ({
 
-export const useCartStore = create<CartStore>((set, get) => ({
+        /* =================================================
+           INITIAL STATE
+        ================================================= */
 
-    items: [],
+        items: [],
 
-    storeId: null,
+        storeId: null,
 
-
-    setStoreId: (id) =>
-        set({
-            storeId: id
-        }),
-
-
-
-    addItem: (newItem) =>
-        set((state) => {
-
-            const existingItem = state.items.find(
-                (item) =>
-                    item.menu_id === newItem.menu_id
-            );
+        orderNote: "",
 
 
-            if (existingItem) {
+        /* =================================================
+           STORE ID
+        ================================================= */
+
+        setStoreId: (id) =>
+            set({
+                storeId: id,
+            }),
+
+
+        /* =================================================
+           ORDER NOTE
+        ================================================= */
+
+        setOrderNote: (note) =>
+            set({
+                orderNote: note.slice(0, 500),
+            }),
+
+
+        /* =================================================
+           ADD ITEM
+        ================================================= */
+
+        addItem: (newItem) =>
+            set((state) => {
+
+                const existingItem =
+                    state.items.find(
+                        (item) =>
+                            item.menu_id ===
+                            newItem.menu_id
+                    );
+
+
+                /* -----------------------------------------
+                   ITEM SUDAH ADA
+                ----------------------------------------- */
+
+                if (existingItem) {
+
+                    return {
+
+                        items:
+                            state.items.map(
+                                (item) =>
+                                    item.menu_id ===
+                                        newItem.menu_id
+                                        ? {
+                                            ...item,
+
+                                            quantity:
+                                                item.quantity +
+                                                newItem.quantity,
+                                        }
+                                        : item
+                            ),
+
+                    };
+                }
+
+
+                /* -----------------------------------------
+                   ITEM BARU
+                ----------------------------------------- */
 
                 return {
 
-                    items: state.items.map((item) =>
-                        item.menu_id === newItem.menu_id
-                            ? {
-                                ...item,
-                                quantity:
-                                    item.quantity +
-                                    newItem.quantity,
-                            }
-                            : item
-                    ),
+                    items: [
+                        ...state.items,
+                        newItem,
+                    ],
 
                 };
 
-            }
+            }),
 
 
-            return {
+        /* =================================================
+           INCREASE
+        ================================================= */
 
-                items: [
-                    ...state.items,
-                    newItem
-                ],
+        increase: (menuId) =>
+            set((state) => ({
 
-            };
+                items:
+                    state.items.map(
+                        (item) =>
+                            item.menu_id ===
+                                menuId
+                                ? {
+                                    ...item,
 
-        }),
+                                    quantity:
+                                        item.quantity +
+                                        1,
+                                }
+                                : item
+                    ),
+
+            })),
 
 
+        /* =================================================
+           DECREASE
+        ================================================= */
 
-    increase: (menuId) =>
-        set((state) => ({
+        decrease: (menuId) =>
+            set((state) => ({
 
-            items: state.items.map((item) =>
-                item.menu_id === menuId
-                    ? {
-                        ...item,
-                        quantity:
-                            item.quantity + 1,
-                    }
-                    : item
+                items:
+                    state.items
+                        .map(
+                            (item) =>
+                                item.menu_id ===
+                                    menuId
+                                    ? {
+                                        ...item,
+
+                                        quantity:
+                                            item.quantity -
+                                            1,
+                                    }
+                                    : item
+                        )
+                        .filter(
+                            (item) =>
+                                item.quantity > 0
+                        ),
+
+            })),
+
+
+        /* =================================================
+           REMOVE
+        ================================================= */
+
+        remove: (menuId) =>
+            set((state) => ({
+
+                items:
+                    state.items.filter(
+                        (item) =>
+                            item.menu_id !==
+                            menuId
+                    ),
+
+            })),
+
+
+        /* =================================================
+           CLEAR CART
+        ================================================= */
+
+        clear: () =>
+            set({
+
+                items: [],
+
+                storeId: null,
+
+                orderNote: "",
+
+            }),
+
+
+        /* =================================================
+           TOTAL
+        ================================================= */
+
+        total: () =>
+            get().items.reduce(
+
+                (sum, item) =>
+                    sum +
+                    item.menu.price *
+                    item.quantity,
+
+                0
+
             ),
 
-        })),
-
-
-
-    decrease: (menuId) =>
-        set((state) => ({
-
-            items: state.items
-                .map((item) =>
-                    item.menu_id === menuId
-                        ? {
-                            ...item,
-                            quantity:
-                                item.quantity - 1,
-                        }
-                        : item
-                )
-                .filter(
-                    (item) =>
-                        item.quantity > 0
-                ),
-
-        })),
-
-
-
-    remove: (menuId) =>
-        set((state) => ({
-
-            items: state.items.filter(
-                (item) =>
-                    item.menu_id !== menuId
-            ),
-
-        })),
-
-
-
-    clear: () =>
-        set({
-
-            items: [],
-
-            storeId: null,
-
-        }),
-
-
-
-    total: () =>
-        get().items.reduce(
-
-            (sum, item) =>
-                sum +
-                item.menu.price *
-                item.quantity,
-
-            0
-
-        ),
-
-
-}));
+    }));

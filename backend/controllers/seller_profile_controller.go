@@ -23,14 +23,10 @@ func GetSellerProfile(c *gin.Context) {
 	)
 
 	if sellerID == "" {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Seller ID tidak boleh kosong",
-			},
-		)
-
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Seller ID tidak boleh kosong",
+		})
 		return
 	}
 
@@ -39,49 +35,115 @@ func GetSellerProfile(c *gin.Context) {
 	)
 
 	if err != nil {
-		c.JSON(
-			http.StatusOK,
-			gin.H{
-				"success": true,
-				"data": gin.H{
-					"seller_id": sellerID,
 
-					"nama_warteg":  "",
-					"nama_pemilik": "",
-					"nomor_hp":     "",
-					"alamat":       "",
-					"deskripsi":    "",
+		// Profile belum ada.
+		// Tetap return 200 supaya frontend
+		// bisa membuka form profile baru.
 
-					"jam_buka":     "",
-					"jam_tutup":    "",
-					"opening_time": "",
-					"closing_time": "",
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
 
-					"bank":              "",
-					"nomor_rekening":    "",
-					"rekening_verified": false,
-					"nama_rekening":     "",
-				},
+			"data": gin.H{
+				"id":        "",
+				"seller_id": sellerID,
+
+				"nama_warteg":  "",
+				"nama_pemilik": "",
+				"nomor_hp":     "",
+
+				"alamat":    "",
+				"deskripsi": "",
+
+				"jam_buka":     "",
+				"jam_tutup":    "",
+				"opening_time": "",
+				"closing_time": "",
+
+				"latitude":  0,
+				"longitude": 0,
+
+				"image": "",
+
+				"bank":              "",
+				"nomor_rekening":    "",
+				"rekening_verified": false,
+				"nama_rekening":     "",
+
+				"created_at": "",
+				"updated_at": "",
 			},
-		)
+		})
 
 		return
 	}
 
 	// =================================================
-	// NORMALIZE JAM DARI DATABASE
+	// NORMALIZE TIME
 	// =================================================
 
-	profile.JamBuka = normalizeTime(profile.JamBuka)
-	profile.JamTutup = normalizeTime(profile.JamTutup)
+	profile.JamBuka =
+		normalizeTime(
+			profile.JamBuka,
+		)
 
-	c.JSON(
-		http.StatusOK,
-		gin.H{
-			"success": true,
-			"data":    profile,
+	profile.JamTutup =
+		normalizeTime(
+			profile.JamTutup,
+		)
+
+	// =================================================
+	// RESPONSE
+	// =================================================
+
+	c.JSON(http.StatusOK, gin.H{
+
+		"success": true,
+
+		"data": gin.H{
+
+			"id": profile.ID,
+
+			"seller_id": profile.SellerID,
+
+			"nama_warteg": profile.NamaWarteg,
+
+			"nama_pemilik": profile.NamaPemilik,
+
+			"nomor_hp": profile.NomorHP,
+
+			"alamat": profile.Alamat,
+
+			"deskripsi": profile.Deskripsi,
+
+			"jam_buka": profile.JamBuka,
+
+			"jam_tutup": profile.JamTutup,
+
+			"opening_time": profile.JamBuka,
+
+			"closing_time": profile.JamTutup,
+
+			"latitude": profile.Latitude,
+
+			"longitude": profile.Longitude,
+
+			"image": strings.TrimSpace(
+				profile.Image,
+			),
+
+			"bank": profile.Bank,
+
+			"nomor_rekening": profile.NomorRekening,
+
+			"rekening_verified": profile.RekeningVerified,
+
+			"nama_rekening": profile.NamaRekening,
+
+			"created_at": profile.CreatedAt,
+
+			"updated_at": profile.UpdatedAt,
 		},
-	)
+	})
 }
 
 // =====================================================
@@ -97,33 +159,11 @@ func UpdateSellerProfile(c *gin.Context) {
 	)
 
 	if sellerID == "" {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Seller ID tidak boleh kosong",
-			},
-		)
 
-		return
-	}
-
-	// =================================================
-	// USER ID DARI AUTH
-	// =================================================
-
-	userID := strings.TrimSpace(
-		c.GetString("user_id"),
-	)
-
-	if userID == "" {
-		c.JSON(
-			http.StatusUnauthorized,
-			gin.H{
-				"success": false,
-				"message": "User ID tidak ditemukan dari authentication context",
-			},
-		)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Seller ID tidak boleh kosong",
+		})
 
 		return
 	}
@@ -134,15 +174,15 @@ func UpdateSellerProfile(c *gin.Context) {
 
 	var profile sellerdb.SellerProfile
 
-	if err := c.ShouldBindJSON(&profile); err != nil {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Format data tidak valid",
-				"error":   err.Error(),
-			},
-		)
+	if err := c.ShouldBindJSON(
+		&profile,
+	); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Format data tidak valid",
+			"error":   err.Error(),
+		})
 
 		return
 	}
@@ -154,29 +194,106 @@ func UpdateSellerProfile(c *gin.Context) {
 	profile.SellerID = sellerID
 
 	// =================================================
-	// NORMALIZE JAM
+	// NORMALIZE TEXT
 	// =================================================
 
-	profile.JamBuka = normalizeTime(
-		profile.JamBuka,
-	)
+	profile.NamaWarteg =
+		strings.TrimSpace(
+			profile.NamaWarteg,
+		)
 
-	profile.JamTutup = normalizeTime(
-		profile.JamTutup,
-	)
+	profile.NamaPemilik =
+		strings.TrimSpace(
+			profile.NamaPemilik,
+		)
+
+	profile.NomorHP =
+		strings.TrimSpace(
+			profile.NomorHP,
+		)
+
+	profile.Alamat =
+		strings.TrimSpace(
+			profile.Alamat,
+		)
+
+	profile.Deskripsi =
+		strings.TrimSpace(
+			profile.Deskripsi,
+		)
+
+	profile.Bank =
+		strings.TrimSpace(
+			profile.Bank,
+		)
+
+	profile.NomorRekening =
+		strings.TrimSpace(
+			profile.NomorRekening,
+		)
+
+	profile.NamaRekening =
+		strings.TrimSpace(
+			profile.NamaRekening,
+		)
+
+	profile.Image =
+		strings.TrimSpace(
+			profile.Image,
+		)
+
+	// =================================================
+	// NORMALIZE TIME
+	// =================================================
+
+	profile.JamBuka =
+		normalizeTime(
+			profile.JamBuka,
+		)
+
+	profile.JamTutup =
+		normalizeTime(
+			profile.JamTutup,
+		)
+
+	// =================================================
+	// VALIDASI NAMA WARTEG
+	// =================================================
+
+	if profile.NamaWarteg == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Nama warteg wajib diisi",
+		})
+
+		return
+	}
+
+	// =================================================
+	// VALIDASI ALAMAT
+	// =================================================
+
+	if profile.Alamat == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Alamat warteg wajib diisi",
+		})
+
+		return
+	}
 
 	// =================================================
 	// VALIDASI JAM BUKA
 	// =================================================
 
 	if profile.JamBuka == "" {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Jam buka wajib diisi dengan format HH:mm",
-			},
-		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Jam buka wajib diisi dengan format HH:mm",
+		})
 
 		return
 	}
@@ -186,69 +303,65 @@ func UpdateSellerProfile(c *gin.Context) {
 	// =================================================
 
 	if profile.JamTutup == "" {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Jam tutup wajib diisi dengan format HH:mm",
-			},
-		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Jam tutup wajib diisi dengan format HH:mm",
+		})
 
 		return
 	}
 
 	// =================================================
-	// VALIDATE JAM BUKA
+	// PARSE JAM BUKA
 	// =================================================
 
-	openMinutes, openOK := parseTimeToMinutes(
-		profile.JamBuka,
-	)
+	openMinutes,
+		openOK :=
+		parseTimeToMinutes(
+			profile.JamBuka,
+		)
 
 	if !openOK {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Format jam buka tidak valid. Gunakan HH:mm",
-			},
-		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Format jam buka tidak valid. Gunakan HH:mm",
+		})
 
 		return
 	}
 
 	// =================================================
-	// VALIDATE JAM TUTUP
+	// PARSE JAM TUTUP
 	// =================================================
 
-	closeMinutes, closeOK := parseTimeToMinutes(
-		profile.JamTutup,
-	)
+	closeMinutes,
+		closeOK :=
+		parseTimeToMinutes(
+			profile.JamTutup,
+		)
 
 	if !closeOK {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Format jam tutup tidak valid. Gunakan HH:mm",
-			},
-		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Format jam tutup tidak valid. Gunakan HH:mm",
+		})
 
 		return
 	}
 
 	// =================================================
-	// JAM SAMA = TUTUP
+	// JAM SAMA
 	// =================================================
 
 	if openMinutes == closeMinutes {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Jam buka dan jam tutup tidak boleh sama",
-			},
-		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Jam buka dan jam tutup tidak boleh sama",
+		})
 
 		return
 	}
@@ -257,17 +370,264 @@ func UpdateSellerProfile(c *gin.Context) {
 	// SAVE PROFILE
 	// =================================================
 
-	if err := sellerdb.SaveProfile(
+	err := sellerdb.SaveProfile(
 		sellerID,
-		userID,
 		profile,
+	)
+
+	if err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Gagal menyimpan data profil",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	// =================================================
+	// GET DATA TERBARU
+	// =================================================
+
+	savedProfile,
+		err :=
+		sellerdb.GetProfile(
+			sellerID,
+		)
+
+	if err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"success": false,
+			"message": "Profil berhasil disimpan tetapi gagal mengambil data terbaru",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	// =================================================
+	// NORMALIZE HASIL
+	// =================================================
+
+	savedProfile.JamBuka =
+		normalizeTime(
+			savedProfile.JamBuka,
+		)
+
+	savedProfile.JamTutup =
+		normalizeTime(
+			savedProfile.JamTutup,
+		)
+
+	// =================================================
+	// SUCCESS
+	// =================================================
+
+	c.JSON(http.StatusOK, gin.H{
+
+		"success": true,
+
+		"message": "Profile usaha berhasil disimpan",
+
+		"data": savedProfile,
+	})
+}
+
+// =====================================================
+// VERIFY SELLER BANK
+//
+// POST /api/v1/sellers/:seller_id/verify-bank
+// =====================================================
+
+func VerifySellerBank(c *gin.Context) {
+
+	sellerID := strings.TrimSpace(
+		c.Param("seller_id"),
+	)
+
+	if sellerID == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Seller ID tidak boleh kosong",
+		})
+
+		return
+	}
+
+	// =================================================
+	// REQUEST BODY
+	// =================================================
+
+	var request struct {
+		Bank string `json:"bank"`
+
+		NomorRekening string `json:"nomor_rekening"`
+	}
+
+	if err := c.ShouldBindJSON(
+		&request,
 	); err != nil {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Format data tidak valid",
+			"error":   err.Error(),
+		})
+
+		return
+	}
+
+	// =================================================
+	// NORMALIZE
+	// =================================================
+
+	bank := strings.TrimSpace(
+		request.Bank,
+	)
+
+	nomorRekening :=
+		strings.TrimSpace(
+			request.NomorRekening,
+		)
+
+	// =================================================
+	// VALIDASI BANK
+	// =================================================
+
+	if bank == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Bank wajib dipilih",
+		})
+
+		return
+	}
+
+	// =================================================
+	// NORMALIZE NOMOR REKENING
+	// =================================================
+
+	nomorRekening =
+		strings.Map(
+			func(r rune) rune {
+
+				if r >= '0' &&
+					r <= '9' {
+
+					return r
+				}
+
+				return -1
+			},
+			nomorRekening,
+		)
+
+	// =================================================
+	// VALIDASI NOMOR REKENING
+	// =================================================
+
+	if nomorRekening == "" {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Nomor rekening wajib diisi",
+		})
+
+		return
+	}
+
+	if len(nomorRekening) < 5 {
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Nomor rekening tidak valid",
+		})
+
+		return
+	}
+
+	// =================================================
+	// GET PROFILE
+	// =================================================
+
+	profile,
+		err :=
+		sellerdb.GetProfile(
+			sellerID,
+		)
+
+	if err != nil {
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "Profil seller tidak ditemukan",
+		})
+
+		return
+	}
+
+	// =================================================
+	// UPDATE REKENING
+	// =================================================
+
+	profile.SellerID =
+		sellerID
+
+	profile.Bank =
+		bank
+
+	profile.NomorRekening =
+		nomorRekening
+
+	/*
+	 * Untuk sementara proses verifikasi
+	 * dilakukan berdasarkan validasi input.
+	 *
+	 * Nantinya bagian ini dapat diganti
+	 * dengan integrasi API bank/payment gateway.
+	 */
+
+	profile.RekeningVerified =
+		true
+
+	// =================================================
+	// NAMA REKENING
+	// =================================================
+	//
+	// Kalau belum ada nama rekening dari
+	// provider bank, gunakan nama pemilik
+	// sebagai fallback.
+	//
+
+	if strings.TrimSpace(
+		profile.NamaRekening,
+	) == "" {
+
+		profile.NamaRekening =
+			profile.NamaPemilik
+	}
+
+	// =================================================
+	// SAVE PROFILE
+	// =================================================
+
+	err =
+		sellerdb.SaveProfile(
+			sellerID,
+			profile,
+		)
+
+	if err != nil {
 
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
 				"success": false,
-				"message": "Gagal menyimpan data profil",
+				"message": "Gagal menyimpan rekening",
 				"error":   err.Error(),
 			},
 		)
@@ -279,16 +639,19 @@ func UpdateSellerProfile(c *gin.Context) {
 	// GET DATA TERBARU
 	// =================================================
 
-	savedProfile, err := sellerdb.GetProfile(
-		sellerID,
-	)
+	savedProfile,
+		err :=
+		sellerdb.GetProfile(
+			sellerID,
+		)
 
 	if err != nil {
+
 		c.JSON(
 			http.StatusInternalServerError,
 			gin.H{
 				"success": false,
-				"message": "Profil berhasil disimpan tetapi gagal mengambil data terbaru",
+				"message": "Rekening berhasil disimpan tetapi data terbaru gagal diambil",
 				"error":   err.Error(),
 			},
 		)
@@ -297,27 +660,29 @@ func UpdateSellerProfile(c *gin.Context) {
 	}
 
 	// =================================================
-	// NORMALIZE HASIL
-	// =================================================
-
-	savedProfile.JamBuka = normalizeTime(
-		savedProfile.JamBuka,
-	)
-
-	savedProfile.JamTutup = normalizeTime(
-		savedProfile.JamTutup,
-	)
-
-	// =================================================
 	// SUCCESS
 	// =================================================
 
 	c.JSON(
 		http.StatusOK,
 		gin.H{
+
 			"success": true,
-			"message": "Profile usaha berhasil disimpan",
-			"data":    savedProfile,
+
+			"message": "Rekening berhasil diverifikasi",
+
+			"data": gin.H{
+
+				"seller_id": sellerID,
+
+				"bank": savedProfile.Bank,
+
+				"nomor_rekening": savedProfile.NomorRekening,
+
+				"rekening_verified": savedProfile.RekeningVerified,
+
+				"nama_rekening": savedProfile.NamaRekening,
+			},
 		},
 	)
 }
@@ -335,13 +700,11 @@ func GetCustomerSellerDetail(c *gin.Context) {
 	)
 
 	if sellerID == "" {
-		c.JSON(
-			http.StatusBadRequest,
-			gin.H{
-				"success": false,
-				"message": "Seller ID tidak boleh kosong",
-			},
-		)
+
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": "Seller ID tidak boleh kosong",
+		})
 
 		return
 	}
@@ -350,136 +713,130 @@ func GetCustomerSellerDetail(c *gin.Context) {
 	// GET PROFILE
 	// =================================================
 
-	profile, err := sellerdb.GetProfile(
-		sellerID,
-	)
+	profile,
+		err :=
+		sellerdb.GetProfile(
+			sellerID,
+		)
 
 	if err != nil {
-		c.JSON(
-			http.StatusNotFound,
-			gin.H{
-				"success": false,
-				"message": "Profil warteg tidak ditemukan",
-			},
-		)
+
+		c.JSON(http.StatusNotFound, gin.H{
+			"success": false,
+			"message": "Profil warteg tidak ditemukan",
+		})
 
 		return
 	}
 
 	// =================================================
-	// NORMALIZE PROFILE
+	// NORMALIZE
 	// =================================================
 
-	namaWarteg := strings.TrimSpace(
-		profile.NamaWarteg,
-	)
+	namaWarteg :=
+		strings.TrimSpace(
+			profile.NamaWarteg,
+		)
 
-	namaPemilik := strings.TrimSpace(
-		profile.NamaPemilik,
-	)
+	namaPemilik :=
+		strings.TrimSpace(
+			profile.NamaPemilik,
+		)
 
-	nomorHP := strings.TrimSpace(
-		profile.NomorHP,
-	)
+	nomorHP :=
+		strings.TrimSpace(
+			profile.NomorHP,
+		)
 
-	alamat := strings.TrimSpace(
-		profile.Alamat,
-	)
+	alamat :=
+		strings.TrimSpace(
+			profile.Alamat,
+		)
 
-	deskripsi := strings.TrimSpace(
-		profile.Deskripsi,
-	)
+	deskripsi :=
+		strings.TrimSpace(
+			profile.Deskripsi,
+		)
+
+	jamBuka :=
+		normalizeTime(
+			profile.JamBuka,
+		)
+
+	jamTutup :=
+		normalizeTime(
+			profile.JamTutup,
+		)
 
 	// =================================================
-	// NORMALIZE JAM
-	// =================================================
-
-	jamBuka := normalizeTime(
-		profile.JamBuka,
-	)
-
-	jamTutup := normalizeTime(
-		profile.JamTutup,
-	)
-
-	// =================================================
-	// HITUNG STATUS BUKA
+	// OPEN STATUS
 	// =================================================
 
 	isOpen := false
 
-	if jamBuka != "" && jamTutup != "" {
-		isOpen = isSellerOpen(
-			jamBuka,
-			jamTutup,
-		)
+	if jamBuka != "" &&
+		jamTutup != "" {
+
+		isOpen =
+			isSellerOpen(
+				jamBuka,
+				jamTutup,
+			)
 	}
 
 	// =================================================
 	// RESPONSE
 	// =================================================
 
-	c.JSON(
-		http.StatusOK,
-		gin.H{
-			"success": true,
+	c.JSON(http.StatusOK, gin.H{
 
-			"data": gin.H{
+		"success": true,
 
-				// =====================================
-				// IDENTIFIER
-				// =====================================
+		"data": gin.H{
 
-				"id":        sellerID,
-				"seller_id": sellerID,
+			"id": sellerID,
 
-				// =====================================
-				// PROFILE
-				// =====================================
+			"seller_id": sellerID,
 
-				"store_name":  namaWarteg,
-				"owner":       namaPemilik,
-				"phone":       nomorHP,
-				"address":     alamat,
-				"description": deskripsi,
+			"store_name": namaWarteg,
 
-				// =====================================
-				// OPERATING HOURS
-				// =====================================
+			"owner": namaPemilik,
 
-				"opening_time": jamBuka,
-				"closing_time": jamTutup,
+			"phone": nomorHP,
 
-				// Backward compatibility
-				"jam_buka":  jamBuka,
-				"jam_tutup": jamTutup,
+			"address": alamat,
 
-				// =====================================
-				// OPEN STATUS
-				// =====================================
+			"description": deskripsi,
 
-				"is_open": isOpen,
+			"image": strings.TrimSpace(
+				profile.Image,
+			),
 
-				// =====================================
-				// CUSTOMER META
-				// =====================================
+			"latitude": profile.Latitude,
 
-				"rating":      0,
-				"distance_km": 0,
-				"total_menu":  0,
+			"longitude": profile.Longitude,
 
-				// =====================================
-				// IMAGE
-				// =====================================
+			"opening_time": jamBuka,
 
-				"image": "",
-			},
+			"closing_time": jamTutup,
+
+			"jam_buka": jamBuka,
+
+			"jam_tutup": jamTutup,
+
+			"is_open": isOpen,
+
+			"rating": 0,
+
+			"distance_km": 0,
+
+			"total_menu": 0,
 		},
-	)
+	})
 }
 
 // =====================================================
-// CHECK SELLER OPEN
+// SELLER OPEN STATUS
 //
 // SUPPORT:
 //
@@ -494,50 +851,55 @@ func isSellerOpen(
 	closingTime string,
 ) bool {
 
-	openMinutes, openOK := parseTimeToMinutes(
-		openingTime,
-	)
+	openMinutes,
+		openOK :=
+		parseTimeToMinutes(
+			openingTime,
+		)
 
-	closeMinutes, closeOK := parseTimeToMinutes(
-		closingTime,
-	)
+	closeMinutes,
+		closeOK :=
+		parseTimeToMinutes(
+			closingTime,
+		)
 
-	// =================================================
-	// INVALID
-	// =================================================
+	if !openOK ||
+		!closeOK {
 
-	if !openOK || !closeOK {
+		return false
+	}
+
+	if openMinutes ==
+		closeMinutes {
+
 		return false
 	}
 
 	// =================================================
-	// TIMEZONE ASIA/JAKARTA
+	// ASIA/JAKARTA
 	// =================================================
 
-	loc, err := time.LoadLocation(
-		"Asia/Jakarta",
-	)
+	loc,
+		err :=
+		time.LoadLocation(
+			"Asia/Jakarta",
+		)
 
 	if err != nil {
-		loc = time.FixedZone(
-			"WIB",
-			7*60*60,
-		)
+
+		loc =
+			time.FixedZone(
+				"WIB",
+				7*60*60,
+			)
 	}
 
-	now := time.Now().In(loc)
+	now :=
+		time.Now().In(loc)
 
 	currentMinutes :=
 		now.Hour()*60 +
 			now.Minute()
-
-	// =================================================
-	// JAM SAMA = TUTUP
-	// =================================================
-
-	if openMinutes == closeMinutes {
-		return false
-	}
 
 	// =================================================
 	// NORMAL
@@ -545,9 +907,13 @@ func isSellerOpen(
 	// 07:00 - 23:00
 	// =================================================
 
-	if openMinutes < closeMinutes {
-		return currentMinutes >= openMinutes &&
-			currentMinutes < closeMinutes
+	if openMinutes <
+		closeMinutes {
+
+		return currentMinutes >=
+			openMinutes &&
+			currentMinutes <
+				closeMinutes
 	}
 
 	// =================================================
@@ -556,8 +922,10 @@ func isSellerOpen(
 	// 18:00 - 02:00
 	// =================================================
 
-	return currentMinutes >= openMinutes ||
-		currentMinutes < closeMinutes
+	return currentMinutes >=
+		openMinutes ||
+		currentMinutes <
+			closeMinutes
 }
 
 // =====================================================
@@ -567,7 +935,6 @@ func isSellerOpen(
 //
 // 08:00
 // 08:00:00
-// " 08:00 "
 //
 // OUTPUT:
 //
@@ -578,9 +945,10 @@ func normalizeTime(
 	value string,
 ) string {
 
-	value = strings.TrimSpace(
-		value,
-	)
+	value =
+		strings.TrimSpace(
+			value,
+		)
 
 	if value == "" {
 		return ""
@@ -590,26 +958,36 @@ func normalizeTime(
 	// HH:MM
 	// =================================================
 
-	parsed, err := time.Parse(
-		"15:04",
-		value,
-	)
+	parsed,
+		err :=
+		time.Parse(
+			"15:04",
+			value,
+		)
 
 	if err == nil {
-		return parsed.Format("15:04")
+
+		return parsed.Format(
+			"15:04",
+		)
 	}
 
 	// =================================================
 	// HH:MM:SS
 	// =================================================
 
-	parsed, err = time.Parse(
-		"15:04:05",
-		value,
-	)
+	parsed,
+		err =
+		time.Parse(
+			"15:04:05",
+			value,
+		)
 
 	if err == nil {
-		return parsed.Format("15:04")
+
+		return parsed.Format(
+			"15:04",
+		)
 	}
 
 	return ""
@@ -618,24 +996,20 @@ func normalizeTime(
 // =====================================================
 // PARSE TIME TO MINUTES
 //
-// IMPORTANT:
-//
-// Fungsi ini SATU-SATUNYA di package controllers.
-//
-// 08:00     -> 480, true
-// 08:30     -> 510, true
-// 08:00:00  -> 480, true
-// kosong    -> 0, false
-// invalid   -> 0, false
+// 08:00 -> 480, true
+// 08:30 -> 510, true
+// kosong -> 0, false
+// invalid -> 0, false
 // =====================================================
 
 func parseTimeToMinutes(
 	value string,
 ) (int, bool) {
 
-	value = strings.TrimSpace(
-		value,
-	)
+	value =
+		strings.TrimSpace(
+			value,
+		)
 
 	if value == "" {
 		return 0, false
@@ -645,13 +1019,18 @@ func parseTimeToMinutes(
 	// HH:MM
 	// =================================================
 
-	parsed, err := time.Parse(
-		"15:04",
-		value,
-	)
+	parsed,
+		err :=
+		time.Parse(
+			"15:04",
+			value,
+		)
 
 	if err == nil {
-		minutes := parsed.Hour()*60 + parsed.Minute()
+
+		minutes :=
+			parsed.Hour()*60 +
+				parsed.Minute()
 
 		return minutes, true
 	}
@@ -660,20 +1039,21 @@ func parseTimeToMinutes(
 	// HH:MM:SS
 	// =================================================
 
-	parsed, err = time.Parse(
-		"15:04:05",
-		value,
-	)
+	parsed,
+		err =
+		time.Parse(
+			"15:04:05",
+			value,
+		)
 
 	if err == nil {
-		minutes := parsed.Hour()*60 + parsed.Minute()
+
+		minutes :=
+			parsed.Hour()*60 +
+				parsed.Minute()
 
 		return minutes, true
 	}
-
-	// =================================================
-	// INVALID
-	// =================================================
 
 	return 0, false
 }
